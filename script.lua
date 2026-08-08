@@ -900,6 +900,28 @@ local function getAimbotMode()
     return v or 'Hold'
 end
 
+-- Coerce stored keypicker values to an Enum.KeyCode when possible (fallback for InputBegan)
+local function coerceKey(value)
+    if typeof then
+        local ok, t = pcall(typeof, value)
+        if ok and t == 'EnumItem' then
+            return value
+        end
+    end
+    if type(value) == 'table' then
+        -- KeyPicker:SetValue({ 'MB2', 'Toggle' }) stores a table sometimes
+        value = value[1]
+    end
+    if type(value) == 'string' then
+        local s = value:gsub('Enum.KeyCode%.', '')
+        if s and Enum and Enum.KeyCode[s] then
+            return Enum.KeyCode[s]
+        end
+        -- Mouse buttons (MB1/MB2) or other UserInputTypes aren't supported by KeyCode compare here
+    end
+    return nil
+end
+
 local AcquireTargetOnFrame = false
 if Options.AimbotKeybind and Options.AimbotKeybind.OnClick then
     Options.AimbotKeybind:OnClick(function()
@@ -913,6 +935,22 @@ if Options.AimbotKeybind and Options.AimbotKeybind.OnClick then
         end
     end)
 end
+
+-- Fallback: listen for raw InputBegan for toggle mode in case KeyPicker callbacks are unavailable
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if getAimbotMode() ~= 'Toggle' then return end
+    local kc = nil
+    if Options.AimbotKeybind then kc = coerceKey(Options.AimbotKeybind.Value) end
+    if kc and input.KeyCode == kc then
+        CamlockEnabled = not CamlockEnabled
+        if CamlockEnabled then
+            AcquireTargetOnFrame = true
+        else
+            TargetPlayer = nil
+        end
+    end
+end)
 
 
 AimbotGroupBox:AddDropdown('AimbotTargetPart', {
@@ -1087,14 +1125,15 @@ end
 
 local function updateFOVCircle()
     if not aimbotFOVCircle then return end
-    if not Toggles.AimbotShowFOV.Value then
+    -- Only show FOV circle when Aimbot is enabled and user requested to show it
+    if not Toggles.AimbotToggle.Value or not Toggles.AimbotShowFOV.Value then
         aimbotFOVCircle.Visible = false
         return
     end
 
     local mousePos = UserInputService:GetMouseLocation()
     aimbotFOVCircle.Position = mousePos
-    aimbotFOVCircle.Radius = Options.AimbotFOV.Value
+    aimbotFOVCircle.Radius = Options.AimbotFOV and Options.AimbotFOV.Value or 100
     aimbotFOVCircle.Visible = true
 end
 
