@@ -1882,30 +1882,6 @@ Options.MiscFOVValue:OnChanged(function()
     end
 end)
 
-MiscVisualsGroup:AddToggle('MiscNoFogToggle', {
-    Text = 'No Fog',
-    Default = false,
-})
-
-MiscVisualsGroup:AddButton('Reset Lighting', function()
-    Lighting.Brightness = Originals.Brightness
-    Lighting.GlobalShadows = Originals.GlobalShadows
-    Lighting.FogEnd = Originals.FogEnd
-    Lighting.FogStart = Originals.FogStart
-    Lighting.Ambient = Originals.Ambient
-    Lighting.OutdoorAmbient = Originals.OutdoorAmbient
-    Lighting.ClockTime = Originals.ClockTime
-end)
-
-Toggles.MiscNoFogToggle:OnChanged(function()
-    if Toggles.MiscNoFogToggle.Value then
-        Lighting.FogEnd = 999999
-        Lighting.FogStart = 999999
-    else
-        Lighting.FogEnd = Originals.FogEnd
-        Lighting.FogStart = Originals.FogStart
-    end
-end)
 
 local spinAngle = 0
 
@@ -2343,38 +2319,6 @@ Players.PlayerRemoving:Connect(function(player)
     end)
 end)
 
-local FOVGroupBox = Tabs.Visuals:AddRightGroupbox('FOV Changer')
-
-FOVGroupBox:AddToggle('FOVToggle', {
-    Text = 'Enable FOV Changer',
-    Default = false,
-})
-
-FOVGroupBox:AddSlider('FOVValue', {
-    Text = 'Field of View',
-    Default = 70,
-    Min = 30,
-    Max = 120,
-    Rounding = 0,
-})
-
-FOVGroupBox:AddButton('Reset FOV', function()
-    workspace.CurrentCamera.FieldOfView = Originals.FOV
-end)
-
-Toggles.FOVToggle:OnChanged(function()
-    if Toggles.FOVToggle.Value then
-        workspace.CurrentCamera.FieldOfView = Options.FOVValue.Value
-    else
-        workspace.CurrentCamera.FieldOfView = Originals.FOV
-    end
-end)
-
-Options.FOVValue:OnChanged(function()
-    if Toggles.FOVToggle.Value then
-        workspace.CurrentCamera.FieldOfView = Options.FOVValue.Value
-    end
-end)
 
 local LightingGroupBox = Tabs.Visuals:AddRightGroupbox('Lighting')
 
