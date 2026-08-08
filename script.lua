@@ -878,7 +878,7 @@ AimbotGroupBox:AddToggle('AimbotToggle', {
 })
 
 AimbotGroupBox:AddDropdown('AimbotMode', {
-    Values = { 'Hold', 'Toggle' },
+    Values = { 'Hold' },
     Default = 1,
     Multi = false,
     Text = 'Aimbot Mode',
@@ -892,65 +892,8 @@ AimbotGroupBox:AddLabel('Aimbot Keybind'):AddKeyPicker('AimbotKeybind', {
 })
 
 local function getAimbotMode()
-    local v = Options.AimbotMode and Options.AimbotMode.Value
-    if type(v) == 'number' then
-        local vals = { 'Hold', 'Toggle' }
-        return vals[v] or 'Hold'
-    end
-    return v or 'Hold'
+    return 'Hold'
 end
-
--- Coerce stored keypicker values to an Enum.KeyCode when possible (fallback for InputBegan)
-local function coerceKey(value)
-    if typeof then
-        local ok, t = pcall(typeof, value)
-        if ok and t == 'EnumItem' then
-            return value
-        end
-    end
-    if type(value) == 'table' then
-        -- KeyPicker:SetValue({ 'MB2', 'Toggle' }) stores a table sometimes
-        value = value[1]
-    end
-    if type(value) == 'string' then
-        local s = value:gsub('Enum.KeyCode%.', '')
-        if s and Enum and Enum.KeyCode[s] then
-            return Enum.KeyCode[s]
-        end
-        -- Mouse buttons (MB1/MB2) or other UserInputTypes aren't supported by KeyCode compare here
-    end
-    return nil
-end
-
-local AcquireTargetOnFrame = false
-if Options.AimbotKeybind and Options.AimbotKeybind.OnClick then
-    Options.AimbotKeybind:OnClick(function()
-        if getAimbotMode() == 'Toggle' then
-            CamlockEnabled = not CamlockEnabled
-            if CamlockEnabled then
-                AcquireTargetOnFrame = true
-            else
-                TargetPlayer = nil
-            end
-        end
-    end)
-end
-
--- Fallback: listen for raw InputBegan for toggle mode in case KeyPicker callbacks are unavailable
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    if getAimbotMode() ~= 'Toggle' then return end
-    local kc = nil
-    if Options.AimbotKeybind then kc = coerceKey(Options.AimbotKeybind.Value) end
-    if kc and input.KeyCode == kc then
-        CamlockEnabled = not CamlockEnabled
-        if CamlockEnabled then
-            AcquireTargetOnFrame = true
-        else
-            TargetPlayer = nil
-        end
-    end
-end)
 
 
 AimbotGroupBox:AddDropdown('AimbotTargetPart', {
@@ -1185,7 +1128,7 @@ RunService.RenderStepped:Connect(function()
         if Options.AimbotKeybind:GetState() then
             if not CamlockEnabled then
                 CamlockEnabled = true
-                AcquireTargetOnFrame = true
+                TargetPlayer = GetClosestPlayer()
             end
         else
             if CamlockEnabled then
@@ -1195,17 +1138,9 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    if AcquireTargetOnFrame then
-        AcquireTargetOnFrame = false
-        if CamlockEnabled then
-            TargetPlayer = GetClosestPlayer()
-        end
-    end
-
     if CamlockEnabled then
         if Options.AimbotSticky and Options.AimbotSticky.Value then
             if not ValidateTarget() then
-                -- do not auto-switch if sticky and current target is still valid
                 TargetPlayer = GetClosestPlayer()
             end
         else
