@@ -888,17 +888,10 @@ HitboxGroupBox:AddLabel('Hitbox Keybind'):AddKeyPicker('HitboxKeybind', {
     end,
 })
 
-HitboxGroupBox:AddDropdown('HitboxParts', {
-    Values = { 'All', 'Head', 'UpperTorso', 'LowerTorso', 'HumanoidRootPart', 'LeftUpperArm', 'RightUpperArm', 'LeftUpperLeg', 'RightUpperLeg', 'Torso', 'Left Arm', 'Right Arm', 'Left Leg', 'Right Leg' },
-    Default = 1,
-    Multi = true,
-    Text = 'Hitbox Parts',
-})
-
 HitboxGroupBox:AddSlider('HitboxSize', {
     Text = 'Hitbox Size',
-    Default = 2,
-    Min = 1.0,
+    Default = 5,
+    Min = 1,
     Max = 20,
     Rounding = 1,
 })
@@ -913,418 +906,163 @@ HitboxGroupBox:AddLabel('Hitbox Color'):AddColorPicker('HitboxColor', {
     Title = 'Hitbox Color',
 })
 
-HitboxGroupBox:AddDropdown('HitboxMethod', {
-    Values = { 'Hook', 'Spoof' },
-    Default = 1,
-    Multi = false,
-    Text = 'Detection Method',
-})
-
-local hitboxConnections = {}
-local hitboxOverlays = {}
-local originalSizes = {}
-local originalTransparency = {}
-local originalCollision = {}
+-- Hitbox state
 local hitboxActive = false
-local connectionCache = {}
-local namecallHook = nil
-local indexHook = nil
-local newindexHook = nil
-local hitboxHooks = {}
+local hitboxOriginalSizes = {}   -- [part] = originalSize
+local hitboxSelectionBoxes = {}  -- [player][partName] = SelectionBox
 
-local function getPlayerFromPart(part)
-    if not part then return nil end
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player.Character and part:IsDescendantOf(player.Character) then
-            return player
-        end
-    end
-    return nil
-end
+-- Parts to expand for R6 and R15
+local HITBOX_PARTS = {
+    -- R6
+    'Head', 'Torso', 'HumanoidRootPart',
+    'Left Arm', 'Right Arm', 'Left Leg', 'Right Leg',
+    -- R15
+    'UpperTorso', 'LowerTorso',
+    'LeftUpperArm', 'LeftLowerArm', 'LeftHand',
+    'RightUpperArm', 'RightLowerArm', 'RightHand',
+    'LeftUpperLeg', 'LeftLowerLeg', 'LeftFoot',
+    'RightUpperLeg', 'RightLowerLeg', 'RightFoot',
+}
 
-local function getSelectedHitboxParts()
-    local selected = Options.HitboxParts.Value
-    local parts = {}
-    local partMap = {
-        ['All'] = {
-            'Head', 'Torso', 'HumanoidRootPart', 'Left Arm', 'Right Arm', 'Left Leg', 'Right Leg',
-            'UpperTorso', 'LowerTorso', 'LeftUpperArm', 'LeftLowerArm', 'RightUpperArm', 'RightLowerArm',
-            'LeftUpperLeg', 'LeftLowerLeg', 'RightUpperLeg', 'RightLowerLeg'
-        },
-        ['Head'] = { 'Head' },
-        ['UpperTorso'] = { 'UpperTorso' },
-        ['LowerTorso'] = { 'LowerTorso' },
-        ['HumanoidRootPart'] = { 'HumanoidRootPart' },
-        ['LeftUpperArm'] = { 'LeftUpperArm' },
-        ['RightUpperArm'] = { 'RightUpperArm' },
-        ['LeftUpperLeg'] = { 'LeftUpperLeg' },
-        ['RightUpperLeg'] = { 'RightUpperLeg' },
-        ['Torso'] = { 'Torso' },
-        ['Left Arm'] = { 'Left Arm' },
-        ['Right Arm'] = { 'Right Arm' },
-        ['Left Leg'] = { 'Left Leg' },
-        ['Right Leg'] = { 'Right Leg' },
-    }
-    for name, _ in pairs(selected) do
-        if partMap[name] then
-            for _, partName in ipairs(partMap[name]) do
-                if not table.find(parts, partName) then
-                    table.insert(parts, partName)
-                end
-            end
-        end
-    end
-    return parts
-end
-
-local function isTargetPart(partName)
-    local selected = getSelectedHitboxParts()
-    for _, name in ipairs(selected) do
-        if name == partName then return true end
-    end
-    return false
-end
-
-local function setupIndexSpoof()
-    if indexHook then return end
-
-    indexHook = hookmetamethod(game, "__index", newcclosure(function(self, index)
-        if not checkcaller() and self:IsA("BasePart") then
-            if index == "Size" and originalSizes[self] then
-                return originalSizes[self]
-            elseif index == "Transparency" and originalTransparency[self] ~= nil then
-                return originalTransparency[self]
-            elseif index == "CanCollide" and originalCollision[self] ~= nil then
-                return originalCollision[self]
-            end
-        end
-        return indexHook(self, index)
-    end))
-
-    newindexHook = hookmetamethod(game, "__newindex", newcclosure(function(self, index, value)
-        if not checkcaller() and self:IsA("BasePart") then
-            if index == "Size" and originalSizes[self] then
-                originalSizes[self] = value
-                return
-            elseif index == "Transparency" and originalTransparency[self] ~= nil then
-                originalTransparency[self] = value
-                return
-            elseif index == "CanCollide" and originalCollision[self] ~= nil then
-                originalCollision[self] = value
-                return
-            end
-        end
-        return newindexHook(self, index, value)
-    end))
-
-    hitboxHooks.index = indexHook
-    hitboxHooks.newindex = newindexHook
-end
-
-local function setupNamecallHook()
-    if namecallHook then return end
-
-    local findPartMethods = {
-        FindPartOnRay = true,
-        FindPartOnRayWithIgnoreList = true,
-        FindPartOnRayWithWhitelist = true,
-        Raycast = true,
-    }
-
-    namecallHook = hookmetamethod(Workspace, "__namecall", newcclosure(function(self, a, b, c, d, e)
-        local method = getnamecallmethod()
-
-        if findPartMethods[method] then
-            local r1, r2, r3, r4 = namecallHook(self, a, b, c, d, e)
-
-            if r1 and typeof(r1) == "Instance" and r1:IsA("BasePart") then
-                local player = getPlayerFromPart(r1)
-                if player and player ~= LocalPlayer and isTargetPart(r1.Name) then
-                    local head = player.Character and player.Character:FindFirstChild("Head")
-                    if head then return head, head.Position, r3, r4 end
-                end
-            elseif r1 and typeof(r1) == "RaycastResult" then
-                local player = getPlayerFromPart(r1.Instance)
-                if player and player ~= LocalPlayer and isTargetPart(r1.Instance.Name) then
-                    local head = player.Character and player.Character:FindFirstChild("Head")
-                    if head then return head, head.Position, r1.Material, r1.Normal end
-                end
-            end
-
-            return r1, r2, r3, r4
-        end
-
-        return namecallHook(self, a, b, c, d, e)
-    end))
-
-    hitboxHooks.namecall = namecallHook
-end
-
-local function removeHooks()
-    if indexHook then
-        hookmetamethod(game, "__index", indexHook)
-        indexHook = nil
-    end
-    if newindexHook then
-        hookmetamethod(game, "__newindex", newindexHook)
-        newindexHook = nil
-    end
-    if namecallHook then
-        hookmetamethod(Workspace, "__namecall", namecallHook)
-        namecallHook = nil
-    end
-    hitboxHooks = {}
-end
-
-local function disableConnections(part)
-    if not connectionCache[part] then
-        connectionCache[part] = {}
-    end
-    local changedConns = getconnections(part.Changed)
-    for _, conn in ipairs(changedConns) do
-        if conn.State then
-            conn:Disable()
-            table.insert(connectionCache[part], conn)
-        end
-    end
-end
-
-local function enableConnections(part)
-    if connectionCache[part] then
-        for _, conn in ipairs(connectionCache[part]) do
-            if not conn.State then
-                conn:Enable()
-            end
-        end
-        connectionCache[part] = nil
-    end
-end
-
-local function spoofHitbox(player)
+local function expandHitboxForPlayer(player)
     local char = player.Character
     if not char then return end
 
-    local selectedParts = getSelectedHitboxParts()
-    local hitboxSize = Options.HitboxSize.Value
+    local size = Options.HitboxSize.Value
 
-    for _, partName in ipairs(selectedParts) do
+    for _, partName in ipairs(HITBOX_PARTS) do
         local part = char:FindFirstChild(partName)
-        if part and part:IsA("BasePart") then
-            if not originalSizes[part] then
-                originalSizes[part] = part.Size
-            end
-            if originalTransparency[part] == nil then
-                originalTransparency[part] = part.Transparency
-            end
-            if originalCollision[part] == nil then
-                originalCollision[part] = part.CanCollide
+        if part and part:IsA('BasePart') then
+            -- Store original size once per part instance
+            if not hitboxOriginalSizes[part] then
+                hitboxOriginalSizes[part] = part.Size
             end
 
-            local ref = cloneref(part)
-            cache.invalidate(ref)
+            local orig = hitboxOriginalSizes[part]
+            local newSize = orig * size
 
-            disableConnections(part)
-
-            local newSize = Vector3.new(
-                originalSizes[part].X * hitboxSize,
-                originalSizes[part].Y * hitboxSize,
-                originalSizes[part].Z * hitboxSize
-            )
-
-            -- Use size_xml only to avoid network ownership loss (freeze)
-            pcall(sethiddenproperty, part, "size_xml", newSize)
-            part.CanCollide = false
-
-            enableConnections(part)
+            -- sethiddenproperty writes size_xml (server-side hitbox)
+            -- without touching physics/rendering = no freeze, no visual change
+            pcall(sethiddenproperty, part, 'size_xml', newSize)
         end
     end
 end
 
-local function restoreHitbox(player)
+local function restoreHitboxForPlayer(player)
     local char = player.Character
     if not char then return end
 
-    local selectedParts = getSelectedHitboxParts()
-    for _, partName in ipairs(selectedParts) do
+    for _, partName in ipairs(HITBOX_PARTS) do
         local part = char:FindFirstChild(partName)
-        if part and part:IsA("BasePart") then
-            disableConnections(part)
-
-            if originalSizes[part] then
-                pcall(sethiddenproperty, part, "size_xml", originalSizes[part])
-                originalSizes[part] = nil
+        if part and part:IsA('BasePart') then
+            if hitboxOriginalSizes[part] then
+                pcall(sethiddenproperty, part, 'size_xml', hitboxOriginalSizes[part])
+                hitboxOriginalSizes[part] = nil
             end
-            if originalTransparency[part] ~= nil then
-                part.Transparency = originalTransparency[part]
-                originalTransparency[part] = nil
-            end
-            if originalCollision[part] ~= nil then
-                part.CanCollide = originalCollision[part]
-                originalCollision[part] = nil
-            end
-
-            enableConnections(part)
         end
     end
 end
 
-local function clearOverlays(player)
-    if hitboxOverlays[player] then
-        for _, overlay in pairs(hitboxOverlays[player]) do
-            if overlay and overlay.Parent then
-                overlay:Destroy()
+local function clearSelectionBoxes(player)
+    if hitboxSelectionBoxes[player] then
+        for _, sb in pairs(hitboxSelectionBoxes[player]) do
+            if sb and sb.Parent then
+                sb:Destroy()
             end
         end
-        hitboxOverlays[player] = nil
+        hitboxSelectionBoxes[player] = nil
     end
 end
 
-local function createOverlay(player, part, color)
-    if not hitboxOverlays[player] then
-        hitboxOverlays[player] = {}
-    end
+local function updateSelectionBoxes(player)
+    local char = player.Character
+    if not char then return end
 
-    local existing = hitboxOverlays[player][part.Name]
-    if existing and existing.Parent then
-        existing.Color3 = color
-        existing.SurfaceColor3 = color
+    if not Toggles.HitboxShow.Value then
+        clearSelectionBoxes(player)
         return
     end
 
-    local overlay = Instance.new("SelectionBox")
-    overlay.Name = "HitboxOverlay_" .. part.Name
-    overlay.Adornee = part
-    overlay.Color3 = color
-    overlay.LineThickness = 0.04
-    overlay.SurfaceTransparency = 0.6
-    overlay.SurfaceColor3 = color
-    overlay.Parent = part
-
-    hitboxOverlays[player][part.Name] = overlay
-end
-
-local function assignHitbox(player)
-    if player == LocalPlayer then return end
-    if hitboxConnections[player] then
-        hitboxConnections[player]:Disconnect()
+    if not hitboxSelectionBoxes[player] then
+        hitboxSelectionBoxes[player] = {}
     end
 
-    local method = Options.HitboxMethod.Value
+    local color = Options.HitboxColor.Value
 
-    hitboxConnections[player] = RunService.RenderStepped:Connect(function()
-        local char = player.Character
-        if not char then return end
-
-        -- Always expand hitbox via size_xml for both methods
-        spoofHitbox(player)
-
-        -- Visuals
-        if Toggles.HitboxShow.Value then
-            local selectedParts = getSelectedHitboxParts()
-            for _, partName in ipairs(selectedParts) do
-                local part = char:FindFirstChild(partName)
-                if part and part:IsA("BasePart") then
-                    createOverlay(player, part, Options.HitboxColor.Value)
-                end
+    for _, partName in ipairs(HITBOX_PARTS) do
+        local part = char:FindFirstChild(partName)
+        if part and part:IsA('BasePart') then
+            local sb = hitboxSelectionBoxes[player][partName]
+            if not sb or not sb.Parent then
+                sb = Instance.new('SelectionBox')
+                sb.Adornee = part
+                sb.LineThickness = 0.03
+                sb.SurfaceTransparency = 0.7
+                sb.Parent = part
+                hitboxSelectionBoxes[player][partName] = sb
             end
+            sb.Color3 = color
+            sb.SurfaceColor3 = color
         else
-            clearOverlays(player)
+            -- Part doesn't exist (wrong rig type), clean up
+            if hitboxSelectionBoxes[player][partName] then
+                hitboxSelectionBoxes[player][partName]:Destroy()
+                hitboxSelectionBoxes[player][partName] = nil
+            end
+        end
+    end
+end
+
+local hitboxLoop = nil
+
+local function startHitbox()
+    hitboxActive = true
+    hitboxLoop = RunService.Heartbeat:Connect(function()
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                expandHitboxForPlayer(player)
+                updateSelectionBoxes(player)
+            end
         end
     end)
 end
 
-local function removeHitbox(player)
-    if hitboxConnections[player] then
-        hitboxConnections[player]:Disconnect()
-        hitboxConnections[player] = nil
-    end
-    clearOverlays(player)
-    restoreHitbox(player)
-end
-
-local function cleanupHitboxes()
-    for player, _ in pairs(hitboxConnections) do
-        removeHitbox(player)
-    end
-    hitboxConnections = {}
-    for player, _ in pairs(hitboxOverlays) do
-        clearOverlays(player)
-    end
-    hitboxOverlays = {}
-    removeHooks()
-    originalSizes = {}
-    originalTransparency = {}
-    originalCollision = {}
-    connectionCache = {}
+local function stopHitbox()
     hitboxActive = false
-end
-
-local function initializeHitbox()
-    local method = Options.HitboxMethod.Value
-
-    if method == "Hook" then
-        setupNamecallHook()
-    elseif method == "Spoof" then
-        setupIndexSpoof()
+    if hitboxLoop then
+        hitboxLoop:Disconnect()
+        hitboxLoop = nil
     end
-
-    hitboxActive = true
     for _, player in ipairs(Players:GetPlayers()) do
-        assignHitbox(player)
+        restoreHitboxForPlayer(player)
+        clearSelectionBoxes(player)
     end
+    hitboxOriginalSizes = {}
 end
 
 Toggles.HitboxToggle:OnChanged(function()
     if Toggles.HitboxToggle.Value then
-        initializeHitbox()
+        startHitbox()
     else
-        cleanupHitboxes()
+        stopHitbox()
     end
 end)
 
-Options.HitboxSize:OnChanged(function()
-    if Toggles.HitboxToggle.Value then
+Toggles.HitboxShow:OnChanged(function()
+    if not Toggles.HitboxShow.Value then
         for _, player in ipairs(Players:GetPlayers()) do
-            removeHitbox(player)
-            assignHitbox(player)
+            clearSelectionBoxes(player)
         end
-    end
-end)
-
-Options.HitboxColor:OnChanged(function()
-    if Toggles.HitboxToggle.Value then
-        for _, player in ipairs(Players:GetPlayers()) do
-            removeHitbox(player)
-            assignHitbox(player)
-        end
-    end
-end)
-
-Options.HitboxParts:OnChanged(function()
-    if Toggles.HitboxToggle.Value then
-        for _, player in ipairs(Players:GetPlayers()) do
-            removeHitbox(player)
-            assignHitbox(player)
-        end
-    end
-end)
-
-Options.HitboxMethod:OnChanged(function()
-    if Toggles.HitboxToggle.Value then
-        cleanupHitboxes()
-        initializeHitbox()
-    end
-end)
-
-Players.PlayerAdded:Connect(function(player)
-    if Toggles.HitboxToggle.Value then
-        task.wait(1)
-        assignHitbox(player)
     end
 end)
 
 Players.PlayerRemoving:Connect(function(player)
-    removeHitbox(player)
+    restoreHitboxForPlayer(player)
+    clearSelectionBoxes(player)
+end)
+
+LocalPlayer.CharacterAdded:Connect(function()
+    hitboxOriginalSizes = {}
 end)
 local TriggerbotGroupBox = Tabs.Combat:AddLeftGroupbox('Triggerbot')
 
@@ -1412,53 +1150,6 @@ Toggles.TriggerbotToggle:OnChanged(function()
             triggerbotConnection = nil
         end
     end
-end)
-
-Options.HitboxSize:OnChanged(function()
-    if Toggles.HitboxToggle.Value then
-        for _, player in ipairs(Players:GetPlayers()) do
-            removeHitbox(player)
-            assignHitbox(player)
-        end
-    end
-end)
-
-Options.HitboxColor:OnChanged(function()
-    if Toggles.HitboxToggle.Value then
-        for _, player in ipairs(Players:GetPlayers()) do
-            removeHitbox(player)
-            assignHitbox(player)
-        end
-    end
-end)
-
-Options.HitboxParts:OnChanged(function()
-    if Toggles.HitboxToggle.Value then
-        for _, player in ipairs(Players:GetPlayers()) do
-            removeHitbox(player)
-            assignHitbox(player)
-        end
-    end
-end)
-
-Options.HitboxMethod:OnChanged(function()
-    if Toggles.HitboxToggle.Value then
-        cleanupHitboxes()
-        initializeHitbox()
-    end
-end)
-
-
-
-Players.PlayerAdded:Connect(function(player)
-    if Toggles.HitboxToggle.Value then
-        task.wait(1)
-        assignHitbox(player)
-    end
-end)
-
-Players.PlayerRemoving:Connect(function(player)
-    removeHitbox(player)
 end)
 
 local AimbotGroupBox = Tabs.Combat:AddLeftGroupbox('Aimbot')
@@ -3609,7 +3300,7 @@ local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
 MenuGroup:AddButton('Unload', function() Library:Unload() end)
 
 Library:OnUnload(function()
-    cleanupHitboxes()
+    stopHitbox()
     getgenv().__HITBOX__ = nil
     gcinfo()
 end)
