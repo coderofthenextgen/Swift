@@ -3320,8 +3320,8 @@ MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', {
 
 Library.ToggleKeybind = Options.MenuKeybind
 
--- Mobile toggle button (only shown on touch devices)
-if UserInputService.TouchEnabled then
+-- Mobile toggle button
+do
     local MobileButton = Instance.new('TextButton')
     MobileButton.Size = UDim2.new(0, 60, 0, 60)
     MobileButton.Position = UDim2.new(0, 10, 0.5, -30)
