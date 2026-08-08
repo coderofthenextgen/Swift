@@ -33,12 +33,11 @@ local function Wait(Seconds)
 	end
 end
 
-local function FastSpawn(Function, ...)
-	local Arguments = table.pack(...)
+local function FastSpawn(Function, a, b, c, d)
 	local BindableEvent = Instance.new("BindableEvent")
 
 	BindableEvent.Event:Connect(function()
-		Function(table.unpack(Arguments, 1, Arguments.n))
+		Function(a, b, c, d)
 	end)
 
 	BindableEvent:Fire()
