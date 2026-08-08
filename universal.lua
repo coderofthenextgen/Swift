@@ -1,5 +1,6 @@
 local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
 local swiftRepo = 'https://raw.githubusercontent.com/coderofthenextgen/Swift-Hub/main/'
+local v = '?v=' .. tostring(os.time())
 
 local function safeLoad(url)
     local src = game:HttpGet(url)
@@ -14,9 +15,9 @@ local Library = safeLoad(repo .. 'Library.lua')
 local ThemeManager = safeLoad(repo .. 'addons/ThemeManager.lua')
 local SaveManager = safeLoad(repo .. 'addons/SaveManager.lua')
 
-local DrawingLib = safeLoad(swiftRepo .. 'drawinglib.lua')
-local EntityLib = safeLoad(swiftRepo .. 'entitylib.lua')
-local JanitorLib = safeLoad(swiftRepo .. 'janitor.lua')
+local DrawingLib = safeLoad(swiftRepo .. 'drawinglib.lua' .. v)
+local EntityLib = safeLoad(swiftRepo .. 'entitylib.lua' .. v)
+local JanitorLib = safeLoad(swiftRepo .. 'janitor.lua' .. v)
 
 local Players = cloneref(game:GetService('Players'))
 cache.invalidate(Players)
