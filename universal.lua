@@ -1458,8 +1458,7 @@ Players.PlayerAdded:Connect(function(player)
 end)
 
 Players.PlayerRemoving:Connect(function(player)
-    hitboxConnections[player] = nil
-    cleanupSelectionBoxes(player)
+    removeHitbox(player)
 end)
 
 local AimbotGroupBox = Tabs.Combat:AddLeftGroupbox('Aimbot')
