@@ -900,12 +900,13 @@ local function getAimbotMode()
     return v or 'Hold'
 end
 
+local AcquireTargetOnFrame = false
 if Options.AimbotKeybind and Options.AimbotKeybind.OnClick then
     Options.AimbotKeybind:OnClick(function()
         if getAimbotMode() == 'Toggle' then
             CamlockEnabled = not CamlockEnabled
             if CamlockEnabled then
-                TargetPlayer = GetClosestPlayer()
+                AcquireTargetOnFrame = true
             else
                 TargetPlayer = nil
             end
@@ -1145,7 +1146,7 @@ RunService.RenderStepped:Connect(function()
         if Options.AimbotKeybind:GetState() then
             if not CamlockEnabled then
                 CamlockEnabled = true
-                TargetPlayer = GetClosestPlayer()
+                AcquireTargetOnFrame = true
             end
         else
             if CamlockEnabled then
@@ -1155,9 +1156,17 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
+    if AcquireTargetOnFrame then
+        AcquireTargetOnFrame = false
+        if CamlockEnabled then
+            TargetPlayer = GetClosestPlayer()
+        end
+    end
+
     if CamlockEnabled then
         if Options.AimbotSticky and Options.AimbotSticky.Value then
             if not ValidateTarget() then
+                -- do not auto-switch if sticky and current target is still valid
                 TargetPlayer = GetClosestPlayer()
             end
         else
