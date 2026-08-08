@@ -930,8 +930,12 @@ local connectionCache = {}
 
 local function getPlayerFromPart(part)
     if not part then return nil end
-    local entity = EntityLib.getEntity(part)
-    return entity and entity.Player or nil
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.Character and part:IsDescendantOf(player.Character) then
+            return player
+        end
+    end
+    return nil
 end
 
 local function getSelectedHitboxParts()
@@ -1011,39 +1015,36 @@ end
 local function setupNamecallHook()
     if oldNamecall then return end
 
-    oldNamecall = hookmetamethod(Workspace, "__namecall", newcclosure(function(self, ...)
+    oldNamecall = hookmetamethod(Workspace, "__namecall", newcclosure(function(self, a, b, c, d, e)
         local method = getnamecallmethod()
-        local args = {...}
 
         if method == "FindPartOnRay" or method == "FindPartOnRayWithIgnoreList" or method == "Raycast" then
-            local result = oldNamecall(self, unpack(args))
+            local r1, r2, r3, r4 = oldNamecall(self, a, b, c, d, e)
 
-            if type(result) == "table" and result[1] and result[1]:IsA("BasePart") then
-                local player = getPlayerFromPart(result[1])
-                if player and player ~= LocalPlayer and isTargetPart(result[1].Name) then
+            -- Raycast result is a single RaycastResult table
+            if r1 and typeof(r1) == "RaycastResult" then
+                local player = getPlayerFromPart(r1.Instance)
+                if player and player ~= LocalPlayer and isTargetPart(r1.Instance.Name) then
                     local head = player.Character and player.Character:FindFirstChild("Head")
                     if head then
-                        setnamecallmethod("GetChildren")
-                        return head, head.Position, result[3], result[4]
+                        return head, head.Position, r1.Material, r1.Normal
+                    end
+                end
+            -- FindPartOnRay returns part, position, normal, material
+            elseif r1 and typeof(r1) == "Instance" and r1:IsA("BasePart") then
+                local player = getPlayerFromPart(r1)
+                if player and player ~= LocalPlayer and isTargetPart(r1.Name) then
+                    local head = player.Character and player.Character:FindFirstChild("Head")
+                    if head then
+                        return head, head.Position, r3, r4
                     end
                 end
             end
 
-            if result and result.Instance and result.Instance:IsA("BasePart") then
-                local player = getPlayerFromPart(result.Instance)
-                if player and player ~= LocalPlayer and isTargetPart(result.Instance.Name) then
-                    local head = player.Character and player.Character:FindFirstChild("Head")
-                    if head then
-                        setnamecallmethod("GetChildren")
-                        return head, head.Position, result.Material, result.Normal
-                    end
-                end
-            end
-
-            return result
+            return r1, r2, r3, r4
         end
 
-        return oldNamecall(self, ...)
+        return oldNamecall(self, a, b, c, d, e)
     end))
 
     hitboxHooks.namecall = oldNamecall
@@ -1181,11 +1182,21 @@ local function createOverlay(player, part, size, color)
     if hitboxOverlays[player][part.Name] then
         Drawing.remove(hitboxOverlays[player][part.Name])
     end
-    
-    local screenPos, onScreen = Workspace.CurrentCamera:WorldToViewportPoint(part.Position)
+
+    local cam = Workspace.CurrentCamera
+    local screenPos, onScreen = cam:WorldToViewportPoint(part.Position)
     if onScreen then
-        local overlay = Drawing.Square(Vector2.new(screenPos.x, screenPos.y), Vector2.new(size.x, size.y), color, 1, true, true)
+        -- Project size to screen space using distance
+        local dist = screenPos.Z
+        local screenSize = (size.X + size.Y) / 2 * (cam.ViewportSize.Y / (2 * math.tan(math.rad(cam.FieldOfView / 2)))) / dist
+        local half = screenSize / 2
+        local overlay = Drawing.new('Square')
+        overlay.Position = Vector2.new(screenPos.X - half, screenPos.Y - half)
+        overlay.Size = Vector2.new(screenSize, screenSize)
+        overlay.Color = color
         overlay.Thickness = 2
+        overlay.Filled = false
+        overlay.Visible = true
         hitboxOverlays[player][part.Name] = overlay
     end
 end
