@@ -889,7 +889,7 @@ HitboxGroupBox:AddLabel('Hitbox Keybind'):AddKeyPicker('HitboxKeybind', {
 })
 
 HitboxGroupBox:AddDropdown('HitboxParts', {
-    Values = { 'All', 'Head', 'Torso', 'HumanoidRootPart', 'Left Arm', 'Right Arm', 'Left Leg', 'Right Leg' },
+    Values = { 'All', 'Head', 'UpperTorso', 'LowerTorso', 'HumanoidRootPart', 'LeftUpperArm', 'RightUpperArm', 'LeftUpperLeg', 'RightUpperLeg', 'Torso', 'Left Arm', 'Right Arm', 'Left Leg', 'Right Leg' },
     Default = 1,
     Multi = true,
     Text = 'Hitbox Parts',
@@ -921,7 +921,6 @@ HitboxGroupBox:AddDropdown('HitboxMethod', {
 })
 
 local hitboxConnections = {}
-local hitboxOverlays = {}
 local originalSizes = {}
 local originalTransparency = {}
 local originalCollision = {}
@@ -942,10 +941,22 @@ local function getSelectedHitboxParts()
     local selected = Options.HitboxParts.Value
     local parts = {}
     local partMap = {
-        ['All'] = { 'Head', 'Torso', 'HumanoidRootPart', 'Left Arm', 'Right Arm', 'Left Leg', 'Right Leg' },
+        ['All'] = {
+            -- R6
+            'Head', 'Torso', 'HumanoidRootPart', 'Left Arm', 'Right Arm', 'Left Leg', 'Right Leg',
+            -- R15
+            'UpperTorso', 'LowerTorso', 'LeftUpperArm', 'LeftLowerArm', 'RightUpperArm', 'RightLowerArm',
+            'LeftUpperLeg', 'LeftLowerLeg', 'RightUpperLeg', 'RightLowerLeg'
+        },
         ['Head'] = { 'Head' },
-        ['Torso'] = { 'Torso' },
+        ['UpperTorso'] = { 'UpperTorso' },
+        ['LowerTorso'] = { 'LowerTorso' },
         ['HumanoidRootPart'] = { 'HumanoidRootPart' },
+        ['LeftUpperArm'] = { 'LeftUpperArm' },
+        ['RightUpperArm'] = { 'RightUpperArm' },
+        ['LeftUpperLeg'] = { 'LeftUpperLeg' },
+        ['RightUpperLeg'] = { 'RightUpperLeg' },
+        ['Torso'] = { 'Torso' },
         ['Left Arm'] = { 'Left Arm' },
         ['Right Arm'] = { 'Right Arm' },
         ['Left Leg'] = { 'Left Leg' },
@@ -1164,43 +1175,6 @@ local function restoreHitbox(player)
     end
 end
 
-local function clearOverlays(player)
-    if hitboxOverlays[player] then
-        for _, overlay in pairs(hitboxOverlays[player]) do
-            if overlay then
-                Drawing.remove(overlay)
-            end
-        end
-        hitboxOverlays[player] = nil
-    end
-end
-
-local function createOverlay(player, part, size, color)
-    if not hitboxOverlays[player] then
-        hitboxOverlays[player] = {}
-    end
-    if hitboxOverlays[player][part.Name] then
-        Drawing.remove(hitboxOverlays[player][part.Name])
-    end
-
-    local cam = Workspace.CurrentCamera
-    local screenPos, onScreen = cam:WorldToViewportPoint(part.Position)
-    if onScreen then
-        -- Project size to screen space using distance
-        local dist = screenPos.Z
-        local screenSize = (size.X + size.Y) / 2 * (cam.ViewportSize.Y / (2 * math.tan(math.rad(cam.FieldOfView / 2)))) / dist
-        local half = screenSize / 2
-        local overlay = Drawing.new('Square')
-        overlay.Position = Vector2.new(screenPos.X - half, screenPos.Y - half)
-        overlay.Size = Vector2.new(screenSize, screenSize)
-        overlay.Color = color
-        overlay.Thickness = 2
-        overlay.Filled = false
-        overlay.Visible = true
-        hitboxOverlays[player][part.Name] = overlay
-    end
-end
-
 local function assignHitbox(player)
     if player == LocalPlayer then return end
     if hitboxConnections[player] then
@@ -1244,7 +1218,6 @@ local function assignHitbox(player)
             for _, partName in ipairs(selectedParts) do
                 local part = char:FindFirstChild(partName)
                 if part and part:IsA("BasePart") then
-                    -- Create or update SelectionBox
                     local boxName = "HitboxBox_" .. partName
                     local selBox = part:FindFirstChild(boxName)
                     if not selBox then
@@ -1263,18 +1236,6 @@ local function assignHitbox(player)
                 end
             end
         end
-
-        -- 2D screen overlay (shown for both methods when HitboxShow is on)
-        if showHitbox then
-            for _, partName in ipairs(selectedParts) do
-                local part = char:FindFirstChild(partName)
-                if part and part:IsA("BasePart") then
-                    createOverlay(player, part, part.Size, hitboxColor)
-                end
-            end
-        else
-            clearOverlays(player)
-        end
     end)
 end
 
@@ -1283,7 +1244,6 @@ local function removeHitbox(player)
         hitboxConnections[player]:Disconnect()
         hitboxConnections[player] = nil
     end
-    clearOverlays(player)
     restoreHitbox(player)
 end
 
@@ -1293,10 +1253,6 @@ local function cleanupHitboxes()
         removeHitbox(player)
     end
     hitboxConnections = {}
-    for player, _ in pairs(hitboxOverlays) do
-        clearOverlays(player)
-    end
-    hitboxOverlays = {}
     removeSpoof()
     originalSizes = {}
     originalTransparency = {}
@@ -1444,15 +1400,7 @@ Options.HitboxMethod:OnChanged(function()
     end
 end)
 
-Toggles.HitboxShow:OnChanged(function()
-    if Toggles.HitboxToggle.Value then
-        if not Toggles.HitboxShow.Value then
-            for player, _ in pairs(hitboxOverlays) do
-                clearOverlays(player)
-            end
-        end
-    end
-end)
+
 
 Players.PlayerAdded:Connect(function(player)
     if Toggles.HitboxToggle.Value then
