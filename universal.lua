@@ -1184,11 +1184,10 @@ local function createOverlay(player, part, color)
         hitboxOverlays[player] = {}
     end
 
-    -- Reuse existing overlay if it exists
     local existing = hitboxOverlays[player][part.Name]
     if existing and existing.Parent then
-        existing.Size = part.Size
-        existing.Color = color
+        existing.Color3 = color
+        existing.SurfaceColor3 = color
         return
     end
 
