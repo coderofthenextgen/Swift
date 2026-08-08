@@ -1,12 +1,22 @@
 local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
+local swiftRepo = 'https://raw.githubusercontent.com/coderofthenextgen/Swift-Hub/main/'
 
-local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
-local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
-local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
- 
-local DrawingLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/coderofthenextgen/Swift-Hub/main/drawinglib.lua'))()
-local EntityLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/coderofthenextgen/Swift-Hub/main/entitylib.lua'))()
-local JanitorLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/coderofthenextgen/Swift-Hub/main/janitor.lua'))()
+local function safeLoad(url)
+    local src = game:HttpGet(url)
+    local fn, err = loadstring(src)
+    if not fn then
+        error('Failed to compile ' .. url .. '\nError: ' .. tostring(err))
+    end
+    return fn()
+end
+
+local Library = safeLoad(repo .. 'Library.lua')
+local ThemeManager = safeLoad(repo .. 'addons/ThemeManager.lua')
+local SaveManager = safeLoad(repo .. 'addons/SaveManager.lua')
+
+local DrawingLib = safeLoad(swiftRepo .. 'drawinglib.lua')
+local EntityLib = safeLoad(swiftRepo .. 'entitylib.lua')
+local JanitorLib = safeLoad(swiftRepo .. 'janitor.lua')
 
 local Players = cloneref(game:GetService('Players'))
 cache.invalidate(Players)
