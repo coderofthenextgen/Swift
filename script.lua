@@ -977,6 +977,30 @@ AimbotGroupBox:AddToggle('AimbotSilentAim', {
     Default = false,
 })
 
+AimbotGroupBox:AddToggle('AimbotSticky', {
+    Text = 'Sticky',
+    Default = false,
+})
+
+-- Ensure keypicker mode matches AimbotMode dropdown
+if Options.AimbotMode then
+    Options.AimbotMode:OnChanged(function()
+        local mode = getAimbotMode()
+        if Options.AimbotKeybind and Options.AimbotKeybind.SetValue then
+            local current = Options.AimbotKeybind.Value
+            local key = 'Q'
+            if type(current) == 'table' and current[1] then
+                key = current[1]
+            elseif type(current) == 'string' then
+                key = current
+            end
+            pcall(function()
+                Options.AimbotKeybind:SetValue({ key, mode })
+            end)
+        end
+    end)
+end
+
 local aimbotFOVCircle
 local CamlockEnabled = false
 local TargetPlayer = nil
@@ -1132,12 +1156,18 @@ RunService.RenderStepped:Connect(function()
     end
 
     if CamlockEnabled then
-        if not ValidateTarget() then
-            TargetPlayer = GetClosestPlayer()
+        if Options.AimbotSticky and Options.AimbotSticky.Value then
+            if not ValidateTarget() then
+                TargetPlayer = GetClosestPlayer()
+            end
+        else
+            if not ValidateTarget() then
+                TargetPlayer = GetClosestPlayer()
+            end
         end
     end
 
-    if CamlockEnabled and TargetPlayer and TargetPlayer.Character and TargetPlayer.Character:FindFirstChild(Options.AimbotTargetPart.Value) then
+    if CamlockEnabled and TargetPlayer and TargetPlayer.Character and TargetPlayer.Character:FindFirstChild(Options.AimbotTargetPart and Options.AimbotTargetPart.Value or 'Head') then
         local cam = workspace.CurrentCamera
         local part = TargetPlayer.Character[Options.AimbotTargetPart.Value]
         local smoothness = Options.AimbotSmoothness.Value
