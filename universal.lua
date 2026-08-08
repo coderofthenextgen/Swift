@@ -1191,52 +1191,78 @@ local function assignHitbox(player)
         local hitboxColor = Options.HitboxColor.Value
         local showHitbox = Toggles.HitboxShow.Value
 
-        if method == "Spoof" then
-            for _, partName in ipairs(selectedParts) do
-                local part = char:FindFirstChild(partName)
-                if part and part:IsA("BasePart") then
-                    if not originalSizes[part] then
-                        originalSizes[part] = part.Size
-                    end
-                    local newSize = Vector3.new(
-                        originalSizes[part].X * hitboxSize,
-                        originalSizes[part].Y * hitboxSize,
-                        originalSizes[part].Z * hitboxSize
-                    )
-                    part.Size = newSize
-                    part.CanCollide = false
-                    pcall(function() part.Transparency = showHitbox and 0.5 or part.Transparency end)
+        for _, partName in ipairs(selectedParts) do
+            local part = char:FindFirstChild(partName)
+            if part and part:IsA("BasePart") then
 
-                    local hidden, exists = gethiddenproperty(part, "size_xml")
-                    if exists then
-                        sethiddenproperty(part, "size_xml", newSize)
-                    end
+                -- Store original size once
+                if not originalSizes[part] then
+                    originalSizes[part] = part.Size
                 end
-            end
-        elseif method == "Hook" then
-            -- Hook method: use SelectionBox for visual, don't resize parts
-            for _, partName in ipairs(selectedParts) do
-                local part = char:FindFirstChild(partName)
-                if part and part:IsA("BasePart") then
+
+                local origSize = originalSizes[part]
+                local newSize = Vector3.new(
+                    origSize.X * hitboxSize,
+                    origSize.Y * hitboxSize,
+                    origSize.Z * hitboxSize
+                )
+
+                if method == "Spoof" then
+                    -- Use size_xml only — avoids physics freeze
+                    -- Do NOT set part.Size directly (causes network ownership loss = freeze)
+                    pcall(sethiddenproperty, part, "size_xml", newSize)
+
+                    -- Visual: make part semi-transparent when ShowHitbox is on
+                    if showHitbox then
+                        if originalTransparency[part] == nil then
+                            originalTransparency[part] = part.Transparency
+                        end
+                        pcall(function() part.Transparency = 0.6 end)
+                    else
+                        if originalTransparency[part] ~= nil then
+                            pcall(function() part.Transparency = originalTransparency[part] end)
+                            originalTransparency[part] = nil
+                        end
+                    end
+
+                elseif method == "Hook" then
+                    -- Expand via size_xml like Spoof but also show SelectionBox
+                    pcall(sethiddenproperty, part, "size_xml", newSize)
+
                     local boxName = "HitboxBox_" .. partName
                     local selBox = part:FindFirstChild(boxName)
-                    if not selBox then
-                        selBox = Instance.new("SelectionBox")
-                        selBox.Name = boxName
-                        selBox.Adornee = part
+
+                    if showHitbox then
+                        if not selBox then
+                            selBox = Instance.new("SelectionBox")
+                            selBox.Name = boxName
+                            selBox.Adornee = part
+                            selBox.LineThickness = 0.04
+                            selBox.SurfaceTransparency = 0.6
+                            selBox.Parent = part
+                        end
                         selBox.Color3 = hitboxColor
-                        selBox.LineThickness = 0.05
-                        selBox.SurfaceTransparency = 0.7
                         selBox.SurfaceColor3 = hitboxColor
-                        selBox.Parent = part
+                        selBox.Visible = true
+                    else
+                        if selBox then
+                            selBox:Destroy()
+                        end
                     end
-                    selBox.Color3 = hitboxColor
-                    selBox.SurfaceColor3 = hitboxColor
-                    selBox.Visible = showHitbox
                 end
             end
         end
     end)
+end
+
+local function cleanupSelectionBoxes(player)
+    local char = player.Character
+    if not char then return end
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("SelectionBox") and part.Name:sub(1, 9) == "HitboxBox" then
+            part:Destroy()
+        end
+    end
 end
 
 local function removeHitbox(player)
@@ -1244,12 +1270,28 @@ local function removeHitbox(player)
         hitboxConnections[player]:Disconnect()
         hitboxConnections[player] = nil
     end
-    restoreHitbox(player)
+    -- Restore size_xml to original
+    local char = player.Character
+    if char then
+        for _, partName in ipairs(getSelectedHitboxParts()) do
+            local part = char:FindFirstChild(partName)
+            if part and part:IsA("BasePart") then
+                if originalSizes[part] then
+                    pcall(sethiddenproperty, part, "size_xml", originalSizes[part])
+                    originalSizes[part] = nil
+                end
+                if originalTransparency[part] ~= nil then
+                    pcall(function() part.Transparency = originalTransparency[part] end)
+                    originalTransparency[part] = nil
+                end
+            end
+        end
+    end
+    cleanupSelectionBoxes(player)
 end
 
 local function cleanupHitboxes()
-    for player, connection in pairs(hitboxConnections) do
-        connection:Disconnect()
+    for player, _ in pairs(hitboxConnections) do
         removeHitbox(player)
     end
     hitboxConnections = {}
@@ -1411,6 +1453,7 @@ end)
 
 Players.PlayerRemoving:Connect(function(player)
     hitboxConnections[player] = nil
+    cleanupSelectionBoxes(player)
 end)
 
 local AimbotGroupBox = Tabs.Combat:AddLeftGroupbox('Aimbot')
