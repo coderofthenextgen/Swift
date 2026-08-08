@@ -1,0 +1,9 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/purnamagar/Documents/Creation/exa/build/cmake_install.cmake",
+		"/Users/purnamagar/Documents/Creation/exa/build/_deps/glm-build/cmake_install.cmake",
+		"/Users/purnamagar/Documents/Creation/exa/build/_deps/glm-build/glm/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

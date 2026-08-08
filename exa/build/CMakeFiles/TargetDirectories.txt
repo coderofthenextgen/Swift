@@ -1,0 +1,8 @@
+/Users/purnamagar/Documents/Creation/exa/build/CMakeFiles/exa.dir
+/Users/purnamagar/Documents/Creation/exa/build/CMakeFiles/edit_cache.dir
+/Users/purnamagar/Documents/Creation/exa/build/CMakeFiles/rebuild_cache.dir
+/Users/purnamagar/Documents/Creation/exa/build/_deps/glm-build/CMakeFiles/edit_cache.dir
+/Users/purnamagar/Documents/Creation/exa/build/_deps/glm-build/CMakeFiles/rebuild_cache.dir
+/Users/purnamagar/Documents/Creation/exa/build/_deps/glm-build/glm/CMakeFiles/glm.dir
+/Users/purnamagar/Documents/Creation/exa/build/_deps/glm-build/glm/CMakeFiles/edit_cache.dir
+/Users/purnamagar/Documents/Creation/exa/build/_deps/glm-build/glm/CMakeFiles/rebuild_cache.dir
