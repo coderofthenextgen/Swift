@@ -150,10 +150,10 @@ function Janitor.__index:LinkToInstance(Instance, Index)
 	end
 end
 
-function Janitor.__index:Call(f, ...)
-	local Object = self:Add(...)
+function Janitor.__index:Call(F, A, B, C, D)
+	local Object = self:Add(A, B, C, D)
 	return FastSpawn(function()
-		local Success, Result = pcall(f, ...)
+		local Success, Result = pcall(F, A, B, C, D)
 		if not Success then
 			warn(string.format("Janitor:Call error: %s", tostring(Result)))
 		end
