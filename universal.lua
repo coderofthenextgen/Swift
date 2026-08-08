@@ -325,6 +325,7 @@ local Window = Library:CreateWindow({
     MenuFadeTime = 0.2,
     ShowCustomCursor = false
 })
+Library.Window = Window
 
 local Tabs = {
     Movement = Window:AddTab('Movement'),
@@ -906,76 +907,67 @@ HitboxGroupBox:AddLabel('Hitbox Color'):AddColorPicker('HitboxColor', {
     Title = 'Hitbox Color',
 })
 
+-- Simple HBE System
+getgenv().HBE = false -- Controlled by toggle
+
+local CHAR_PARENT = Workspace
+local hitboxConnections = {}
+
+local function AssignHitboxes(player)
+    if player == LocalPlayer then return end
+
+    if hitboxConnections[player] then
+        hitboxConnections[player]:Disconnect()
+    end
+
+    hitboxConnections[player] = RunService.RenderStepped:Connect(function()
+        local char = CHAR_PARENT:FindFirstChild(player.Name)
+        if getgenv().HBE then
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local hrp = char.HumanoidRootPart
+                local hitboxSize = Vector3.new(Options.HitboxSize.Value, Options.HitboxSize.Value, Options.HitboxSize.Value)
+                local hitboxColor = Options.HitboxColor.Value
+                
+                if hrp.Size ~= hitboxSize or hrp.Color ~= hitboxColor then
+                    hrp.Size = hitboxSize
+                    hrp.Color = hitboxColor
+                    hrp.CanCollide = false
+                    hrp.Transparency = Toggles.HitboxShow.Value and 0.5 or 1
+                end
+            end
+        else
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                char.HumanoidRootPart.Size = Vector3.new(2,2,1)
+                char.HumanoidRootPart.Transparency = 1
+            end
+        end
+    end)
+end
+
 -- Hitbox state
 local hitboxActive = false
-local hitboxOriginalSizes = {}   -- [part] = originalSize
-local hitboxSelectionBoxes = {}  -- [player][partName] = SelectionBox
+local hitboxSelectionBoxes = {}
 
--- Parts to expand for R6 and R15
-local HITBOX_PARTS = {
-    -- R6
-    'Head', 'Torso', 'HumanoidRootPart',
-    'Left Arm', 'Right Arm', 'Left Leg', 'Right Leg',
-    -- R15
-    'UpperTorso', 'LowerTorso',
-    'LeftUpperArm', 'LeftLowerArm', 'LeftHand',
-    'RightUpperArm', 'RightLowerArm', 'RightHand',
-    'LeftUpperLeg', 'LeftLowerLeg', 'LeftFoot',
-    'RightUpperLeg', 'RightLowerLeg', 'RightFoot',
-}
 
-local function expandHitboxForPlayer(player)
-    local char = player.Character
-    if not char then return end
-
-    local size = Options.HitboxSize.Value
-
-    for _, partName in ipairs(HITBOX_PARTS) do
-        local part = char:FindFirstChild(partName)
-        if part and part:IsA('BasePart') then
-            -- Store original size once per part instance
-            if not hitboxOriginalSizes[part] then
-                hitboxOriginalSizes[part] = part.Size
-            end
-
-            local orig = hitboxOriginalSizes[part]
-            local newSize = orig * size
-
-            -- sethiddenproperty writes size_xml (server-side hitbox)
-            -- without touching physics/rendering = no freeze, no visual change
-            pcall(sethiddenproperty, part, 'size_xml', newSize)
-        end
-    end
-end
-
-local function restoreHitboxForPlayer(player)
-    local char = player.Character
-    if not char then return end
-
-    for _, partName in ipairs(HITBOX_PARTS) do
-        local part = char:FindFirstChild(partName)
-        if part and part:IsA('BasePart') then
-            if hitboxOriginalSizes[part] then
-                pcall(sethiddenproperty, part, 'size_xml', hitboxOriginalSizes[part])
-                hitboxOriginalSizes[part] = nil
-            end
-        end
-    end
-end
 
 local function clearSelectionBoxes(player)
-    if hitboxSelectionBoxes[player] then
-        for _, sb in pairs(hitboxSelectionBoxes[player]) do
+    if player then
+        if hitboxSelectionBoxes[player] and hitboxSelectionBoxes[player].Parent then
+            hitboxSelectionBoxes[player]:Destroy()
+        end
+        hitboxSelectionBoxes[player] = nil
+    else
+        for player, sb in pairs(hitboxSelectionBoxes) do
             if sb and sb.Parent then
                 sb:Destroy()
             end
         end
-        hitboxSelectionBoxes[player] = nil
+        table.clear(hitboxSelectionBoxes)
     end
 end
 
 local function updateSelectionBoxes(player)
-    local char = player.Character
+    local char = Workspace:FindFirstChild(player.Name)
     if not char then return end
 
     if not Toggles.HitboxShow.Value then
@@ -983,61 +975,53 @@ local function updateSelectionBoxes(player)
         return
     end
 
-    if not hitboxSelectionBoxes[player] then
-        hitboxSelectionBoxes[player] = {}
-    end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
 
     local color = Options.HitboxColor.Value
-
-    for _, partName in ipairs(HITBOX_PARTS) do
-        local part = char:FindFirstChild(partName)
-        if part and part:IsA('BasePart') then
-            local sb = hitboxSelectionBoxes[player][partName]
-            if not sb or not sb.Parent then
-                sb = Instance.new('SelectionBox')
-                sb.Adornee = part
-                sb.LineThickness = 0.03
-                sb.SurfaceTransparency = 0.7
-                sb.Parent = part
-                hitboxSelectionBoxes[player][partName] = sb
-            end
-            sb.Color3 = color
-            sb.SurfaceColor3 = color
-        else
-            -- Part doesn't exist (wrong rig type), clean up
-            if hitboxSelectionBoxes[player][partName] then
-                hitboxSelectionBoxes[player][partName]:Destroy()
-                hitboxSelectionBoxes[player][partName] = nil
-            end
-        end
+    local sb = hitboxSelectionBoxes[player]
+    
+    if not sb or not sb.Parent then
+        sb = Instance.new('SelectionBox')
+        sb.Adornee = hrp
+        sb.LineThickness = 0.03
+        sb.SurfaceTransparency = 0.7
+        sb.Parent = hrp
+        hitboxSelectionBoxes[player] = sb
     end
+    sb.Color3 = color
+    sb.SurfaceColor3 = color
 end
 
 local hitboxLoop = nil
 
 local function startHitbox()
     hitboxActive = true
-    hitboxLoop = RunService.Heartbeat:Connect(function()
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer then
-                expandHitboxForPlayer(player)
-                updateSelectionBoxes(player)
-            end
-        end
-    end)
+    getgenv().HBE = true
+    
+    -- Initial application to all existing players
+    for _, player in ipairs(Players:GetPlayers()) do
+        AssignHitboxes(player)
+    end
 end
 
 local function stopHitbox()
     hitboxActive = false
-    if hitboxLoop then
-        hitboxLoop:Disconnect()
-        hitboxLoop = nil
+    getgenv().HBE = false
+    
+    -- Restore all hitboxes
+    for player, connection in pairs(hitboxConnections) do
+        if connection then
+            connection:Disconnect()
+        end
+        local char = Workspace:FindFirstChild(player.Name)
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.Size = Vector3.new(2,2,1)
+            char.HumanoidRootPart.Transparency = 1
+        end
     end
-    for _, player in ipairs(Players:GetPlayers()) do
-        restoreHitboxForPlayer(player)
-        clearSelectionBoxes(player)
-    end
-    hitboxOriginalSizes = {}
+    table.clear(hitboxConnections)
+    clearSelectionBoxes(nil)
 end
 
 Toggles.HitboxToggle:OnChanged(function()
@@ -1053,16 +1037,28 @@ Toggles.HitboxShow:OnChanged(function()
         for _, player in ipairs(Players:GetPlayers()) do
             clearSelectionBoxes(player)
         end
+    else
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                updateSelectionBoxes(player)
+            end
+        end
     end
 end)
 
 Players.PlayerRemoving:Connect(function(player)
-    restoreHitboxForPlayer(player)
+    if hitboxConnections[player] then
+        hitboxConnections[player]:Disconnect()
+        hitboxConnections[player] = nil
+    end
     clearSelectionBoxes(player)
 end)
 
-LocalPlayer.CharacterAdded:Connect(function()
-    hitboxOriginalSizes = {}
+Players.PlayerAdded:Connect(function(player)
+    if Toggles.HitboxToggle.Value then
+        task.wait(1) -- Wait for character to load
+        AssignHitboxes(player)
+    end
 end)
 local TriggerbotGroupBox = Tabs.Combat:AddLeftGroupbox('Triggerbot')
 
@@ -3304,6 +3300,18 @@ Library:OnUnload(function()
     getgenv().__HITBOX__ = nil
     gcinfo()
 end)
+
+MenuGroup:AddToggle('LockUI', {
+    Text = 'Lock UI Position',
+    Default = false,
+    Callback = function(Value)
+        -- Swap MakeDraggable on/off by setting Active on the window holder
+        if Library.Window and Library.Window.Holder then
+            Library.Window.Holder.Active = not Value
+        end
+    end,
+})
+
 MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', {
     Default = 'RightShift',
     NoUI = false,
@@ -3311,6 +3319,69 @@ MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', {
 })
 
 Library.ToggleKeybind = Options.MenuKeybind
+
+-- Mobile toggle button (only shown on touch devices)
+if UserInputService.TouchEnabled then
+    local MobileButton = Instance.new('TextButton')
+    MobileButton.Size = UDim2.new(0, 60, 0, 60)
+    MobileButton.Position = UDim2.new(0, 10, 0.5, -30)
+    MobileButton.BackgroundColor3 = Color3.fromRGB(0, 85, 255)
+    MobileButton.BorderSizePixel = 0
+    MobileButton.Text = '☰'
+    MobileButton.TextColor3 = Color3.new(1, 1, 1)
+    MobileButton.TextSize = 28
+    MobileButton.Font = Enum.Font.GothamBold
+    MobileButton.ZIndex = 999
+    MobileButton.Parent = game:GetService('CoreGui'):FindFirstChildOfClass('ScreenGui') or Library.ScreenGui
+
+    -- Rounded corners
+    local Corner = Instance.new('UICorner')
+    Corner.CornerRadius = UDim.new(0, 12)
+    Corner.Parent = MobileButton
+
+    -- Make the button draggable so user can reposition it
+    local dragging, dragInput, dragStart, startPos
+    MobileButton.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = MobileButton.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    MobileButton.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            -- Only reposition if dragged more than 5px (otherwise treat as tap)
+            if delta.Magnitude > 5 then
+                MobileButton.Position = UDim2.new(
+                    startPos.X.Scale,
+                    startPos.X.Offset + delta.X,
+                    startPos.Y.Scale,
+                    startPos.Y.Offset + delta.Y
+                )
+            end
+        end
+    end)
+
+    -- Tap to toggle UI
+    MobileButton.MouseButton1Click:Connect(function()
+        Library:Toggle()
+    end)
+
+    Library:OnUnload(function()
+        MobileButton:Destroy()
+    end)
+end
 
 ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)
