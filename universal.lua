@@ -897,9 +897,9 @@ HitboxGroupBox:AddDropdown('HitboxParts', {
 
 HitboxGroupBox:AddSlider('HitboxSize', {
     Text = 'Hitbox Size',
-    Default = 1.5,
+    Default = 2,
     Min = 1.0,
-    Max = 3.0,
+    Max = 20,
     Rounding = 1,
 })
 
@@ -1212,11 +1212,12 @@ local function assignHitbox(player)
         local char = player.Character
         if not char then return end
 
-        if method == "Spoof" then
-            local selectedParts = getSelectedHitboxParts()
-            local hitboxSize = Options.HitboxSize.Value
-            local hitboxColor = Options.HitboxColor.Value
+        local selectedParts = getSelectedHitboxParts()
+        local hitboxSize = Options.HitboxSize.Value
+        local hitboxColor = Options.HitboxColor.Value
+        local showHitbox = Toggles.HitboxShow.Value
 
+        if method == "Spoof" then
             for _, partName in ipairs(selectedParts) do
                 local part = char:FindFirstChild(partName)
                 if part and part:IsA("BasePart") then
@@ -1229,9 +1230,8 @@ local function assignHitbox(player)
                         originalSizes[part].Z * hitboxSize
                     )
                     part.Size = newSize
-                    part.Color = hitboxColor
                     part.CanCollide = false
-                    part.Transparency = 0.5
+                    pcall(function() part.Transparency = showHitbox and 0.5 or part.Transparency end)
 
                     local hidden, exists = gethiddenproperty(part, "size_xml")
                     if exists then
@@ -1239,14 +1239,37 @@ local function assignHitbox(player)
                     end
                 end
             end
-        end
-
-        if Toggles.HitboxShow.Value then
-            local selectedParts = getSelectedHitboxParts()
+        elseif method == "Hook" then
+            -- Hook method: use SelectionBox for visual, don't resize parts
             for _, partName in ipairs(selectedParts) do
                 local part = char:FindFirstChild(partName)
                 if part and part:IsA("BasePart") then
-                    createOverlay(player, part, part.Size, Options.HitboxColor.Value)
+                    -- Create or update SelectionBox
+                    local boxName = "HitboxBox_" .. partName
+                    local selBox = part:FindFirstChild(boxName)
+                    if not selBox then
+                        selBox = Instance.new("SelectionBox")
+                        selBox.Name = boxName
+                        selBox.Adornee = part
+                        selBox.Color3 = hitboxColor
+                        selBox.LineThickness = 0.05
+                        selBox.SurfaceTransparency = 0.7
+                        selBox.SurfaceColor3 = hitboxColor
+                        selBox.Parent = part
+                    end
+                    selBox.Color3 = hitboxColor
+                    selBox.SurfaceColor3 = hitboxColor
+                    selBox.Visible = showHitbox
+                end
+            end
+        end
+
+        -- 2D screen overlay (shown for both methods when HitboxShow is on)
+        if showHitbox then
+            for _, partName in ipairs(selectedParts) do
+                local part = char:FindFirstChild(partName)
+                if part and part:IsA("BasePart") then
+                    createOverlay(player, part, part.Size, hitboxColor)
                 end
             end
         else
