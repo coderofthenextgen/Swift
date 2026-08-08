@@ -34,14 +34,7 @@ local function Wait(Seconds)
 end
 
 local function FastSpawn(Function, a, b, c, d)
-	local BindableEvent = Instance.new("BindableEvent")
-
-	BindableEvent.Event:Connect(function()
-		Function(a, b, c, d)
-	end)
-
-	BindableEvent:Fire()
-	BindableEvent:Destroy()
+	task.spawn(Function, a, b, c, d)
 end
 
 local TypeDefaults = {
