@@ -445,7 +445,7 @@ getgenv().BrightnessValue = 2
 getgenv().AmbientColor = Originals.Ambient
 
 getgenv().ESPEnabled = false
-getgenv().ESPItems = {['Box'] = true}
+getgenv().ESPItems = {['Box'] = true, ['Name'] = true, ['Health'] = true, ['Distance'] = true}
 getgenv().ESPColor = Color3.fromRGB(255, 255, 255)
 getgenv().ESPHealthLow = Color3.fromRGB(255, 0, 0)
 getgenv().ESPHealthHigh = Color3.fromRGB(0, 255, 0)
@@ -1177,10 +1177,10 @@ ESPSection:AddKeybind("espKeybind", {
 ESPSection:AddDropdown("espElements", {
     Title = "ESP Elements",
     Values = {"Box", "Name", "Health", "Distance", "Tracers", "LookAngle", "Skeleton", "Tool"},
-    Default = 1,
-    Multi = false,
+    Default = {"Box", "Name", "Health", "Distance"},
+    Multi = true,
     Callback = function(selected)
-        getgenv().ESPItems = {[selected] = true}
+        getgenv().ESPItems = selected
     end
 })
 
@@ -2167,7 +2167,7 @@ end
 
 local function updateFOVCircle()
     if not getgenv().aimbotFOVCircle then return end
-    if not getgenv().AimbotShowFOV then
+    if not getgenv().AimbotShowFOV or not getgenv().CamlockEnabled then
         getgenv().aimbotFOVCircle.Visible = false
         return
     end
@@ -2978,8 +2978,13 @@ getgenv().espObjects = {}
 
 local function getSelectedESPItems()
     local items = {}
-    for name, _ in pairs(getgenv().ESPItems) do
-        items[name] = true
+    if not getgenv().ESPItems then return items end
+    for key, value in pairs(getgenv().ESPItems) do
+        if type(key) == "string" then
+            items[key] = true
+        elseif type(value) == "string" then
+            items[value] = true
+        end
     end
     return items
 end
