@@ -1536,18 +1536,25 @@ SettingsTab:AddButton({
         getgenv().MiscFOVEnabled = false
         Workspace.CurrentCamera.FieldOfView = Originals.FOV
 
-        removeAllESPObjects()
+        pcall(function() stopHitbox() end)
 
         if getgenv().aimbotFOVCircle then
-            getgenv().aimbotFOVCircle:Remove()
+            pcall(function() getgenv().aimbotFOVCircle:Remove() end)
             getgenv().aimbotFOVCircle = nil
         end
+
+        removeAllESPObjects()
+        getgenv().espObjects = {}
 
         pcall(function() DrawingLib.clear() end)
         pcall(function() EntityLib.stop() end)
         janitor:Cleanup()
 
-        stopHitbox()
+        if getgenv()._triggerbotConnection then
+            pcall(function() getgenv()._triggerbotConnection:Disconnect() end)
+            getgenv()._triggerbotConnection = nil
+        end
+
         getgenv().__HITBOX__ = nil
         gcinfo()
     end
@@ -2200,23 +2207,24 @@ end
 janitor:Add(RunService.RenderStepped:Connect(function()
         updateFOVCircle()
 
-        if getgenv().AimbotMode == 'Hold' then
-            local keybind = getgenv().AimbotKeybind
-            if keybind ~= 'None' then
-                local keySuccess, isKeyDown = pcall(function()
-                    return UserInputService:IsKeyDown(Enum.KeyCode[keybind])
-                end)
-                if keySuccess and isKeyDown then
-                    if not getgenv().CamlockEnabled then
-                        getgenv().CamlockEnabled = true
-                        getgenv().TargetPlayer = GetClosestPlayer()
-                    end
-                else
-                    if getgenv().CamlockEnabled then
-                        getgenv().CamlockEnabled = false
-                        getgenv().TargetPlayer = nil
-                    end
-                end
+        local keybind = getgenv().AimbotKeybind
+        local keyHeld = false
+        if keybind ~= 'None' then
+            local ok, result = pcall(function()
+                return UserInputService:IsKeyDown(Enum.KeyCode[keybind])
+            end)
+            if ok then keyHeld = result end
+        end
+
+        if keyHeld then
+            if not getgenv().CamlockEnabled then
+                getgenv().CamlockEnabled = true
+                getgenv().TargetPlayer = GetClosestPlayer()
+            end
+        else
+            if getgenv().CamlockEnabled then
+                getgenv().CamlockEnabled = false
+                getgenv().TargetPlayer = nil
             end
         end
 
@@ -2239,9 +2247,7 @@ janitor:Add(RunService.RenderStepped:Connect(function()
         if getgenv().CamlockEnabled and getgenv().TargetPlayer and getgenv().TargetPlayer.Character and getgenv().TargetPlayer.Character:FindFirstChild(getgenv().AimbotTargetPart) then
             local cam = Workspace.CurrentCamera
             local part = getgenv().TargetPlayer.Character[getgenv().AimbotTargetPart]
-            local smoothness = getgenv().AimbotSmoothness
             local prediction = getgenv().AimbotPrediction
-            local silentAim = getgenv().AimbotSilentAim
 
             local targetPos = part.Position
             if prediction > 0 and getgenv().TargetPlayer.Character:FindFirstChild('HumanoidRootPart') then
@@ -2249,13 +2255,7 @@ janitor:Add(RunService.RenderStepped:Connect(function()
             end
 
             local targetCF = CFrame.new(cam.CFrame.Position, targetPos)
-
-            local smoothFactor
-            if silentAim then
-                smoothFactor = 0.05
-            else
-                smoothFactor = math.clamp(1 / smoothness, 0.02, 1)
-            end
+            local smoothFactor = math.clamp(1 / math.max(getgenv().AimbotSmoothness, 1), 0.02, 1)
 
             cam.CFrame = cam.CFrame:Lerp(targetCF, smoothFactor)
         end
@@ -3144,40 +3144,42 @@ local function createESPObjects(player)
 end
 
 local function removeESPObjects(player)
-    if not getgenv().espObjects[player] then return end
+    if not getgenv().espObjects or not getgenv().espObjects[player] then return end
 
-    for _, line in ipairs(getgenv().espObjects[player].BoxOutline) do line:Remove() end
-    for _, line in ipairs(getgenv().espObjects[player].Box) do line:Remove() end
-    getgenv().espObjects[player].Name:Remove()
-    getgenv().espObjects[player].HealthBarOutline:Remove()
-    getgenv().espObjects[player].HealthBar:Remove()
-    getgenv().espObjects[player].HealthText:Remove()
-    getgenv().espObjects[player].Distance:Remove()
-    getgenv().espObjects[player].Tracer:Remove()
-    getgenv().espObjects[player].TracerOutline:Remove()
-    getgenv().espObjects[player].LookAngle:Remove()
-    getgenv().espObjects[player].LookAngleOutline:Remove()
-    getgenv().espObjects[player].Tool:Remove()
-    for _, line in pairs(getgenv().espObjects[player].Skeleton) do line:Remove() end
+    local esp = getgenv().espObjects[player]
+    pcall(function() for _, line in ipairs(esp.BoxOutline) do line:Remove() end end)
+    pcall(function() for _, line in ipairs(esp.Box) do line:Remove() end end)
+    pcall(function() esp.Name:Remove() end)
+    pcall(function() esp.HealthBarOutline:Remove() end)
+    pcall(function() esp.HealthBar:Remove() end)
+    pcall(function() esp.HealthText:Remove() end)
+    pcall(function() esp.Distance:Remove() end)
+    pcall(function() esp.Tracer:Remove() end)
+    pcall(function() esp.TracerOutline:Remove() end)
+    pcall(function() esp.LookAngle:Remove() end)
+    pcall(function() esp.LookAngleOutline:Remove() end)
+    pcall(function() esp.Tool:Remove() end)
+    pcall(function() for _, line in pairs(esp.Skeleton) do line:Remove() end end)
 
     getgenv().espObjects[player] = nil
 end
 
 local function hideAll(player)
-    if not getgenv().espObjects[player] then return end
-    for _, line in ipairs(getgenv().espObjects[player].BoxOutline) do line.Visible = false end
-    for _, line in ipairs(getgenv().espObjects[player].Box) do line.Visible = false end
-    getgenv().espObjects[player].Name.Visible = false
-    getgenv().espObjects[player].HealthBarOutline.Visible = false
-    getgenv().espObjects[player].HealthBar.Visible = false
-    getgenv().espObjects[player].HealthText.Visible = false
-    getgenv().espObjects[player].Distance.Visible = false
-    getgenv().espObjects[player].Tracer.Visible = false
-    getgenv().espObjects[player].TracerOutline.Visible = false
-    getgenv().espObjects[player].LookAngle.Visible = false
-    getgenv().espObjects[player].LookAngleOutline.Visible = false
-    getgenv().espObjects[player].Tool.Visible = false
-    for _, line in pairs(getgenv().espObjects[player].Skeleton) do line.Visible = false end
+    if not getgenv().espObjects or not getgenv().espObjects[player] then return end
+    local esp = getgenv().espObjects[player]
+    pcall(function() for _, line in ipairs(esp.BoxOutline) do line.Visible = false end end)
+    pcall(function() for _, line in ipairs(esp.Box) do line.Visible = false end end)
+    pcall(function() esp.Name.Visible = false end)
+    pcall(function() esp.HealthBarOutline.Visible = false end)
+    pcall(function() esp.HealthBar.Visible = false end)
+    pcall(function() esp.HealthText.Visible = false end)
+    pcall(function() esp.Distance.Visible = false end)
+    pcall(function() esp.Tracer.Visible = false end)
+    pcall(function() esp.TracerOutline.Visible = false end)
+    pcall(function() esp.LookAngle.Visible = false end)
+    pcall(function() esp.LookAngleOutline.Visible = false end)
+    pcall(function() esp.Tool.Visible = false end)
+    pcall(function() for _, line in pairs(esp.Skeleton) do line.Visible = false end end)
 end
 
 local function hideAllPlayers()
@@ -3353,14 +3355,6 @@ local function updateESP(player)
             local isR15 = char:FindFirstChild('UpperTorso') ~= nil
             local r15 = isR15
 
-            local function getScreen(cf)
-                if not cf then return nil end
-                local p = cf.Position
-                local pos, onScreen = cam:WorldToViewportPoint(p)
-                if not onScreen then return nil end
-                return Vector2.new(pos.X, pos.Y)
-            end
-
             local function getPartScreen(name)
                 local part = char:FindFirstChild(name)
                 if not part then return nil end
@@ -3382,7 +3376,6 @@ local function updateESP(player)
 
             if r15 then
                 local head = getPartScreen('Head')
-                local neck = getScreen(char:FindFirstChild('Neck', true) and char:FindFirstChild('Neck', true).CFrame)
                 local upperTorso = getPartScreen('UpperTorso')
                 local lowerTorso = getPartScreen('LowerTorso')
                 local la = getPartScreen('LeftUpperArm')
@@ -3394,12 +3387,12 @@ local function updateESP(player)
                 local rul = getPartScreen('RightUpperLeg')
                 local rll = getPartScreen('RightLowerLeg')
 
-                drawBone('Head', head, neck)
-                drawBone('Neck', neck, upperTorso)
+                drawBone('Head', head, upperTorso)
+                drawBone('Neck', head, upperTorso)
                 drawBone('Spine', upperTorso, lowerTorso)
-                drawBone('LeftShoulder', neck, la)
+                drawBone('LeftShoulder', upperTorso, la)
                 drawBone('LeftArm', la, lla)
-                drawBone('RightShoulder', neck, ra)
+                drawBone('RightShoulder', upperTorso, ra)
                 drawBone('RightArm', ra, rla)
                 drawBone('LeftHip', lowerTorso, lul)
                 drawBone('LeftLeg', lul, lll)
