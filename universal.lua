@@ -13,9 +13,9 @@ local function safeLoad(url)
     return fn()
 end
 
-local DrawingLib = safeLoad(swiftRepo .. 'drawinglib.lua' .. v)
-local EntityLib = safeLoad(swiftRepo .. 'entitylib.lua' .. v)
-local JanitorLib = safeLoad(swiftRepo .. 'janitor.lua' .. v)
+local DrawingLib = safeLoad(swiftRepo .. 'libs/drawinglib.lua' .. v)
+local EntityLib = safeLoad(swiftRepo .. 'libs/entitylib.lua' .. v)
+local JanitorLib = safeLoad(swiftRepo .. 'libs/janitor.lua' .. v)
 
 local Players = cloneref(game:GetService('Players'))
 cache.invalidate(Players)
@@ -1155,7 +1155,7 @@ ESPSection:AddToggle("espEnabled", {
     Callback = function(state)
         getgenv().ESPEnabled = state
         if not state then
-            hideAllPlayers()
+            removeAllESPObjects()
         end
     end
 })
@@ -1167,6 +1167,9 @@ ESPSection:AddKeybind("espKeybind", {
         getgenv().ESPKeybind = key
         if key ~= "None" then
             getgenv().ESPEnabled = not getgenv().ESPEnabled
+            if not getgenv().ESPEnabled then
+                removeAllESPObjects()
+            end
         end
     end
 })
@@ -1533,7 +1536,6 @@ SettingsTab:AddButton({
         getgenv().MiscFOVEnabled = false
         Workspace.CurrentCamera.FieldOfView = Originals.FOV
 
-        hideAllPlayers()
         removeAllESPObjects()
 
         if getgenv().aimbotFOVCircle then
@@ -2158,7 +2160,7 @@ end
 
 local function updateFOVCircle()
     if not getgenv().aimbotFOVCircle then return end
-    if not getgenv().AimbotEnabled or not getgenv().AimbotShowFOV then
+    if not getgenv().AimbotShowFOV then
         getgenv().aimbotFOVCircle.Visible = false
         return
     end
@@ -2205,7 +2207,7 @@ janitor:Add(RunService.RenderStepped:Connect(function()
                     return UserInputService:IsKeyDown(Enum.KeyCode[keybind])
                 end)
                 if keySuccess and isKeyDown then
-                    if not getgenv().CamlockEnabled and getgenv().AimbotEnabled then
+                    if not getgenv().CamlockEnabled then
                         getgenv().CamlockEnabled = true
                         getgenv().TargetPlayer = GetClosestPlayer()
                     end
