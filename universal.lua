@@ -1,4 +1,6 @@
-local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
+local _version = "1.7.0"
+local Fluent = loadstring(game:HttpGet("https://github.com/StyearX/Fluent-Modded/releases/download/Fluent/FluentPro"))()
+
 local swiftRepo = 'https://raw.githubusercontent.com/coderofthenextgen/Swift-Hub/main/'
 local v = '?v=' .. tostring(os.time())
 
@@ -10,10 +12,6 @@ local function safeLoad(url)
     end
     return fn()
 end
-
-local Library = safeLoad(repo .. 'Library.lua')
-local ThemeManager = safeLoad(repo .. 'addons/ThemeManager.lua')
-local SaveManager = safeLoad(repo .. 'addons/SaveManager.lua')
 
 local DrawingLib = safeLoad(swiftRepo .. 'drawinglib.lua' .. v)
 local EntityLib = safeLoad(swiftRepo .. 'entitylib.lua' .. v)
@@ -68,6 +66,8 @@ getgenv().JumpPowerSpoof = {}
 local Drawing = DrawingLib
 local EntityLib = EntityLib
 local Janitor = JanitorLib
+
+local janitor = Janitor.new()
 
 local split = string.split
 local GetDebugIdHandler = Instance.new("BindableFunction")
@@ -282,7 +282,7 @@ local function getCharacter()
     return char, hrp, hum
 end
 
-local Originals = {
+getgenv().Originals = {
     WalkSpeed = 16,
     JumpPower = 50,
     JumpHeight = 7.2,
@@ -317,35 +317,1256 @@ end
 
 task.delay(1, storeOriginals)
 
-local Window = Library:CreateWindow({
-    Title = 'Swift Hub',
-    Center = true,
-    AutoShow = true,
-    TabPadding = 8,
-    MenuFadeTime = 0.2,
-    ShowCustomCursor = false
+local Window = Fluent:CreateWindow({
+    Title = "Swift Hub",
+    SubTitle = "by coderofthenextgen",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true,
+    Theme = "Galaxy Purple",
+    MinimizeKey = Enum.KeyCode.RightShift,
+    Search = true,
+    User = {
+        Enabled = true,
+        Title = LocalPlayer.Name,
+        Subtitle = "ID: " .. LocalPlayer.UserId,
+        Round = true,
+    },
 })
-Library.Window = Window
 
-local Tabs = {
-    Movement = Window:AddTab('Movement'),
-    Combat = Window:AddTab('Combat'),
-    Visuals = Window:AddTab('Visuals'),
-    Exploits = Window:AddTab('Exploits'),
-    Misc = Window:AddTab('Misc'),
-    ['UI Settings'] = Window:AddTab('UI Settings'),
-}
+local MainTab = Window:AddTab({ Title = "Main", Icon = "solar/home-bold" })
+local CombatTab = Window:AddTab({ Title = "Combat", Icon = "solar/target-bold" })
+local VisualsTab = Window:AddTab({ Title = "Visuals", Icon = "solar/eye-bold" })
+local ExploitsTab = Window:AddTab({ Title = "Exploits", Icon = "solar/code-bold" })
+local MiscTab = Window:AddTab({ Title = "Misc", Icon = "solar/settings-bold" })
+local SettingsTab = Window:AddTab({ Title = "Settings", Icon = "solar/cog-bold" })
 
-local LeftGroupBox = Tabs.Movement:AddLeftGroupbox('Speed')
-local RightGroupBox = Tabs.Movement:AddRightGroupbox('Jump')
+getgenv().SpeedEnabled = false
+getgenv().SpeedMethod = 'Velocity'
+getgenv().MoveDirection = 'MoveDirection'
+getgenv().SpeedValue = 50
+getgenv().HeatseekerDuration = 0.3
+getgenv().HeatseekerTicks = 0.3
+getgenv().SpeedKeybind = 'None'
+
+getgenv().MouseTPEnabled = false
+getgenv().MouseTPMode = 'Instant'
+getgenv().MouseTPMethod = 'CFrame'
+getgenv().TweenSpeed = 1
+getgenv().TPHeight = 3
+getgenv().MouseTPKeybind = 'None'
+
+getgenv().NoclipEnabled = false
+getgenv().NoclipMode = 'Character'
+getgenv().NoclipParts = {['Head'] = true}
+getgenv().NoclipKeybind = 'None'
+
+getgenv().JumpEnabled = false
+getgenv().JumpProperty = 'JumpPower'
+getgenv().JumpMethod = 'DirectSet'
+getgenv().JumpValue = 100
+getgenv().JumpKeybind = 'None'
+
+getgenv().HitboxEnabled = false
+getgenv().HitboxSize = 5
+getgenv().HitboxShow = false
+getgenv().HitboxColor = Color3.fromRGB(255, 0, 0)
+getgenv().HitboxKeybind = 'None'
+
+getgenv().TriggerbotEnabled = false
+getgenv().TriggerbotWallCheck = true
+getgenv().TriggerbotDelay = 0.1
+getgenv().TriggerbotKeybind = 'None'
+
+getgenv().AimbotEnabled = false
+getgenv().AimbotMode = 'Hold'
+getgenv().AimbotTargetPart = 'Head'
+getgenv().AimbotTargetMode = 'Nearest'
+getgenv().AimbotFOV = 150
+getgenv().AimbotSmoothness = 10
+getgenv().AimbotPrediction = 0.1
+getgenv().AimbotShowFOV = true
+getgenv().AimbotTeamCheck = false
+getgenv().AimbotAliveCheck = false
+getgenv().AimbotWallCheck = false
+getgenv().AimbotSilentAim = false
+getgenv().AimbotSticky = false
+getgenv().AimbotKeybind = 'Q'
+
+getgenv().ACBypassEnabled = false
+getgenv().ACWalkSpeed = 16
+getgenv().ACJumpPower = 50
+getgenv().ACJumpHeight = 7.2
+getgenv().ACBypassKeybind = 'None'
+
+getgenv().FlyEnabled = false
+getgenv().FlyMethod = 'CFrame'
+getgenv().FlySpeed = 50
+getgenv().FlyVerticalSpeed = 50
+getgenv().FlyUpKey = 'Space'
+getgenv().FlyDownKey = 'LeftShift'
+getgenv().FlyAutoDisable = true
+getgenv().FlyKeybind = 'None'
+
+getgenv().InfJumpEnabled = false
+getgenv().InfJumpHeight = 50
+getgenv().InfJumpType = 'Velocity'
+getgenv().InfJumpMethod = 'Hold'
+getgenv().InfJumpKeybind = 'None'
+
+getgenv().SpinbotEnabled = false
+getgenv().SpinAxis = 'Y'
+getgenv().SpinSpeed = 50
+getgenv().SpinbotKeybind = 'None'
+
+getgenv().AntiAFKEnabled = false
+getgenv().AntiAFKMethod = 'Click'
+getgenv().AntiAFKInterval = 60
+getgenv().AntiAFKKeybind = 'None'
+
+getgenv().MiscFOVEnabled = false
+getgenv().MiscFOVValue = 70
+
+getgenv().ChamsEnabled = false
+getgenv().ChamsMode = 'Highlight'
+getgenv().ChamsTarget = {['All'] = true}
+getgenv().ChamsFillColor = Color3.fromRGB(255, 0, 0)
+getgenv().ChamsFillTransparency = 0.5
+getgenv().ChamsOutlineColor = Color3.fromRGB(255, 255, 255)
+getgenv().ChamsOutlineTransparency = 0
+getgenv().ChamsMaterial = 'ForceField'
+getgenv().ChamsThroughWalls = true
+getgenv().ChamsOccluded = true
+getgenv().ChamsKeybind = 'None'
+
+getgenv().FullbrightEnabled = false
+getgenv().NoFogEnabled = false
+getgenv().BrightnessValue = 2
+getgenv().AmbientColor = Originals.Ambient
+
+getgenv().ESPEnabled = false
+getgenv().ESPItems = {['Box'] = true}
+getgenv().ESPColor = Color3.fromRGB(255, 255, 255)
+getgenv().ESPHealthLow = Color3.fromRGB(255, 0, 0)
+getgenv().ESPHealthHigh = Color3.fromRGB(0, 255, 0)
+getgenv().ESPTeamColor = Color3.fromRGB(0, 255, 0)
+getgenv().ESPEnemyColor = Color3.fromRGB(255, 255, 255)
+getgenv().ESPFont = 'Code'
+getgenv().ESPThickness = 1
+getgenv().ESPTextSize = 16
+getgenv().ESPMaxDistance = 1000
+getgenv().ESPShowTeam = true
+getgenv().ESPKeybind = 'None'
+
+getgenv().MenuKeybind = 'RightShift'
+
+
+MainTab:AddParagraph({ Title = "Profile", Content = "Player: " .. LocalPlayer.Name .. "\nID: " .. LocalPlayer.UserId .. "\nGame: " .. game.Name .. "\nServer Time: " .. os.date("%H:%M:%S") })
+
+local SpeedSection = MainTab:AddCollapsibleSection({ Title = "Speed" })
+
+SpeedSection:AddToggle("speedEnabled", {
+    Title = "Enable Speed",
+    Default = false,
+    Callback = function(state)
+        getgenv().SpeedEnabled = state
+        if not state then
+            isBoosting = false
+            getgenv().WalkSpeedSpoof.RestoreWalkSpeed()
+        end
+    end
+})
+
+SpeedSection:AddKeybind("speedKeybind", {
+    Title = "Speed Keybind",
+    Default = "None",
+    Callback = function(key)
+        getgenv().SpeedKeybind = key
+        if key ~= "None" then
+            getgenv().SpeedEnabled = not getgenv().SpeedEnabled
+            if not getgenv().SpeedEnabled then
+                isBoosting = false
+                getgenv().WalkSpeedSpoof.RestoreWalkSpeed()
+            end
+        end
+    end
+})
+
+SpeedSection:AddDropdown("speedMethod", {
+    Title = "Speed Method",
+    Values = {"Velocity", "WalkSpeed", "Impulse", "Heatseeker"},
+    Default = 1,
+    Multi = false,
+    Callback = function(selected)
+        getgenv().SpeedMethod = selected
+    end
+})
+
+SpeedSection:AddDropdown("moveDirection", {
+    Title = "Move Direction",
+    Values = {"MoveDirection", "DirectMove"},
+    Default = 1,
+    Multi = false,
+    Callback = function(selected)
+        getgenv().MoveDirection = selected
+    end
+})
+
+SpeedSection:AddSlider("speedValue", {
+    Title = "Speed",
+    Default = 50,
+    Min = 0,
+    Max = 500,
+    Rounding = 0,
+    Callback = function(value)
+        getgenv().SpeedValue = value
+    end
+})
+
+SpeedSection:AddSlider("heatseekerDuration", {
+    Title = "Duration",
+    Default = 0.3,
+    Min = 0.1,
+    Max = 5,
+    Rounding = 1,
+    Callback = function(value)
+        getgenv().HeatseekerDuration = value
+    end
+})
+
+SpeedSection:AddSlider("heatseekerTicks", {
+    Title = "Ticks",
+    Default = 0.3,
+    Min = 0.1,
+    Max = 5,
+    Rounding = 1,
+    Callback = function(value)
+        getgenv().HeatseekerTicks = value
+    end
+})
+
+local JumpSection = MainTab:AddCollapsibleSection({ Title = "Jump" })
+
+JumpSection:AddToggle("jumpEnabled", {
+    Title = "Enable Jump",
+    Default = false,
+    Callback = function(state)
+        getgenv().JumpEnabled = state
+        if not state then
+            getgenv().JumpPowerSpoof.RestoreJumpPower()
+            local char, hrp, hum = getCharacter()
+            if hum then
+                hum.JumpHeight = Originals.JumpHeight
+            end
+        end
+    end
+})
+
+JumpSection:AddKeybind("jumpKeybind", {
+    Title = "Jump Keybind",
+    Default = "None",
+    Callback = function(key)
+        getgenv().JumpKeybind = key
+        if key ~= "None" then
+            getgenv().JumpEnabled = not getgenv().JumpEnabled
+        end
+    end
+})
+
+JumpSection:AddDropdown("jumpProperty", {
+    Title = "Jump Property",
+    Values = {"JumpPower", "JumpHeight"},
+    Default = 1,
+    Multi = false,
+    Callback = function(selected)
+        getgenv().JumpProperty = selected
+    end
+})
+
+JumpSection:AddDropdown("jumpMethod", {
+    Title = "Jump Method",
+    Values = {"DirectSet", "Velocity", "CFrame"},
+    Default = 1,
+    Multi = false,
+    Callback = function(selected)
+        getgenv().JumpMethod = selected
+    end
+})
+
+JumpSection:AddSlider("jumpValue", {
+    Title = "Jump Value",
+    Default = 100,
+    Min = 0,
+    Max = 500,
+    Rounding = 0,
+    Callback = function(value)
+        getgenv().JumpValue = value
+    end
+})
+
+local NoclipSection = MainTab:AddCollapsibleSection({ Title = "Noclip" })
+
+NoclipSection:AddToggle("noclipEnabled", {
+    Title = "Enable Noclip",
+    Default = false,
+    Callback = function(state)
+        getgenv().NoclipEnabled = state
+    end
+})
+
+NoclipSection:AddKeybind("noclipKeybind", {
+    Title = "Noclip Keybind",
+    Default = "None",
+    Callback = function(key)
+        getgenv().NoclipKeybind = key
+        if key ~= "None" then
+            getgenv().NoclipEnabled = not getgenv().NoclipEnabled
+        end
+    end
+})
+
+NoclipSection:AddDropdown("noclipMode", {
+    Title = "Noclip Mode",
+    Values = {"Character", "Part", "CollisionGroup"},
+    Default = 1,
+    Multi = false,
+    Callback = function(selected)
+        getgenv().NoclipMode = selected
+    end
+})
+
+NoclipSection:AddDropdown("noclipParts", {
+    Title = "Body Parts",
+    Values = {"Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg", "HumanoidRootPart"},
+    Default = 1,
+    Multi = false,
+    Callback = function(selected)
+        getgenv().NoclipParts = {[selected] = true}
+    end
+})
+
+local FlySection = MainTab:AddCollapsibleSection({ Title = "Fly" })
+
+FlySection:AddToggle("flyEnabled", {
+    Title = "Enable Fly",
+    Default = false,
+    Callback = function(state)
+        getgenv().FlyEnabled = state
+    end
+})
+
+FlySection:AddKeybind("flyKeybind", {
+    Title = "Fly Keybind",
+    Default = "None",
+    Callback = function(key)
+        getgenv().FlyKeybind = key
+        if key ~= "None" then
+            getgenv().FlyEnabled = not getgenv().FlyEnabled
+        end
+    end
+})
+
+FlySection:AddDropdown("flyMethod", {
+    Title = "Fly Method",
+    Values = {"CFrame", "Velocity", "BodyVelocity", "LinearVelocity"},
+    Default = 1,
+    Multi = false,
+    Callback = function(selected)
+        getgenv().FlyMethod = selected
+    end
+})
+
+FlySection:AddSlider("flySpeed", {
+    Title = "Horizontal Speed",
+    Default = 50,
+    Min = 10,
+    Max = 300,
+    Rounding = 0,
+    Callback = function(value)
+        getgenv().FlySpeed = value
+    end
+})
+
+FlySection:AddSlider("flyVerticalSpeed", {
+    Title = "Vertical Speed",
+    Default = 50,
+    Min = 10,
+    Max = 300,
+    Rounding = 0,
+    Callback = function(value)
+        getgenv().FlyVerticalSpeed = value
+    end
+})
+
+FlySection:AddKeybind("flyUpKey", {
+    Title = "Up Key",
+    Default = "Space",
+    Callback = function(key)
+        getgenv().FlyUpKey = key
+    end
+})
+
+FlySection:AddKeybind("flyDownKey", {
+    Title = "Down Key",
+    Default = "LeftShift",
+    Callback = function(key)
+        getgenv().FlyDownKey = key
+    end
+})
+
+FlySection:AddToggle("flyAutoDisable", {
+    Title = "Auto Disable on Death",
+    Default = true,
+    Callback = function(state)
+        getgenv().FlyAutoDisable = state
+    end
+})
+
+local InfJumpSection = MainTab:AddCollapsibleSection({ Title = "Infinite Jump" })
+
+InfJumpSection:AddToggle("infJumpEnabled", {
+    Title = "Enable Infinite Jump",
+    Default = false,
+    Callback = function(state)
+        getgenv().InfJumpEnabled = state
+    end
+})
+
+InfJumpSection:AddKeybind("infJumpKeybind", {
+    Title = "Inf Jump Keybind",
+    Default = "None",
+    Callback = function(key)
+        getgenv().InfJumpKeybind = key
+        if key ~= "None" then
+            getgenv().InfJumpEnabled = not getgenv().InfJumpEnabled
+        end
+    end
+})
+
+InfJumpSection:AddDropdown("infJumpMethod", {
+    Title = "Jump Method",
+    Values = {"Hold", "Once"},
+    Default = 1,
+    Multi = false,
+    Callback = function(selected)
+        getgenv().InfJumpMethod = selected
+    end
+})
+
+InfJumpSection:AddSlider("infJumpHeight", {
+    Title = "Jump Height",
+    Default = 50,
+    Min = 10,
+    Max = 200,
+    Rounding = 0,
+    Callback = function(value)
+        getgenv().InfJumpHeight = value
+    end
+})
+
+InfJumpSection:AddDropdown("infJumpType", {
+    Title = "Jump Type",
+    Values = {"Velocity", "CFrame", "BodyVelocity"},
+    Default = 1,
+    Multi = false,
+    Callback = function(selected)
+        getgenv().InfJumpType = selected
+    end
+})
+
+
+local AimbotSection = CombatTab:AddCollapsibleSection({ Title = "Aimbot" })
+
+AimbotSection:AddToggle("aimbotEnabled", {
+    Title = "Enable Aimbot",
+    Default = false,
+    Callback = function(state)
+        getgenv().AimbotEnabled = state
+        if not state then
+            getgenv().CamlockEnabled = false
+            getgenv().TargetPlayer = nil
+            if getgenv().aimbotFOVCircle then
+                getgenv().aimbotFOVCircle.Visible = false
+            end
+        end
+    end
+})
+
+AimbotSection:AddDropdown("aimbotMode", {
+    Title = "Aimbot Mode",
+    Values = {"Hold"},
+    Default = 1,
+    Multi = false,
+    Callback = function(selected)
+        getgenv().AimbotMode = selected
+    end
+})
+
+AimbotSection:AddKeybind("aimbotKeybind", {
+    Title = "Aimbot Keybind",
+    Default = "Q",
+    Callback = function(key)
+        getgenv().AimbotKeybind = key
+    end
+})
+
+AimbotSection:AddDropdown("aimbotTargetPart", {
+    Title = "Target Part",
+    Values = {"Head", "HumanoidRootPart", "UpperTorso", "LowerTorso"},
+    Default = 1,
+    Multi = false,
+    Callback = function(selected)
+        getgenv().AimbotTargetPart = selected
+    end
+})
+
+AimbotSection:AddDropdown("aimbotTargetMode", {
+    Title = "Target Mode",
+    Values = {"Nearest", "Crosshair", "Lowest Health"},
+    Default = 1,
+    Multi = false,
+    Callback = function(selected)
+        getgenv().AimbotTargetMode = selected
+    end
+})
+
+AimbotSection:AddSlider("aimbotFOV", {
+    Title = "FOV",
+    Default = 150,
+    Min = 10,
+    Max = 500,
+    Rounding = 0,
+    Callback = function(value)
+        getgenv().AimbotFOV = value
+    end
+})
+
+AimbotSection:AddSlider("aimbotSmoothness", {
+    Title = "Smoothness",
+    Default = 10,
+    Min = 1,
+    Max = 50,
+    Rounding = 0,
+    Callback = function(value)
+        getgenv().AimbotSmoothness = value
+    end
+})
+
+AimbotSection:AddSlider("aimbotPrediction", {
+    Title = "Prediction",
+    Default = 0.1,
+    Min = 0,
+    Max = 1,
+    Rounding = 1,
+    Callback = function(value)
+        getgenv().AimbotPrediction = value
+    end
+})
+
+AimbotSection:AddToggle("aimbotShowFOV", {
+    Title = "Show FOV Circle",
+    Default = true,
+    Callback = function(state)
+        getgenv().AimbotShowFOV = state
+    end
+})
+
+AimbotSection:AddToggle("aimbotTeamCheck", {
+    Title = "Team Check",
+    Default = false,
+    Callback = function(state)
+        getgenv().AimbotTeamCheck = state
+    end
+})
+
+AimbotSection:AddToggle("aimbotAliveCheck", {
+    Title = "Alive Check",
+    Default = false,
+    Callback = function(state)
+        getgenv().AimbotAliveCheck = state
+    end
+})
+
+AimbotSection:AddToggle("aimbotWallCheck", {
+    Title = "Wall Check",
+    Default = false,
+    Callback = function(state)
+        getgenv().AimbotWallCheck = state
+    end
+})
+
+AimbotSection:AddToggle("aimbotSilentAim", {
+    Title = "Silent Aim",
+    Default = false,
+    Callback = function(state)
+        getgenv().AimbotSilentAim = state
+    end
+})
+
+AimbotSection:AddToggle("aimbotSticky", {
+    Title = "Sticky",
+    Default = false,
+    Callback = function(state)
+        getgenv().AimbotSticky = state
+    end
+})
+
+local TriggerbotSection = CombatTab:AddCollapsibleSection({ Title = "Triggerbot" })
+
+TriggerbotSection:AddToggle("triggerbotEnabled", {
+    Title = "Enable Triggerbot",
+    Default = false,
+    Callback = function(state)
+        getgenv().TriggerbotEnabled = state
+    end
+})
+
+TriggerbotSection:AddKeybind("triggerbotKeybind", {
+    Title = "Triggerbot Keybind",
+    Default = "None",
+    Callback = function(key)
+        getgenv().TriggerbotKeybind = key
+        if key ~= "None" then
+            getgenv().TriggerbotEnabled = not getgenv().TriggerbotEnabled
+        end
+    end
+})
+
+TriggerbotSection:AddToggle("triggerbotWallCheck", {
+    Title = "Wall Check",
+    Default = true,
+    Callback = function(state)
+        getgenv().TriggerbotWallCheck = state
+    end
+})
+
+TriggerbotSection:AddSlider("triggerbotDelay", {
+    Title = "Click Delay",
+    Default = 0.1,
+    Min = 0,
+    Max = 1,
+    Rounding = 1,
+    Callback = function(value)
+        getgenv().TriggerbotDelay = value
+    end
+})
+
+local HitboxSection = CombatTab:AddCollapsibleSection({ Title = "Hitbox Extender" })
+
+HitboxSection:AddToggle("hitboxEnabled", {
+    Title = "Enable Hitbox",
+    Default = false,
+    Callback = function(state)
+        getgenv().HitboxEnabled = state
+    end
+})
+
+HitboxSection:AddKeybind("hitboxKeybind", {
+    Title = "Hitbox Keybind",
+    Default = "None",
+    Callback = function(key)
+        getgenv().HitboxKeybind = key
+        if key ~= "None" then
+            getgenv().HitboxEnabled = not getgenv().HitboxEnabled
+        end
+    end
+})
+
+HitboxSection:AddSlider("hitboxSize", {
+    Title = "Hitbox Size",
+    Default = 5,
+    Min = 1,
+    Max = 20,
+    Rounding = 0,
+    Callback = function(value)
+        getgenv().HitboxSize = value
+    end
+})
+
+HitboxSection:AddToggle("hitboxShow", {
+    Title = "Show Hitbox",
+    Default = false,
+    Callback = function(state)
+        getgenv().HitboxShow = state
+    end
+})
+
+HitboxSection:AddColorpicker("hitboxColor", {
+    Title = "Hitbox Color",
+    Default = Color3.fromRGB(255, 0, 0),
+    Callback = function(color)
+        getgenv().HitboxColor = color
+    end
+})
+
+local SpinbotSection = CombatTab:AddCollapsibleSection({ Title = "Spinbot" })
+
+SpinbotSection:AddToggle("spinbotEnabled", {
+    Title = "Enable Spinbot",
+    Default = false,
+    Callback = function(state)
+        getgenv().SpinbotEnabled = state
+    end
+})
+
+SpinbotSection:AddKeybind("spinbotKeybind", {
+    Title = "Spinbot Keybind",
+    Default = "None",
+    Callback = function(key)
+        getgenv().SpinbotKeybind = key
+        if key ~= "None" then
+            getgenv().SpinbotEnabled = not getgenv().SpinbotEnabled
+        end
+    end
+})
+
+SpinbotSection:AddDropdown("spinAxis", {
+    Title = "Spin Axis",
+    Values = {"Y", "X", "Z", "Random"},
+    Default = 1,
+    Multi = false,
+    Callback = function(selected)
+        getgenv().SpinAxis = selected
+    end
+})
+
+SpinbotSection:AddSlider("spinSpeed", {
+    Title = "Spin Speed",
+    Default = 50,
+    Min = 1,
+    Max = 500,
+    Rounding = 0,
+    Callback = function(value)
+        getgenv().SpinSpeed = value
+    end
+})
+
+
+local ChamsSection = VisualsTab:AddCollapsibleSection({ Title = "Chams" })
+
+ChamsSection:AddToggle("chamsEnabled", {
+    Title = "Enable Chams",
+    Default = false,
+    Callback = function(state)
+        getgenv().ChamsEnabled = state
+    end
+})
+
+ChamsSection:AddKeybind("chamsKeybind", {
+    Title = "Chams Keybind",
+    Default = "None",
+    Callback = function(key)
+        getgenv().ChamsKeybind = key
+        if key ~= "None" then
+            getgenv().ChamsEnabled = not getgenv().ChamsEnabled
+        end
+    end
+})
+
+ChamsSection:AddDropdown("chamsMode", {
+    Title = "Chams Mode",
+    Values = {"Highlight", "Material", "Engine"},
+    Default = 1,
+    Multi = false,
+    Callback = function(selected)
+        getgenv().ChamsMode = selected
+    end
+})
+
+ChamsSection:AddDropdown("chamsTarget", {
+    Title = "Chams Target",
+    Values = {"All", "Head", "Body", "Arms", "Legs", "HumanoidRootPart"},
+    Default = 1,
+    Multi = false,
+    Callback = function(selected)
+        getgenv().ChamsTarget = {[selected] = true}
+    end
+})
+
+ChamsSection:AddColorpicker("chamsFillColor", {
+    Title = "Chams Fill",
+    Default = Color3.fromRGB(255, 0, 0),
+    Callback = function(color)
+        getgenv().ChamsFillColor = color
+    end
+})
+
+ChamsSection:AddSlider("chamsFillTransparency", {
+    Title = "Fill Transparency",
+    Default = 0.5,
+    Min = 0,
+    Max = 1,
+    Rounding = 1,
+    Callback = function(value)
+        getgenv().ChamsFillTransparency = value
+    end
+})
+
+ChamsSection:AddColorpicker("chamsOutlineColor", {
+    Title = "Chams Outline",
+    Default = Color3.fromRGB(255, 255, 255),
+    Callback = function(color)
+        getgenv().ChamsOutlineColor = color
+    end
+})
+
+ChamsSection:AddSlider("chamsOutlineTransparency", {
+    Title = "Outline Transparency",
+    Default = 0,
+    Min = 0,
+    Max = 1,
+    Rounding = 1,
+    Callback = function(value)
+        getgenv().ChamsOutlineTransparency = value
+    end
+})
+
+ChamsSection:AddDropdown("chamsMaterial", {
+    Title = "Engine Material",
+    Values = {"ForceField", "Neon", "Glass", "SmoothPlastic", "DiamondPlate", "Chrome", "WoodPlanks", "Marble", "Granite", "Cobblestone", "Brick", "Sand", "Grass"},
+    Default = 1,
+    Multi = false,
+    Callback = function(selected)
+        getgenv().ChamsMaterial = selected
+    end
+})
+
+ChamsSection:AddToggle("chamsThroughWalls", {
+    Title = "Through Walls",
+    Default = true,
+    Callback = function(state)
+        getgenv().ChamsThroughWalls = state
+    end
+})
+
+ChamsSection:AddToggle("chamsOccluded", {
+    Title = "Occluded",
+    Default = true,
+    Callback = function(state)
+        getgenv().ChamsOccluded = state
+    end
+})
+
+local ESPSection = VisualsTab:AddCollapsibleSection({ Title = "ESP" })
+
+ESPSection:AddToggle("espEnabled", {
+    Title = "Enable ESP",
+    Default = false,
+    Callback = function(state)
+        getgenv().ESPEnabled = state
+        if not state then
+            hideAllPlayers()
+        end
+    end
+})
+
+ESPSection:AddKeybind("espKeybind", {
+    Title = "ESP Keybind",
+    Default = "None",
+    Callback = function(key)
+        getgenv().ESPKeybind = key
+        if key ~= "None" then
+            getgenv().ESPEnabled = not getgenv().ESPEnabled
+        end
+    end
+})
+
+ESPSection:AddDropdown("espElements", {
+    Title = "ESP Elements",
+    Values = {"Box", "Name", "Health", "Distance", "Tracers", "LookAngle", "Skeleton", "Tool"},
+    Default = 1,
+    Multi = false,
+    Callback = function(selected)
+        getgenv().ESPItems = {[selected] = true}
+    end
+})
+
+ESPSection:AddColorpicker("espColor", {
+    Title = "ESP Color",
+    Default = Color3.fromRGB(255, 255, 255),
+    Callback = function(color)
+        getgenv().ESPColor = color
+    end
+})
+
+ESPSection:AddColorpicker("espHealthLow", {
+    Title = "Health Low",
+    Default = Color3.fromRGB(255, 0, 0),
+    Callback = function(color)
+        getgenv().ESPHealthLow = color
+    end
+})
+
+ESPSection:AddColorpicker("espHealthHigh", {
+    Title = "Health High",
+    Default = Color3.fromRGB(0, 255, 0),
+    Callback = function(color)
+        getgenv().ESPHealthHigh = color
+    end
+})
+
+ESPSection:AddColorpicker("espTeamColor", {
+    Title = "Team Color",
+    Default = Color3.fromRGB(0, 255, 0),
+    Callback = function(color)
+        getgenv().ESPTeamColor = color
+    end
+})
+
+ESPSection:AddColorpicker("espEnemyColor", {
+    Title = "Enemy Color",
+    Default = Color3.fromRGB(255, 255, 255),
+    Callback = function(color)
+        getgenv().ESPEnemyColor = color
+    end
+})
+
+ESPSection:AddDropdown("espFont", {
+    Title = "Font",
+    Values = {"Code", "ArialBold", "GothamBold", "Gotham", "Legacy", "Highway", "Cartoon", "SciFi"},
+    Default = 1,
+    Multi = false,
+    Callback = function(selected)
+        getgenv().ESPFont = selected
+    end
+})
+
+ESPSection:AddSlider("espThickness", {
+    Title = "Line Thickness",
+    Default = 1,
+    Min = 1,
+    Max = 3,
+    Rounding = 0,
+    Callback = function(value)
+        getgenv().ESPThickness = value
+    end
+})
+
+ESPSection:AddSlider("espTextSize", {
+    Title = "Text Size",
+    Default = 16,
+    Min = 10,
+    Max = 30,
+    Rounding = 0,
+    Callback = function(value)
+        getgenv().ESPTextSize = value
+    end
+})
+
+ESPSection:AddSlider("espMaxDistance", {
+    Title = "Max Distance",
+    Default = 1000,
+    Min = 100,
+    Max = 5000,
+    Rounding = 0,
+    Callback = function(value)
+        getgenv().ESPMaxDistance = value
+    end
+})
+
+ESPSection:AddToggle("espShowTeam", {
+    Title = "Show Teammates",
+    Default = true,
+    Callback = function(state)
+        getgenv().ESPShowTeam = state
+    end
+})
+
+local LightingSection = VisualsTab:AddCollapsibleSection({ Title = "Lighting" })
+
+LightingSection:AddToggle("fullbrightEnabled", {
+    Title = "Fullbright",
+    Default = false,
+    Callback = function(state)
+        getgenv().FullbrightEnabled = state
+    end
+})
+
+LightingSection:AddToggle("noFogEnabled", {
+    Title = "No Fog",
+    Default = false,
+    Callback = function(state)
+        getgenv().NoFogEnabled = state
+    end
+})
+
+LightingSection:AddSlider("brightnessValue", {
+    Title = "Brightness",
+    Default = 2,
+    Min = 0,
+    Max = 10,
+    Rounding = 0,
+    Callback = function(value)
+        getgenv().BrightnessValue = value
+    end
+})
+
+LightingSection:AddColorpicker("ambientColor", {
+    Title = "Ambient Color",
+    Default = Originals.Ambient,
+    Callback = function(color)
+        getgenv().AmbientColor = color
+    end
+})
+
+LightingSection:AddButton({
+    Title = "Reset Lighting",
+    Callback = function()
+        Lighting.Brightness = Originals.Brightness
+        Lighting.GlobalShadows = Originals.GlobalShadows
+        Lighting.FogEnd = Originals.FogEnd
+        Lighting.FogStart = Originals.FogStart
+        Lighting.Ambient = Originals.Ambient
+        Lighting.OutdoorAmbient = Originals.OutdoorAmbient
+        Lighting.ClockTime = Originals.ClockTime
+    end
+})
+
+
+local MouseTPSection = ExploitsTab:AddCollapsibleSection({ Title = "Mouse TP" })
+
+MouseTPSection:AddToggle("mouseTPEnabled", {
+    Title = "Enable Mouse TP",
+    Default = false,
+    Callback = function(state)
+        getgenv().MouseTPEnabled = state
+        if state then
+            mouseTPTeleport()
+            getgenv().MouseTPEnabled = false
+        end
+    end
+})
+
+MouseTPSection:AddKeybind("mouseTPKeybind", {
+    Title = "Mouse TP Keybind",
+    Default = "None",
+    Callback = function(key)
+        getgenv().MouseTPKeybind = key
+    end
+})
+
+MouseTPSection:AddDropdown("mouseTPMode", {
+    Title = "TP Mode",
+    Values = {"Instant", "Tween"},
+    Default = 1,
+    Multi = false,
+    Callback = function(selected)
+        getgenv().MouseTPMode = selected
+    end
+})
+
+MouseTPSection:AddDropdown("mouseTPMethod", {
+    Title = "TP Method",
+    Values = {"CFrame", "Velocity", "Impulse"},
+    Default = 1,
+    Multi = false,
+    Callback = function(selected)
+        getgenv().MouseTPMethod = selected
+    end
+})
+
+MouseTPSection:AddSlider("tweenSpeed", {
+    Title = "Tween Speed",
+    Default = 1,
+    Min = 0.1,
+    Max = 10,
+    Rounding = 1,
+    Callback = function(value)
+        getgenv().TweenSpeed = value
+    end
+})
+
+MouseTPSection:AddSlider("tpHeight", {
+    Title = "TP Height Offset",
+    Default = 3,
+    Min = 0,
+    Max = 50,
+    Rounding = 0,
+    Callback = function(value)
+        getgenv().TPHeight = value
+    end
+})
+
+local ACBypassSection = ExploitsTab:AddCollapsibleSection({ Title = "AC Bypass" })
+
+ACBypassSection:AddToggle("acBypassEnabled", {
+    Title = "Enable AC Bypass",
+    Default = false,
+    Callback = function(state)
+        getgenv().ACBypassEnabled = state
+    end
+})
+
+ACBypassSection:AddKeybind("acBypassKeybind", {
+    Title = "AC Bypass Keybind",
+    Default = "None",
+    Callback = function(key)
+        getgenv().ACBypassKeybind = key
+        if key ~= "None" then
+            getgenv().ACBypassEnabled = not getgenv().ACBypassEnabled
+        end
+    end
+})
+
+ACBypassSection:AddSlider("acWalkSpeed", {
+    Title = "Walk Speed",
+    Default = 16,
+    Min = 0,
+    Max = 100,
+    Rounding = 0,
+    Callback = function(value)
+        getgenv().ACWalkSpeed = value
+    end
+})
+
+ACBypassSection:AddSlider("acJumpPower", {
+    Title = "Jump Power",
+    Default = 50,
+    Min = 0,
+    Max = 200,
+    Rounding = 0,
+    Callback = function(value)
+        getgenv().ACJumpPower = value
+    end
+})
+
+ACBypassSection:AddSlider("acJumpHeight", {
+    Title = "Jump Height",
+    Default = 7.2,
+    Min = 0,
+    Max = 50,
+    Rounding = 1,
+    Callback = function(value)
+        getgenv().ACJumpHeight = value
+    end
+})
+
+ACBypassSection:AddParagraph({ Title = "Status", Content = "Inactive" })
+
+
+local AntiAFKSection = MiscTab:AddCollapsibleSection({ Title = "Anti-AFK" })
+
+AntiAFKSection:AddToggle("antiAFKEnabled", {
+    Title = "Enable Anti-AFK",
+    Default = false,
+    Callback = function(state)
+        getgenv().AntiAFKEnabled = state
+    end
+})
+
+AntiAFKSection:AddKeybind("antiAFKKeybind", {
+    Title = "Anti-AFK Keybind",
+    Default = "None",
+    Callback = function(key)
+        getgenv().AntiAFKKeybind = key
+        if key ~= "None" then
+            getgenv().AntiAFKEnabled = not getgenv().AntiAFKEnabled
+        end
+    end
+})
+
+AntiAFKSection:AddDropdown("antiAFKMethod", {
+    Title = "Anti-AFK Method",
+    Values = {"Click", "Jump"},
+    Default = 1,
+    Multi = false,
+    Callback = function(selected)
+        getgenv().AntiAFKMethod = selected
+    end
+})
+
+AntiAFKSection:AddSlider("antiAFKInterval", {
+    Title = "Interval (sec)",
+    Default = 60,
+    Min = 10,
+    Max = 300,
+    Rounding = 0,
+    Callback = function(value)
+        getgenv().AntiAFKInterval = value
+    end
+})
+
+local FOVSection = MiscTab:AddCollapsibleSection({ Title = "FOV Changer" })
+
+FOVSection:AddToggle("miscFOVEnabled", {
+    Title = "Enable FOV Changer",
+    Default = false,
+    Callback = function(state)
+        getgenv().MiscFOVEnabled = state
+    end
+})
+
+FOVSection:AddSlider("miscFOVValue", {
+    Title = "Field of View",
+    Default = 70,
+    Min = 30,
+    Max = 120,
+    Rounding = 0,
+    Callback = function(value)
+        getgenv().MiscFOVValue = value
+    end
+})
+
+FOVSection:AddButton({
+    Title = "Reset FOV",
+    Callback = function()
+        Workspace.CurrentCamera.FieldOfView = Originals.FOV
+    end
+})
+
+
+SettingsTab:AddButton({
+    Title = "Unload",
+    Callback = function()
+        getgenv().ESPEnabled = false
+        getgenv().AimbotEnabled = false
+        getgenv().CamlockEnabled = false
+        getgenv().TargetPlayer = nil
+        getgenv().TriggerbotEnabled = false
+        getgenv().ChamsEnabled = false
+        getgenv().FlyEnabled = false
+        getgenv().NoclipEnabled = false
+        getgenv().SpeedEnabled = false
+        getgenv().InfJumpEnabled = false
+        getgenv().SpinbotEnabled = false
+        getgenv().AntiAFKEnabled = false
+        getgenv().MiscFOVEnabled = false
+        Workspace.CurrentCamera.FieldOfView = Originals.FOV
+
+        hideAllPlayers()
+        removeAllESPObjects()
+
+        if getgenv().aimbotFOVCircle then
+            getgenv().aimbotFOVCircle:Remove()
+            getgenv().aimbotFOVCircle = nil
+        end
+
+        pcall(function() DrawingLib.clear() end)
+        pcall(function() EntityLib.stop() end)
+        janitor:Cleanup()
+
+        stopHitbox()
+        getgenv().__HITBOX__ = nil
+        gcinfo()
+    end
+})
+
+SettingsTab:AddKeybind("menuKeybind", {
+    Title = "Menu Keybind",
+    Default = "RightShift",
+    Callback = function(key)
+        getgenv().MenuKeybind = key
+    end
+})
+
+SettingsTab:AddParagraph({ Title = "Swift Hub", Content = "Version: " .. _version .. "\nUI: Fluent Modded\nby coderofthenextgen" })
+
 
 local function getDirection()
     local char, hrp, hum = getCharacter()
     if not char or not hrp or not hum then return Vector3.zero end
 
-    local direction = Options.MoveDirection.Value
-
-    if direction == 'MoveDirection' then
+    if getgenv().MoveDirection == 'MoveDirection' then
         return hum.MoveDirection
     else
         local cam = Workspace.CurrentCamera
@@ -360,78 +1581,6 @@ local function getDirection()
         return Vector3.zero
     end
 end
-
-task.delay(1, storeOriginals)
-
-task.delay(1, storeOriginals)
-
-LeftGroupBox:AddToggle('SpeedToggle', {
-    Text = 'Enable Speed',
-    Default = false,
-    Callback = function(Value)
-        if not Value then
-            isBoosting = false
-            getgenv().WalkSpeedSpoof.RestoreWalkSpeed()
-        end
-    end
-})
-
-LeftGroupBox:AddLabel('Speed Keybind'):AddKeyPicker('SpeedKeybind', {
-    Default = 'None',
-    SyncToggleState = true,
-    Mode = 'Toggle',
-    Text = 'Speed Keybind',
-    Callback = function(Value)
-        Toggles.SpeedToggle:SetValue(Value)
-    end,
-})
-
-LeftGroupBox:AddDropdown('SpeedMethod', {
-    Values = { 'Velocity', 'WalkSpeed', 'Impulse', 'Heatseeker' },
-    Default = 1,
-    Multi = false,
-    Text = 'Speed Method',
-})
-
-LeftGroupBox:AddDropdown('MoveDirection', {
-    Values = { 'MoveDirection', 'DirectMove' },
-    Default = 1,
-    Multi = false,
-    Text = 'Move Direction',
-})
-
-LeftGroupBox:AddSlider('SpeedValue', {
-    Text = 'Speed',
-    Default = 50,
-    Min = 0,
-    Max = 500,
-    Rounding = 0,
-})
-
-local HeatseekerDepBox = LeftGroupBox:AddDependencyBox()
-
-HeatseekerDepBox:AddSlider('HeatseekerDuration', {
-    Text = 'Duration',
-    Default = 0.3,
-    Min = 0.1,
-    Max = 5,
-    Rounding = 1,
-})
-
-HeatseekerDepBox:AddSlider('HeatseekerTicks', {
-    Text = 'Ticks',
-    Default = 0.3,
-    Min = 0.1,
-    Max = 5,
-    Rounding = 1,
-})
-
-HeatseekerDepBox:SetupDependencies({
-    { Toggles.SpeedToggle, true },
-    { Options.SpeedMethod, 'Heatseeker' }
-})
-
-local MouseTPGroupBox = Tabs.Exploits:AddLeftGroupbox('Mouse TP')
 
 local MouseTPRaycastParams = RaycastParams.new()
 MouseTPRaycastParams.FilterType = Enum.RaycastFilterType.Exclude
@@ -458,7 +1607,7 @@ local function getMouseGroundCF()
         return nil
     end
 
-    return CFrame.new(result.Position + Vector3.new(0, Options.TPHeight.Value, 0))
+    return CFrame.new(result.Position + Vector3.new(0, getgenv().TPHeight, 0))
 end
 
 local function tweenToPosition(hrp, targetCFrame, speed)
@@ -508,46 +1657,25 @@ local function mouseTPTeleport()
     local targetCF = getMouseGroundCF()
     if not targetCF then return end
 
-    local mode = Options.MouseTPMode.Value
-    local method = Options.MouseTPMethod.Value
-
-    if mode == 'Instant' then
-        if method == 'CFrame' then
+    if getgenv().MouseTPMode == 'Instant' then
+        if getgenv().MouseTPMethod == 'CFrame' then
             hrp.CFrame = targetCF
         else
-            moveToPosition(hrp, targetCF, method)
+            moveToPosition(hrp, targetCF, getgenv().MouseTPMethod)
         end
-    elseif mode == 'Tween' then
-        if method == 'CFrame' then
-            tweenToPosition(hrp, targetCF, Options.TweenSpeed.Value)
+    elseif getgenv().MouseTPMode == 'Tween' then
+        if getgenv().MouseTPMethod == 'CFrame' then
+            tweenToPosition(hrp, targetCF, getgenv().TweenSpeed)
         else
-            moveToPosition(hrp, targetCF, method)
+            moveToPosition(hrp, targetCF, getgenv().MouseTPMethod)
         end
     end
 end
 
-MouseTPGroupBox:AddToggle('MouseTPToggle', {
-    Text = 'Enable Mouse TP',
-    Default = false,
-    Callback = function(Value)
-        if Value then
-            mouseTPTeleport()
-            Toggles.MouseTPToggle:SetValue(false)
-        end
-    end,
-})
-
-MouseTPGroupBox:AddLabel('Mouse TP Keybind'):AddKeyPicker('MouseTPKeybind', {
-    Default = 'None',
-    SyncToggleState = false,
-    Mode = 'Toggle',
-    Text = 'Mouse TP Keybind',
-})
-
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    if Options.MouseTPKeybind.Value ~= 'None' then
-        local key = Options.MouseTPKeybind.Value
+    if getgenv().MouseTPKeybind ~= 'None' then
+        local key = getgenv().MouseTPKeybind
         if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode.Name == key then
             mouseTPTeleport()
         elseif input.UserInputType == Enum.UserInputType.MouseButton1 and key == 'MB1' then
@@ -558,76 +1686,10 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-MouseTPGroupBox:AddDropdown('MouseTPMode', {
-    Values = { 'Instant', 'Tween' },
-    Default = 1,
-    Multi = false,
-    Text = 'TP Mode',
-})
-
-MouseTPGroupBox:AddDropdown('MouseTPMethod', {
-    Values = { 'CFrame', 'Velocity', 'Impulse' },
-    Default = 1,
-    Multi = false,
-    Text = 'TP Method',
-})
-
-MouseTPGroupBox:AddSlider('TweenSpeed', {
-    Text = 'Tween Speed',
-    Default = 1,
-    Min = 0.1,
-    Max = 10,
-    Rounding = 1,
-})
-
-local MouseTPDepBox = MouseTPGroupBox:AddDependencyBox()
-MouseTPDepBox:AddSlider('TPHeight', {
-    Text = 'TP Height Offset',
-    Default = 3,
-    Min = 0,
-    Max = 50,
-    Rounding = 0,
-})
-MouseTPDepBox:SetupDependencies({
-    { Toggles.MouseTPToggle, true }
-})
-
-local NoclipGroupBox = Tabs.Movement:AddRightGroupbox('Noclip')
-
-NoclipGroupBox:AddToggle('NoclipToggle', {
-    Text = 'Enable Noclip',
-    Default = false,
-})
-
-NoclipGroupBox:AddLabel('Noclip Keybind'):AddKeyPicker('NoclipKeybind', {
-    Default = 'None',
-    SyncToggleState = true,
-    Mode = 'Toggle',
-    Text = 'Noclip Keybind',
-    Callback = function(Value)
-        Toggles.NoclipToggle:SetValue(Value)
-    end,
-})
-
-NoclipGroupBox:AddDropdown('NoclipMode', {
-    Values = { 'Character', 'Part', 'CollisionGroup' },
-    Default = 1,
-    Multi = false,
-    Text = 'Noclip Mode',
-})
-
-NoclipGroupBox:AddDropdown('NoclipParts', {
-    Values = { 'Head', 'Torso', 'Left Arm', 'Right Arm', 'Left Leg', 'Right Leg', 'HumanoidRootPart' },
-    Default = 1,
-    Multi = true,
-    Text = 'Body Parts',
-})
-
 local noclipOriginalCollisions = {}
 local noclipCollisionFolder = nil
 
 local function getSelectedParts()
-    local selected = Options.NoclipParts.Value
     local parts = {}
 
     local partMap = {
@@ -640,7 +1702,7 @@ local function getSelectedParts()
         ['HumanoidRootPart'] = 'HumanoidRootPart',
     }
 
-    for name, _ in pairs(selected) do
+    for name, _ in pairs(getgenv().NoclipParts) do
         if partMap[name] then
             table.insert(parts, partMap[name])
         end
@@ -719,13 +1781,11 @@ end
 
 local function startNoclip()
     local char, hrp, hum = getCharacter()
-    if not char or not hrp or not hum then return end
+    if not char then return end
 
-    local mode = Options.NoclipMode.Value
-
-    if mode == 'CollisionGroup' then
+    if getgenv().NoclipMode == 'CollisionGroup' then
         noclipCollisionFolder = Instance.new('Folder')
-        noclipCollisionFolder.Name = 'NoclipCollisionGroups'
+        noclipCollisionFolder.Name = 'NoclipCollisionFolder'
         noclipCollisionFolder.Parent = char
 
         local colPart = Instance.new('Part')
@@ -794,145 +1854,53 @@ end
 local function noclipLoop()
     updateGroundPart()
 
-    local mode = Options.NoclipMode.Value
-
-    if mode == 'Character' then
+    if getgenv().NoclipMode == 'Character' then
         noclipCharacter()
-    elseif mode == 'Part' then
+    elseif getgenv().NoclipMode == 'Part' then
         noclipPart()
-    elseif mode == 'CollisionGroup' then
+    elseif getgenv().NoclipMode == 'CollisionGroup' then
         noclipCollisionGroup()
     end
 end
 
-Toggles.NoclipToggle:OnChanged(function()
-    if Toggles.NoclipToggle.Value then
-        startNoclip()
-    else
-        stopNoclip()
-    end
-end)
-
-RunService.Stepped:Connect(function()
-    if Toggles.NoclipToggle.Value then
+janitor:Add(RunService.Stepped:Connect(function()
+    if getgenv().NoclipEnabled then
         noclipLoop()
     end
-end)
+end), "Disconnect", "Noclip_Stepped")
 
-LocalPlayer.CharacterAdded:Connect(function()
-    if Toggles.NoclipToggle.Value then
+janitor:Add(LocalPlayer.CharacterAdded:Connect(function()
+    if getgenv().NoclipEnabled then
         task.wait(0.5)
         startNoclip()
     end
-end)
+end), "Disconnect", "Noclip_CharAdded")
 
-RightGroupBox:AddToggle('JumpToggle', {
-    Text = 'Enable Jump',
-    Default = false,
-    Callback = function(Value)
-        if not Value then
-            getgenv().JumpPowerSpoof.RestoreJumpPower()
-            local char, hrp, hum = getCharacter()
-            if hum then
-                hum.JumpHeight = Originals.JumpHeight
-            end
-        end
-    end
-})
 
-RightGroupBox:AddLabel('Jump Keybind'):AddKeyPicker('JumpKeybind', {
-    Default = 'None',
-    SyncToggleState = true,
-    Mode = 'Toggle',
-    Text = 'Jump Keybind',
-    Callback = function(Value)
-        Toggles.JumpToggle:SetValue(Value)
-    end,
-})
+getgenv().HBE = false
 
-RightGroupBox:AddDropdown('JumpProperty', {
-    Values = { 'JumpPower', 'JumpHeight' },
-    Default = 1,
-    Multi = false,
-    Text = 'Jump Property',
-})
-
-RightGroupBox:AddDropdown('JumpMethod', {
-    Values = { 'DirectSet', 'Velocity', 'CFrame' },
-    Default = 1,
-    Multi = false,
-    Text = 'Jump Method',
-})
-
-RightGroupBox:AddSlider('JumpValue', {
-    Text = 'Jump Value',
-    Default = 100,
-    Min = 0,
-    Max = 500,
-    Rounding = 0,
-})
-
-local HitboxGroupBox = Tabs.Combat:AddRightGroupbox('Hitbox Extender')
-
-HitboxGroupBox:AddToggle('HitboxToggle', {
-    Text = 'Enable Hitbox',
-    Default = false,
-})
-
-HitboxGroupBox:AddLabel('Hitbox Keybind'):AddKeyPicker('HitboxKeybind', {
-    Default = 'None',
-    SyncToggleState = true,
-    Mode = 'Toggle',
-    Text = 'Hitbox Keybind',
-    Callback = function(Value)
-        Toggles.HitboxToggle:SetValue(Value)
-    end,
-})
-
-HitboxGroupBox:AddSlider('HitboxSize', {
-    Text = 'Hitbox Size',
-    Default = 5,
-    Min = 1,
-    Max = 20,
-    Rounding = 1,
-})
-
-HitboxGroupBox:AddToggle('HitboxShow', {
-    Text = 'Show Hitbox',
-    Default = false,
-})
-
-HitboxGroupBox:AddLabel('Hitbox Color'):AddColorPicker('HitboxColor', {
-    Default = Color3.fromRGB(255, 0, 0),
-    Title = 'Hitbox Color',
-})
-
--- Simple HBE System
-getgenv().HBE = false -- Controlled by toggle
-
-local CHAR_PARENT = Workspace
-local hitboxConnections = {}
+getgenv().CHAR_PARENT = Workspace
+getgenv().hitboxConnections = {}
 
 local function AssignHitboxes(player)
     if player == LocalPlayer then return end
 
-    if hitboxConnections[player] then
-        hitboxConnections[player]:Disconnect()
+    if getgenv().hitboxConnections[player] then
+        getgenv().hitboxConnections[player]:Disconnect()
     end
 
-    hitboxConnections[player] = RunService.RenderStepped:Connect(function()
-        local char = CHAR_PARENT:FindFirstChild(player.Name)
+    getgenv().hitboxConnections[player] = RunService.RenderStepped:Connect(function()
+        local char = getgenv().CHAR_PARENT:FindFirstChild(player.Name)
         if getgenv().HBE then
             if char and char:FindFirstChild("HumanoidRootPart") then
                 local hrp = char.HumanoidRootPart
-                local hitboxSize = Vector3.new(Options.HitboxSize.Value, Options.HitboxSize.Value, Options.HitboxSize.Value)
-                local hitboxColor = Options.HitboxColor.Value
-                
-                if hrp.Size ~= hitboxSize or hrp.Color ~= hitboxColor then
-                    hrp.Size = hitboxSize
-                    hrp.Color = hitboxColor
+                local hitboxSizeVec = Vector3.new(getgenv().HitboxSize, getgenv().HitboxSize, getgenv().HitboxSize)
+
+                if hrp.Size ~= hitboxSizeVec or hrp.Color ~= getgenv().HitboxColor then
+                    hrp.Size = hitboxSizeVec
+                    hrp.Color = getgenv().HitboxColor
                     hrp.CanCollide = false
-                    hrp.Transparency = Toggles.HitboxShow.Value and 0.5 or 1
+                    hrp.Transparency = getgenv().HitboxShow and 0.5 or 1
                 end
             end
         else
@@ -944,25 +1912,22 @@ local function AssignHitboxes(player)
     end)
 end
 
--- Hitbox state
-local hitboxActive = false
-local hitboxSelectionBoxes = {}
-
-
+getgenv().hitboxActive = false
+getgenv().hitboxSelectionBoxes = {}
 
 local function clearSelectionBoxes(player)
     if player then
-        if hitboxSelectionBoxes[player] and hitboxSelectionBoxes[player].Parent then
-            hitboxSelectionBoxes[player]:Destroy()
+        if getgenv().hitboxSelectionBoxes[player] and getgenv().hitboxSelectionBoxes[player].Parent then
+            getgenv().hitboxSelectionBoxes[player]:Destroy()
         end
-        hitboxSelectionBoxes[player] = nil
+        getgenv().hitboxSelectionBoxes[player] = nil
     else
-        for player, sb in pairs(hitboxSelectionBoxes) do
+        for player, sb in pairs(getgenv().hitboxSelectionBoxes) do
             if sb and sb.Parent then
                 sb:Destroy()
             end
         end
-        table.clear(hitboxSelectionBoxes)
+        table.clear(getgenv().hitboxSelectionBoxes)
     end
 end
 
@@ -970,7 +1935,7 @@ local function updateSelectionBoxes(player)
     local char = Workspace:FindFirstChild(player.Name)
     if not char then return end
 
-    if not Toggles.HitboxShow.Value then
+    if not getgenv().HitboxShow then
         clearSelectionBoxes(player)
         return
     end
@@ -978,39 +1943,34 @@ local function updateSelectionBoxes(player)
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
 
-    local color = Options.HitboxColor.Value
-    local sb = hitboxSelectionBoxes[player]
-    
+    local sb = getgenv().hitboxSelectionBoxes[player]
+
     if not sb or not sb.Parent then
         sb = Instance.new('SelectionBox')
         sb.Adornee = hrp
         sb.LineThickness = 0.03
         sb.SurfaceTransparency = 0.7
         sb.Parent = hrp
-        hitboxSelectionBoxes[player] = sb
+        getgenv().hitboxSelectionBoxes[player] = sb
     end
-    sb.Color3 = color
-    sb.SurfaceColor3 = color
+    sb.Color3 = getgenv().HitboxColor
+    sb.SurfaceColor3 = getgenv().HitboxColor
 end
 
-local hitboxLoop = nil
-
 local function startHitbox()
-    hitboxActive = true
+    getgenv().hitboxActive = true
     getgenv().HBE = true
-    
-    -- Initial application to all existing players
+
     for _, player in ipairs(Players:GetPlayers()) do
         AssignHitboxes(player)
     end
 end
 
 local function stopHitbox()
-    hitboxActive = false
+    getgenv().hitboxActive = false
     getgenv().HBE = false
-    
-    -- Restore all hitboxes
-    for player, connection in pairs(hitboxConnections) do
+
+    for player, connection in pairs(getgenv().hitboxConnections) do
         if connection then
             connection:Disconnect()
         end
@@ -1020,77 +1980,55 @@ local function stopHitbox()
             char.HumanoidRootPart.Transparency = 1
         end
     end
-    table.clear(hitboxConnections)
+    table.clear(getgenv().hitboxConnections)
     clearSelectionBoxes(nil)
 end
 
-Toggles.HitboxToggle:OnChanged(function()
-    if Toggles.HitboxToggle.Value then
-        startHitbox()
-    else
-        stopHitbox()
-    end
-end)
 
-Toggles.HitboxShow:OnChanged(function()
-    if not Toggles.HitboxShow.Value then
-        for _, player in ipairs(Players:GetPlayers()) do
-            clearSelectionBoxes(player)
-        end
-    else
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer then
-                updateSelectionBoxes(player)
+task.spawn(function()
+    while true do
+        if getgenv().HitboxEnabled ~= getgenv().hitboxActive then
+            if getgenv().HitboxEnabled then
+                startHitbox()
+            else
+                stopHitbox()
             end
         end
+
+        if getgenv().HitboxEnabled then
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer then
+                    updateSelectionBoxes(player)
+                end
+            end
+        end
+        task.wait(0.1)
     end
 end)
 
 Players.PlayerRemoving:Connect(function(player)
-    if hitboxConnections[player] then
-        hitboxConnections[player]:Disconnect()
-        hitboxConnections[player] = nil
+    if getgenv().hitboxConnections[player] then
+        getgenv().hitboxConnections[player]:Disconnect()
+        getgenv().hitboxConnections[player] = nil
     end
     clearSelectionBoxes(player)
 end)
 
 Players.PlayerAdded:Connect(function(player)
-    if Toggles.HitboxToggle.Value then
-        task.wait(1) -- Wait for character to load
+    if getgenv().HitboxEnabled then
+        task.wait(1)
         AssignHitboxes(player)
     end
 end)
-local TriggerbotGroupBox = Tabs.Combat:AddLeftGroupbox('Triggerbot')
 
-TriggerbotGroupBox:AddToggle('TriggerbotToggle', {
-    Text = 'Enable Triggerbot',
-    Default = false,
-})
 
-TriggerbotGroupBox:AddLabel('Triggerbot Keybind'):AddKeyPicker('TriggerbotKeybind', {
-    Default = 'None',
-    SyncToggleState = true,
-    Mode = 'Hold',
-    Text = 'Triggerbot Keybind',
-    Callback = function(Value)
-        Toggles.TriggerbotToggle:SetValue(Value)
-    end,
-})
-
-TriggerbotGroupBox:AddToggle('TriggerbotWallCheck', {
-    Text = 'Wall Check',
-    Default = true,
-})
-
-TriggerbotGroupBox:AddSlider('TriggerbotDelay', {
-    Text = 'Click Delay',
-    Default = 0.1,
-    Min = 0,
-    Max = 1,
-    Rounding = 2,
-})
-
-local triggerbotConnection = nil
+local function getPlayerFromPart(part)
+    if not part then return nil end
+    local char = part:FindFirstAncestorOfClass("Model")
+    if not char then return nil end
+    local player = Players:GetPlayerFromCharacter(char)
+    return player
+end
 
 local function isTargetValid(target)
     if not target then return false end
@@ -1101,7 +2039,7 @@ local function isTargetValid(target)
 
     if entity.Health <= 0 then return false end
 
-    if Toggles.TriggerbotWallCheck and Toggles.TriggerbotWallCheck.Value then
+    if getgenv().TriggerbotWallCheck then
         local head = target.Character:FindFirstChild('Head')
         if head then
             local rayParams = RaycastParams.new()
@@ -1117,180 +2055,57 @@ local function isTargetValid(target)
     return true
 end
 
-local function triggerbotLoop()
+getgenv()._triggerbotConnection = nil
+
+function triggerbotLoop()
     local mouse = LocalPlayer:GetMouse()
 
-    if triggerbotConnection then
-        triggerbotConnection:Disconnect()
+    if getgenv()._triggerbotConnection then
+        getgenv()._triggerbotConnection:Disconnect()
     end
 
-    triggerbotConnection = RunService.Heartbeat:Connect(function()
-        if Toggles.TriggerbotToggle.Value and mouse.Target then
+    getgenv()._triggerbotConnection = RunService.Heartbeat:Connect(function()
+        if getgenv().TriggerbotEnabled and mouse.Target then
             local target = getPlayerFromPart(mouse.Target)
             if target and target ~= LocalPlayer and isTargetValid(target) then
                 mouse1press()
-                local delay = Options.TriggerbotDelay and Options.TriggerbotDelay.Value or 0.1
-                task.wait(delay)
+                task.wait(getgenv().TriggerbotDelay)
                 mouse1release()
             end
         end
     end)
 end
 
-Toggles.TriggerbotToggle:OnChanged(function()
-    if Toggles.TriggerbotToggle.Value then
-        triggerbotLoop()
-    else
-        if triggerbotConnection then
-            triggerbotConnection:Disconnect()
-            triggerbotConnection = nil
+task.spawn(function()
+    while true do
+        if getgenv().TriggerbotEnabled and not getgenv()._triggerbotConnection then
+            triggerbotLoop()
+        elseif not getgenv().TriggerbotEnabled and getgenv()._triggerbotConnection then
+            getgenv()._triggerbotConnection:Disconnect()
+            getgenv()._triggerbotConnection = nil
         end
+        task.wait(0.1)
     end
 end)
 
-local AimbotGroupBox = Tabs.Combat:AddLeftGroupbox('Aimbot')
 
-AimbotGroupBox:AddToggle('AimbotToggle', {
-    Text = 'Enable Aimbot',
-    Default = false,
-    Callback = function(Value)
-        if not Value then
-            CamlockEnabled = false
-            TargetPlayer = nil
-        end
-    end,
-})
-
-AimbotGroupBox:AddDropdown('AimbotMode', {
-    Values = { 'Hold' },
-    Default = 1,
-    Multi = false,
-    Text = 'Aimbot Mode',
-})
-
-AimbotGroupBox:AddLabel('Aimbot Keybind'):AddKeyPicker('AimbotKeybind', {
-    Default = 'Q',
-    SyncToggleState = false,
-    Mode = 'Hold',
-    Text = 'Aimbot Keybind',
-})
-
-local function getAimbotMode()
-    return 'Hold'
-end
-
-
-AimbotGroupBox:AddDropdown('AimbotTargetPart', {
-    Values = { 'Head', 'HumanoidRootPart', 'UpperTorso', 'LowerTorso' },
-    Default = 1,
-    Multi = false,
-    Text = 'Target Part',
-})
-
-AimbotGroupBox:AddDropdown('AimbotTargetMode', {
-    Values = { 'Nearest', 'Crosshair', 'Lowest Health' },
-    Default = 1,
-    Multi = false,
-    Text = 'Target Mode',
-})
-
-AimbotGroupBox:AddSlider('AimbotFOV', {
-    Text = 'FOV',
-    Default = 150,
-    Min = 10,
-    Max = 500,
-    Rounding = 0,
-})
-
-AimbotGroupBox:AddSlider('AimbotSmoothness', {
-    Text = 'Smoothness',
-    Default = 10,
-    Min = 1,
-    Max = 50,
-    Rounding = 0,
-})
-
-AimbotGroupBox:AddSlider('AimbotPrediction', {
-    Text = 'Prediction',
-    Default = 0.1,
-    Min = 0,
-    Max = 1,
-    Rounding = 2,
-})
-
-AimbotGroupBox:AddToggle('AimbotShowFOV', {
-    Text = 'Show FOV Circle',
-    Default = true,
-})
-
-AimbotGroupBox:AddToggle('AimbotTeamCheck', {
-    Text = 'Team Check',
-    Default = false,
-})
-
-AimbotGroupBox:AddToggle('AimbotAliveCheck', {
-    Text = 'Alive Check',
-    Default = false,
-})
-
-AimbotGroupBox:AddToggle('AimbotWallCheck', {
-    Text = 'Wall Check',
-    Default = false,
-})
-
-AimbotGroupBox:AddToggle('AimbotSilentAim', {
-    Text = 'Silent Aim',
-    Default = false,
-})
-
-AimbotGroupBox:AddToggle('AimbotSticky', {
-    Text = 'Sticky',
-    Default = false,
-})
-
--- Ensure keypicker mode matches AimbotMode dropdown
-if Options.AimbotMode then
-    Options.AimbotMode:OnChanged(function()
-        local mode = getAimbotMode()
-        if Options.AimbotKeybind and Options.AimbotKeybind.SetValue then
-            local current = Options.AimbotKeybind.Value
-            local key = 'Q'
-            if type(current) == 'table' and current[1] then
-                key = current[1]
-            elseif type(current) == 'string' then
-                key = current
-            end
-            pcall(function()
-                Options.AimbotKeybind:SetValue({ key, mode })
-            end)
-        end
-    end)
-end
-
-local aimbotFOVCircle
-local CamlockEnabled = false
-local TargetPlayer = nil
+getgenv().aimbotFOVCircle = nil
+getgenv().CamlockEnabled = false
+getgenv().TargetPlayer = nil
 
 local function createFOVCircle()
-    aimbotFOVCircle = Drawing.new('Circle')
-    aimbotFOVCircle.Visible = false
-    aimbotFOVCircle.Thickness = 2
-    aimbotFOVCircle.NumSides = 64
-    aimbotFOVCircle.Radius = 100
-    aimbotFOVCircle.Color = Color3.fromRGB(255, 255, 255)
-    aimbotFOVCircle.Filled = false
-    aimbotFOVCircle.Transparency = 1
+    getgenv().aimbotFOVCircle = Drawing.new('Circle')
+    getgenv().aimbotFOVCircle.Visible = false
+    getgenv().aimbotFOVCircle.Thickness = 2
+    getgenv().aimbotFOVCircle.NumSides = 64
+    getgenv().aimbotFOVCircle.Radius = 100
+    getgenv().aimbotFOVCircle.Color = Color3.fromRGB(255, 255, 255)
+    getgenv().aimbotFOVCircle.Filled = false
+    getgenv().aimbotFOVCircle.Transparency = 1
 end
 
 local function GetClosestPlayer()
     local cam = Workspace.CurrentCamera
-    local targetMode = Options.AimbotTargetMode and Options.AimbotTargetMode.Value or 'Nearest'
-    local fov = Options.AimbotFOV and Options.AimbotFOV.Value or 100
-    local targetPart = Options.AimbotTargetPart and Options.AimbotTargetPart.Value or 'Head'
-    local teamCheck = Options.AimbotTeamCheck and Options.AimbotTeamCheck.Value
-    local aliveCheck = Options.AimbotAliveCheck and Options.AimbotAliveCheck.Value
-    local wallCheck = Options.AimbotWallCheck and Options.AimbotWallCheck.Value
-
     local validPlayers = {}
 
     for _, player in ipairs(Players:GetPlayers()) do
@@ -1298,51 +2113,42 @@ local function GetClosestPlayer()
         if not player.Character then continue end
 
         local hum = player.Character:FindFirstChildOfClass('Humanoid')
-        local part = player.Character:FindFirstChild(targetPart)
+        local part = player.Character:FindFirstChild(getgenv().AimbotTargetPart)
         if not hum or not part then continue end
 
-        if aliveCheck and hum.Health <= 0 then continue end
-        if teamCheck and player.Team == LocalPlayer.Team then continue end
+        if getgenv().AimbotAliveCheck and hum.Health <= 0 then continue end
+        if getgenv().AimbotTeamCheck and player.Team == LocalPlayer.Team then continue end
 
         local screenPos, onScreen = cam:WorldToViewportPoint(part.Position)
         if not onScreen then continue end
 
+        if getgenv().AimbotWallCheck then
+            local origin = cam.CFrame.Position
+            local rayResult = workspace:Raycast(origin, part.Position - origin)
+            if rayResult then continue end
+        end
+
         local mousePos = UserInputService:GetMouseLocation()
         local dist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
 
-        if dist > fov then continue end
-
-        if wallCheck then
-            local rayParams = RaycastParams.new()
-            local filterList = {}
-            if LocalPlayer.Character then
-                table.insert(filterList, LocalPlayer.Character)
-            end
-            table.insert(filterList, player.Character)
-            rayParams.FilterDescendantsInstances = filterList
-            rayParams.FilterType = Enum.RaycastFilterType.Exclude
-            local rayResult = Workspace:Raycast(cam.CFrame.Position, (part.Position - cam.CFrame.Position).Unit * 500, rayParams)
-            if rayResult and not rayResult.Instance:IsDescendantOf(player.Character) then
-                continue
-            end
+        if dist <= getgenv().AimbotFOV then
+            table.insert(validPlayers, {
+                player = player,
+                distance = dist,
+                health = hum.Health
+            })
         end
-
-        table.insert(validPlayers, {
-            player = player,
-            distance = dist,
-            health = hum.Health
-        })
     end
 
     if #validPlayers == 0 then return nil end
 
-    if targetMode == 'Nearest' then
+    if getgenv().AimbotTargetMode == 'Nearest' then
         table.sort(validPlayers, function(a, b) return a.distance < b.distance end)
         return validPlayers[1].player
-    elseif targetMode == 'Crosshair' then
+    elseif getgenv().AimbotTargetMode == 'Crosshair' then
         table.sort(validPlayers, function(a, b) return a.distance < b.distance end)
         return validPlayers[1].player
-    elseif targetMode == 'Lowest Health' then
+    elseif getgenv().AimbotTargetMode == 'Lowest Health' then
         table.sort(validPlayers, function(a, b) return a.health < b.health end)
         return validPlayers[1].player
     end
@@ -1351,193 +2157,172 @@ local function GetClosestPlayer()
 end
 
 local function updateFOVCircle()
-    if not aimbotFOVCircle then return end
-    -- Only show FOV circle when Aimbot is enabled and user requested to show it
-    if not Toggles.AimbotToggle.Value or not Toggles.AimbotShowFOV.Value then
-        aimbotFOVCircle.Visible = false
+    if not getgenv().aimbotFOVCircle then return end
+    if not getgenv().AimbotEnabled or not getgenv().AimbotShowFOV then
+        getgenv().aimbotFOVCircle.Visible = false
         return
     end
 
     local mousePos = UserInputService:GetMouseLocation()
-    aimbotFOVCircle.Position = mousePos
-    aimbotFOVCircle.Radius = Options.AimbotFOV and Options.AimbotFOV.Value or 100
-    aimbotFOVCircle.Visible = true
+    getgenv().aimbotFOVCircle.Position = mousePos
+    getgenv().aimbotFOVCircle.Radius = getgenv().AimbotFOV
+    getgenv().aimbotFOVCircle.Visible = true
 end
 
 createFOVCircle()
 
-Toggles.AimbotToggle:OnChanged(function()
-    if not Toggles.AimbotToggle.Value then
-        CamlockEnabled = false
-        TargetPlayer = nil
-    end
-end)
-
 local function ValidateTarget()
-    if not TargetPlayer then return false end
-    if not TargetPlayer.Character then return false end
+    if not getgenv().TargetPlayer then return false end
+    if not getgenv().TargetPlayer.Character then return false end
 
-    local targetPartName = Options.AimbotTargetPart and Options.AimbotTargetPart.Value or 'Head'
-    local targetPart = TargetPlayer.Character:FindFirstChild(targetPartName)
+    local targetPart = getgenv().TargetPlayer.Character:FindFirstChild(getgenv().AimbotTargetPart)
     if not targetPart then return false end
 
-    local hum = TargetPlayer.Character:FindFirstChildOfClass('Humanoid')
+    local hum = getgenv().TargetPlayer.Character:FindFirstChildOfClass('Humanoid')
     if not hum then return false end
 
-    local aliveCheck = false
-    if Options.AimbotAliveCheck then aliveCheck = Options.AimbotAliveCheck.Value end
-    if aliveCheck and hum.Health <= 0 then return false end
-
-    local teamCheck = false
-    if Options.AimbotTeamCheck then teamCheck = Options.AimbotTeamCheck.Value end
-    if teamCheck and TargetPlayer.Team == LocalPlayer.Team then return false end
+    if getgenv().AimbotAliveCheck and hum.Health <= 0 then return false end
+    if getgenv().AimbotTeamCheck and getgenv().TargetPlayer.Team == LocalPlayer.Team then return false end
 
     local cam = Workspace.CurrentCamera
     local screenPos, onScreen = cam:WorldToViewportPoint(targetPart.Position)
     if not onScreen then return false end
 
-    local fov = Options.AimbotFOV and Options.AimbotFOV.Value or 100
     local mousePos = UserInputService:GetMouseLocation()
     local dist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
-    if dist > fov then return false end
+    if dist > getgenv().AimbotFOV then return false end
 
     return true
 end
 
-RunService.RenderStepped:Connect(function()
-    updateFOVCircle()
+janitor:Add(RunService.RenderStepped:Connect(function()
+        updateFOVCircle()
 
-    local aimbotMode = getAimbotMode()
-    if aimbotMode == 'Hold' and Options.AimbotKeybind and Options.AimbotKeybind.GetState then
-        if Options.AimbotKeybind:GetState() then
-            if not CamlockEnabled then
-                CamlockEnabled = true
-                TargetPlayer = GetClosestPlayer()
-            end
-        else
-            if CamlockEnabled then
-                CamlockEnabled = false
-                TargetPlayer = nil
-            end
-        end
-    end
-
-    if CamlockEnabled then
-        if Options.AimbotSticky and Options.AimbotSticky.Value then
-            if not ValidateTarget() then
-                TargetPlayer = GetClosestPlayer()
-            end
-        else
-            if not ValidateTarget() then
-                TargetPlayer = GetClosestPlayer()
+        if getgenv().AimbotMode == 'Hold' then
+            local keybind = getgenv().AimbotKeybind
+            if keybind ~= 'None' then
+                local keySuccess, isKeyDown = pcall(function()
+                    return UserInputService:IsKeyDown(Enum.KeyCode[keybind])
+                end)
+                if keySuccess and isKeyDown then
+                    if not getgenv().CamlockEnabled and getgenv().AimbotEnabled then
+                        getgenv().CamlockEnabled = true
+                        getgenv().TargetPlayer = GetClosestPlayer()
+                    end
+                else
+                    if getgenv().CamlockEnabled then
+                        getgenv().CamlockEnabled = false
+                        getgenv().TargetPlayer = nil
+                    end
+                end
             end
         end
-    end
 
-    if CamlockEnabled and TargetPlayer and TargetPlayer.Character and TargetPlayer.Character:FindFirstChild(Options.AimbotTargetPart and Options.AimbotTargetPart.Value or 'Head') then
-        local cam = Workspace.CurrentCamera
-        local part = TargetPlayer.Character[Options.AimbotTargetPart.Value]
-        local smoothness = Options.AimbotSmoothness.Value
-        local prediction = Options.AimbotPrediction.Value
-        local silentAim = Options.AimbotSilentAim and Options.AimbotSilentAim.Value or false
-
-        print('[Aimbot] Locking onto:', TargetPlayer.Name, 'Part:', Options.AimbotTargetPart.Value, 'Smoothness:', smoothness, 'Prediction:', prediction, 'Silent:', silentAim)
-
-        local targetPos = part.Position
-        if prediction > 0 and TargetPlayer.Character:FindFirstChild('HumanoidRootPart') then
-            targetPos = targetPos + (TargetPlayer.Character.HumanoidRootPart.AssemblyLinearVelocity * prediction)
+        if getgenv().CamlockEnabled then
+            if getgenv().AimbotSticky then
+                if not ValidateTarget() then
+                    local newTarget = GetClosestPlayer()
+                    if newTarget then
+                        getgenv().TargetPlayer = newTarget
+                    end
+                end
+            else
+                local newTarget = GetClosestPlayer()
+                if newTarget then
+                    getgenv().TargetPlayer = newTarget
+                end
+            end
         end
 
-        local targetCF = CFrame.new(cam.CFrame.Position, targetPos)
+        if getgenv().CamlockEnabled and getgenv().TargetPlayer and getgenv().TargetPlayer.Character and getgenv().TargetPlayer.Character:FindFirstChild(getgenv().AimbotTargetPart) then
+            local cam = Workspace.CurrentCamera
+            local part = getgenv().TargetPlayer.Character[getgenv().AimbotTargetPart]
+            local smoothness = getgenv().AimbotSmoothness
+            local prediction = getgenv().AimbotPrediction
+            local silentAim = getgenv().AimbotSilentAim
 
-        local smoothFactor
-        if silentAim then
-            smoothFactor = 0.05
-        else
-            smoothFactor = math.clamp(1 / smoothness, 0.02, 1)
-        end
+            local targetPos = part.Position
+            if prediction > 0 and getgenv().TargetPlayer.Character:FindFirstChild('HumanoidRootPart') then
+                targetPos = targetPos + (getgenv().TargetPlayer.Character.HumanoidRootPart.AssemblyLinearVelocity * prediction)
+            end
 
-        cam.CFrame = cam.CFrame:Lerp(targetCF, smoothFactor)
-    else
-        if CamlockEnabled then
-            print('[Aimbot] CamlockEnabled is true but no valid target. TargetPlayer:', TargetPlayer and TargetPlayer.Name or 'nil')
+            local targetCF = CFrame.new(cam.CFrame.Position, targetPos)
+
+            local smoothFactor
+            if silentAim then
+                smoothFactor = 0.05
+            else
+                smoothFactor = math.clamp(1 / smoothness, 0.02, 1)
+            end
+
+            cam.CFrame = cam.CFrame:Lerp(targetCF, smoothFactor)
         end
-    end
-end)
+    end), "Disconnect", "Aimbot_Render")
 
 local function heatseekerLoop()
-    while Toggles.SpeedToggle.Value and Options.SpeedMethod.Value == 'Heatseeker' do
+    while getgenv().SpeedEnabled and getgenv().SpeedMethod == 'Heatseeker' do
         local char, hrp, hum = getCharacter()
         if char and hrp and hum then
             isBoosting = true
             local dir = getDirection()
             if dir.Magnitude > 0 then
-                hrp.Velocity = dir * Options.SpeedValue.Value + Vector3.new(0, hrp.Velocity.Y, 0)
+                hrp.Velocity = dir * getgenv().SpeedValue + Vector3.new(0, hrp.Velocity.Y, 0)
             end
-            task.wait(Options.HeatseekerDuration.Value)
+            task.wait(getgenv().HeatseekerDuration)
             isBoosting = false
             hrp.Velocity = Vector3.new(0, hrp.Velocity.Y, 0)
-            task.wait(Options.HeatseekerTicks.Value)
+            task.wait(getgenv().HeatseekerTicks)
         else
             task.wait(0.1)
         end
     end
 end
 
-RunService.Heartbeat:Connect(function()
-    if not Toggles.SpeedToggle.Value then return end
+janitor:Add(RunService.Heartbeat:Connect(function()
+    if not getgenv().SpeedEnabled then return end
 
     local char, hrp, hum = getCharacter()
     if not char or not hrp or not hum then return end
 
-    local method = Options.SpeedMethod.Value
     local dir = getDirection()
     if dir.Magnitude == 0 then return end
 
-    local speed = Options.SpeedValue.Value
-    local vel = dir * speed
+    local vel = dir * getgenv().SpeedValue
 
-    if method == 'Velocity' then
+    if getgenv().SpeedMethod == 'Velocity' then
         hrp.Velocity = vel + Vector3.new(0, hrp.Velocity.Y, 0)
-    elseif method == 'WalkSpeed' then
-        getgenv().WalkSpeedSpoof.SetWalkSpeed(speed)
-    elseif method == 'Impulse' then
+    elseif getgenv().SpeedMethod == 'WalkSpeed' then
+        getgenv().WalkSpeedSpoof.SetWalkSpeed(getgenv().SpeedValue)
+    elseif getgenv().SpeedMethod == 'Impulse' then
         hrp:ApplyImpulse(Vector3.new(vel.X, 0, vel.Z) * hrp.AssemblyMass)
     end
-end)
+end), "Disconnect", "Speed_Heartbeat")
 
-Options.SpeedMethod:OnChanged(function()
-    if Toggles.SpeedToggle.Value and Options.SpeedMethod.Value == 'Heatseeker' then
-        task.spawn(heatseekerLoop)
-    end
-end)
-
-Toggles.SpeedToggle:OnChanged(function()
-    if Toggles.SpeedToggle.Value and Options.SpeedMethod.Value == 'Heatseeker' then
-        task.spawn(heatseekerLoop)
+task.spawn(function()
+    while true do
+        if getgenv().SpeedEnabled and getgenv().SpeedMethod == 'Heatseeker' then
+            task.spawn(heatseekerLoop)
+        end
+        task.wait(0.5)
     end
 end)
 
 local function onJump()
-    if not Toggles.JumpToggle.Value then return end
+    if not getgenv().JumpEnabled then return end
 
     local char, hrp, hum = getCharacter()
     if not char or not hrp or not hum then return end
 
-    local method = Options.JumpMethod.Value
-    local prop = Options.JumpProperty.Value
-    local value = Options.JumpValue.Value
-
-    if method == 'DirectSet' then
-        if prop == 'JumpPower' then
-            getgenv().JumpPowerSpoof.SetJumpPower(value)
+    if getgenv().JumpMethod == 'DirectSet' then
+        if getgenv().JumpProperty == 'JumpPower' then
+            getgenv().JumpPowerSpoof.SetJumpPower(getgenv().JumpValue)
         else
-            hum.JumpHeight = value
+            hum.JumpHeight = getgenv().JumpValue
         end
-    elseif method == 'Velocity' then
-        hrp.Velocity = Vector3.new(hrp.Velocity.X, value, hrp.Velocity.Z)
-    elseif method == 'CFrame' then
-        hrp.CFrame = hrp.CFrame + Vector3.new(0, value, 0)
+    elseif getgenv().JumpMethod == 'Velocity' then
+        hrp.Velocity = Vector3.new(hrp.Velocity.X, getgenv().JumpValue, hrp.Velocity.Z)
+    elseif getgenv().JumpMethod == 'CFrame' then
+        hrp.CFrame = hrp.CFrame + Vector3.new(0, getgenv().JumpValue, 0)
     end
 end
 
@@ -1561,80 +2346,6 @@ if LocalPlayer.Character then
     task.spawn(setupJumpListener)
 end
 
-local ACBypassGroupBox = Tabs.Exploits:AddRightGroupbox('AC Bypass')
-
-ACBypassGroupBox:AddToggle('ACBypass', {
-    Text = 'Enable AC Bypass',
-    Default = false,
-})
-
-ACBypassGroupBox:AddLabel('AC Bypass Keybind'):AddKeyPicker('ACBypassKeybind', {
-    Default = 'None',
-    SyncToggleState = true,
-    Mode = 'Toggle',
-    Text = 'AC Bypass Keybind',
-    Callback = function(Value)
-        Toggles.ACBypass:SetValue(Value)
-    end,
-})
-
-ACBypassGroupBox:AddSlider('ACWalkSpeed', {
-    Text = 'Spoofed WalkSpeed',
-    Default = 16,
-    Min = 0,
-    Max = 500,
-    Rounding = 0,
-})
-
-ACBypassGroupBox:AddSlider('ACJumpPower', {
-    Text = 'Spoofed JumpPower',
-    Default = 50,
-    Min = 0,
-    Max = 500,
-    Rounding = 0,
-})
-
-ACBypassGroupBox:AddSlider('ACJumpHeight', {
-    Text = 'Spoofed JumpHeight',
-    Default = 7,
-    Min = 0,
-    Max = 100,
-    Rounding = 1,
-})
-
-ACBypassGroupBox:AddButton('Kill AC Scripts', function()
-    pcall(function()
-        for _, obj in ipairs(game:GetDescendants()) do
-            local name = string.lower(obj.Name)
-            if
-                obj:IsA('LocalScript')
-                or obj:IsA('ModuleScript')
-            then
-                local acNames = {
-                    'anticheat', 'ac_', 'ac-', 'detector', 'detection',
-                    'guard', 'protector', 'watchdog', 'sentinel',
-                    'minimetrics', 'wally', 'byfron', 'hyperion',
-                    'frida', 'tracer', 'check', 'validator',
-                    'anticheatclient', 'anticheatserver',
-                    'acclient', 'acserver',
-                }
-                for _, acName in ipairs(acNames) do
-                    if string.find(name, acName) then
-                        obj.Disabled = true
-                        obj:Destroy()
-                        break
-                    end
-                end
-            end
-        end
-    end)
-end)
-
-ACBypassGroupBox:AddLabel('Status: Inactive')
-
-local cloneref = cloneref or function(...)
-    return ...
-end
 
 local spoofedProperties = {
     WalkSpeed = 16,
@@ -1675,86 +2386,21 @@ oldNewIndex = hookmetamethod(game, '__newindex', newcclosure(function(self, inde
     return oldNewIndex(self, index, value)
 end))
 
-Options.ACWalkSpeed:OnChanged(function()
-    spoofedProperties.WalkSpeed = Options.ACWalkSpeed.Value
-end)
-
-Options.ACJumpPower:OnChanged(function()
-    spoofedProperties.JumpPower = Options.ACJumpPower.Value
-end)
-
-Options.ACJumpHeight:OnChanged(function()
-    spoofedProperties.JumpHeight = Options.ACJumpHeight.Value
-end)
-
-Toggles.ACBypass:OnChanged(function()
-    if Toggles.ACBypass.Value then
-        spoofedProperties.WalkSpeed = Options.ACWalkSpeed.Value
-        spoofedProperties.JumpPower = Options.ACJumpPower.Value
-        spoofedProperties.JumpHeight = Options.ACJumpHeight.Value
-    else
-        spoofedProperties.WalkSpeed = Originals.WalkSpeed
-        spoofedProperties.JumpPower = Originals.JumpPower
-        spoofedProperties.JumpHeight = Originals.JumpHeight
+task.spawn(function()
+    while true do
+        if getgenv().ACBypassEnabled then
+            spoofedProperties.WalkSpeed = getgenv().ACWalkSpeed
+            spoofedProperties.JumpPower = getgenv().ACJumpPower
+            spoofedProperties.JumpHeight = getgenv().ACJumpHeight
+        else
+            spoofedProperties.WalkSpeed = Originals.WalkSpeed
+            spoofedProperties.JumpPower = Originals.JumpPower
+            spoofedProperties.JumpHeight = Originals.JumpHeight
+        end
+        task.wait(0.1)
     end
 end)
 
-local FlyGroupBox = Tabs.Movement:AddRightGroupbox('Fly')
-
-FlyGroupBox:AddToggle('FlyToggle', {
-    Text = 'Enable Fly',
-    Default = false,
-})
-
-FlyGroupBox:AddLabel('Fly Keybind'):AddKeyPicker('FlyKeybind', {
-    Default = 'None',
-    SyncToggleState = true,
-    Mode = 'Toggle',
-    Text = 'Fly Keybind',
-    Callback = function(Value)
-        Toggles.FlyToggle:SetValue(Value)
-    end,
-})
-
-FlyGroupBox:AddDropdown('FlyMethod', {
-    Values = { 'CFrame', 'Velocity', 'BodyVelocity', 'LinearVelocity' },
-    Default = 1,
-    Multi = false,
-    Text = 'Fly Method',
-})
-
-FlyGroupBox:AddSlider('FlySpeed', {
-    Text = 'Horizontal Speed',
-    Default = 50,
-    Min = 10,
-    Max = 300,
-    Rounding = 0,
-})
-
-FlyGroupBox:AddSlider('FlyVerticalSpeed', {
-    Text = 'Vertical Speed',
-    Default = 50,
-    Min = 10,
-    Max = 300,
-    Rounding = 0,
-})
-
-FlyGroupBox:AddLabel('Up Key'):AddKeyPicker('FlyUpKey', {
-    Default = 'Space',
-    Mode = 'Hold',
-    Text = 'Up Key',
-})
-
-FlyGroupBox:AddLabel('Down Key'):AddKeyPicker('FlyDownKey', {
-    Default = 'LeftShift',
-    Mode = 'Hold',
-    Text = 'Down Key',
-})
-
-FlyGroupBox:AddToggle('FlyAutoDisable', {
-    Text = 'Auto Disable on Death',
-    Default = true,
-})
 
 local flyActive = false
 local flyBV
@@ -1764,24 +2410,23 @@ local function startFly()
     if not char or not hrp or not hum then return end
 
     flyActive = true
-    local method = Options.FlyMethod.Value
 
-    if method == 'CFrame' then
+    if getgenv().FlyMethod == 'CFrame' then
         flyBV = Instance.new('BodyVelocity')
         flyBV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
         flyBV.Velocity = Vector3.zero
         flyBV.Parent = hrp
-    elseif method == 'Velocity' then
+    elseif getgenv().FlyMethod == 'Velocity' then
         flyBV = Instance.new('BodyVelocity')
         flyBV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
         flyBV.Velocity = Vector3.zero
         flyBV.Parent = hrp
-    elseif method == 'BodyVelocity' then
+    elseif getgenv().FlyMethod == 'BodyVelocity' then
         flyBV = Instance.new('BodyVelocity')
         flyBV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
         flyBV.Velocity = Vector3.zero
         flyBV.Parent = hrp
-    elseif method == 'LinearVelocity' then
+    elseif getgenv().FlyMethod == 'LinearVelocity' then
         flyBV = Instance.new('LinearVelocity')
         flyBV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
         flyBV.VelocityConstraintMode = Enum.VelocityConstraintMode.Vector
@@ -1809,25 +2454,30 @@ local function stopFly()
     end
 end
 
-Toggles.FlyToggle:OnChanged(function()
-    if Toggles.FlyToggle.Value then
-        startFly()
-    else
-        stopFly()
+task.spawn(function()
+    while true do
+        if getgenv().FlyEnabled ~= flyActive then
+            if getgenv().FlyEnabled then
+                startFly()
+            else
+                stopFly()
+            end
+        end
+        task.wait(0.1)
     end
 end)
 
-if Toggles.FlyAutoDisable and Toggles.FlyAutoDisable.Value then
+if getgenv().FlyAutoDisable then
     LocalPlayer.CharacterAdded:Connect(function(char)
-        if Toggles.FlyToggle.Value then
+        if getgenv().FlyEnabled then
             task.wait(0.5)
             stopFly()
-            Toggles.FlyToggle:SetValue(false)
+            getgenv().FlyEnabled = false
         end
     end)
 end
 
-RunService.Heartbeat:Connect(function(dt)
+janitor:Add(RunService.Heartbeat:Connect(function(dt)
     if not flyActive then return end
 
     local char, hrp, hum = getCharacter()
@@ -1837,9 +2487,8 @@ RunService.Heartbeat:Connect(function(dt)
     end
 
     local cam = Workspace.CurrentCamera
-    local method = Options.FlyMethod.Value
-    local speed = Options.FlySpeed.Value
-    local vertSpeed = Options.FlyVerticalSpeed.Value
+    local speed = getgenv().FlySpeed
+    local vertSpeed = getgenv().FlyVerticalSpeed
 
     local moveDir = Vector3.zero
     local camCF = cam.CFrame
@@ -1858,10 +2507,10 @@ RunService.Heartbeat:Connect(function(dt)
     end
 
     local vertical = 0
-    if UserInputService:IsKeyDown(Options.FlyUpKey.Value) then
+    if UserInputService:IsKeyDown(Enum.KeyCode[getgenv().FlyUpKey]) then
         vertical = 1
     end
-    if UserInputService:IsKeyDown(Options.FlyDownKey.Value) then
+    if UserInputService:IsKeyDown(Enum.KeyCode[getgenv().FlyDownKey]) then
         vertical = -1
     end
 
@@ -1871,19 +2520,19 @@ RunService.Heartbeat:Connect(function(dt)
 
     local finalVelocity = Vector3.new(moveDir.X, vertical * vertSpeed, moveDir.Z)
 
-    if method == 'CFrame' then
+    if getgenv().FlyMethod == 'CFrame' then
         if flyBV then
             flyBV.Velocity = finalVelocity
         end
-    elseif method == 'Velocity' then
+    elseif getgenv().FlyMethod == 'Velocity' then
         if flyBV then
             flyBV.Velocity = finalVelocity
         end
-    elseif method == 'BodyVelocity' then
+    elseif getgenv().FlyMethod == 'BodyVelocity' then
         if flyBV then
             flyBV.Velocity = finalVelocity
         end
-    elseif method == 'LinearVelocity' then
+    elseif getgenv().FlyMethod == 'LinearVelocity' then
         if flyBV then
             flyBV.VectorVelocity = finalVelocity
         end
@@ -1896,181 +2545,118 @@ RunService.Heartbeat:Connect(function(dt)
             hrp.CFrame = hrp.CFrame:Lerp(targetCF, 0.3)
         end
     end
-end)
+end), "Disconnect", "Fly_Heartbeat")
 
-local InfJumpGroupBox = Tabs.Movement:AddLeftGroupbox('Infinite Jump')
-local infJumpConnections = {}
 
-InfJumpGroupBox:AddToggle('InfJumpToggle', {
-    Text = 'Enable Infinite Jump',
-    Default = false,
-})
+getgenv().infJumpConnections = {}
 
-InfJumpGroupBox:AddLabel('Inf Jump Keybind'):AddKeyPicker('InfJumpKeybind', {
-    Default = 'None',
-    SyncToggleState = true,
-    Mode = 'Toggle',
-    Text = 'Inf Jump Keybind',
-    Callback = function(Value)
-        Toggles.InfJumpToggle:SetValue(Value)
-    end,
-})
+task.spawn(function()
+    while true do
+        if getgenv().InfJumpEnabled then
+            local function doJump()
+                local c, h, m = getCharacter()
+                if not c or not h or not m then return end
 
-InfJumpGroupBox:AddDropdown('InfJumpMethod', {
-    Values = { 'Hold', 'Once' },
-    Default = 1,
-    Multi = false,
-    Text = 'Jump Mode',
-})
-
-InfJumpGroupBox:AddSlider('InfJumpHeight', {
-    Text = 'Jump Height',
-    Default = 50,
-    Min = 10,
-    Max = 200,
-    Rounding = 0,
-})
-
-InfJumpGroupBox:AddDropdown('InfJumpType', {
-    Values = { 'Velocity', 'CFrame', 'BodyVelocity' },
-    Default = 1,
-    Multi = false,
-    Text = 'Jump Type',
-})
-
-Toggles.InfJumpToggle:OnChanged(function()
-    if Toggles.InfJumpToggle.Value then
-        local function doJump()
-            local c, h, m = getCharacter()
-            if not c or not h or not m then return end
-
-            local jumpType = Options.InfJumpType.Value
-            local height = Options.InfJumpHeight.Value
-
-            if jumpType == 'Velocity' then
-                local bv = Instance.new('BodyVelocity')
-                bv.MaxForce = Vector3.new(0, math.huge, 0)
-                bv.Velocity = Vector3.new(0, height, 0)
-                bv.Parent = h
-                game:GetService('Debris'):AddItem(bv, 0.15)
-            elseif jumpType == 'CFrame' then
-                h.CFrame = h.CFrame + Vector3.new(0, height * 0.1, 0)
-            elseif jumpType == 'BodyVelocity' then
-                local bv = Instance.new('BodyVelocity')
-                bv.MaxForce = Vector3.new(0, math.huge, 0)
-                bv.Velocity = Vector3.new(0, height, 0)
-                bv.Parent = h
-                game:GetService('Debris'):AddItem(bv, 0.2)
-            end
-        end
-
-        local method = Options.InfJumpMethod.Value
-
-        if method == 'Hold' then
-            local conn = RunService.Heartbeat:Connect(function()
-                if not Toggles.InfJumpToggle.Value then
-                    conn:Disconnect()
-                    return
+                if getgenv().InfJumpType == 'Velocity' then
+                    local bv = Instance.new('BodyVelocity')
+                    bv.MaxForce = Vector3.new(0, math.huge, 0)
+                    bv.Velocity = Vector3.new(0, getgenv().InfJumpHeight, 0)
+                    bv.Parent = h
+                    game:GetService('Debris'):AddItem(bv, 0.15)
+                elseif getgenv().InfJumpType == 'CFrame' then
+                    h.CFrame = h.CFrame + Vector3.new(0, getgenv().InfJumpHeight * 0.1, 0)
+                elseif getgenv().InfJumpType == 'BodyVelocity' then
+                    local bv = Instance.new('BodyVelocity')
+                    bv.MaxForce = Vector3.new(0, math.huge, 0)
+                    bv.Velocity = Vector3.new(0, getgenv().InfJumpHeight, 0)
+                    bv.Parent = h
+                    game:GetService('Debris'):AddItem(bv, 0.2)
                 end
+            end
+
+            if getgenv().InfJumpMethod == 'Hold' then
                 if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
                     doJump()
                 end
-            end)
-            table.insert(infJumpConnections, conn)
-        elseif method == 'Once' then
-            local pressing = false
-            local conn = UserInputService.InputBegan:Connect(function(input, gpe)
-                if not Toggles.InfJumpToggle.Value then
-                    conn:Disconnect()
-                    return
-                end
-                if gpe then return end
-                if input.KeyCode == Enum.KeyCode.Space and not pressing then
-                    pressing = true
-                    doJump()
-                end
-            end)
-            local conn2 = UserInputService.InputEnded:Connect(function(input)
-                if input.KeyCode == Enum.KeyCode.Space then
-                    pressing = false
-                end
-            end)
-            table.insert(infJumpConnections, conn)
-            table.insert(infJumpConnections, conn2)
-        end
-    else
-        for _, conn in ipairs(infJumpConnections) do
-            if conn.Connected then
-                conn:Disconnect()
+            elseif getgenv().InfJumpMethod == 'Once' then
+
             end
+        else
+            for _, conn in ipairs(getgenv().infJumpConnections) do
+                if conn.Connected then
+                    conn:Disconnect()
+                end
+            end
+            getgenv().infJumpConnections = {}
         end
-        infJumpConnections = {}
+        task.wait(0.1)
     end
 end)
 
-local SpinbotGroupBox = Tabs.Combat:AddLeftGroupbox('Spinbot')
+getgenv().pressing = false
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == Enum.KeyCode.Space and not getgenv().pressing and getgenv().InfJumpEnabled and getgenv().InfJumpMethod == 'Once' then
+        getgenv().pressing = true
+        local c, h, m = getCharacter()
+        if not c or not h or not m then return end
 
-SpinbotGroupBox:AddToggle('SpinbotToggle', {
-    Text = 'Enable Spinbot',
-    Default = false,
-})
+        if getgenv().InfJumpType == 'Velocity' then
+            local bv = Instance.new('BodyVelocity')
+            bv.MaxForce = Vector3.new(0, math.huge, 0)
+            bv.Velocity = Vector3.new(0, getgenv().InfJumpHeight, 0)
+            bv.Parent = h
+            game:GetService('Debris'):AddItem(bv, 0.15)
+        elseif getgenv().InfJumpType == 'CFrame' then
+            h.CFrame = h.CFrame + Vector3.new(0, getgenv().InfJumpHeight * 0.1, 0)
+        elseif getgenv().InfJumpType == 'BodyVelocity' then
+            local bv = Instance.new('BodyVelocity')
+            bv.MaxForce = Vector3.new(0, math.huge, 0)
+            bv.Velocity = Vector3.new(0, getgenv().InfJumpHeight, 0)
+            bv.Parent = h
+            game:GetService('Debris'):AddItem(bv, 0.2)
+        end
+    end
+end)
 
-SpinbotGroupBox:AddLabel('Spinbot Keybind'):AddKeyPicker('SpinbotKeybind', {
-    Default = 'None',
-    SyncToggleState = true,
-    Mode = 'Toggle',
-    Text = 'Spinbot Keybind',
-    Callback = function(Value)
-        Toggles.SpinbotToggle:SetValue(Value)
-    end,
-})
+UserInputService.InputEnded:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.Space then
+        getgenv().pressing = false
+    end
+end)
 
-SpinbotGroupBox:AddDropdown('SpinAxis', {
-    Values = { 'Y', 'X', 'Z', 'Random' },
-    Default = 1,
-    Multi = false,
-    Text = 'Spin Axis',
-})
 
-SpinbotGroupBox:AddSlider('SpinSpeed', {
-    Text = 'Spin Speed',
-    Default = 50,
-    Min = 1,
-    Max = 500,
-    Rounding = 0,
-})
+getgenv().spinAngle = 0
 
-local AntiAFKGroupBox = Tabs.Misc:AddLeftGroupbox('Anti-AFK')
+janitor:Add(RunService.Heartbeat:Connect(function(dt)
+    if not getgenv().SpinbotEnabled then return end
 
-AntiAFKGroupBox:AddToggle('AntiAFK', {
-    Text = 'Enable Anti-AFK',
-    Default = false,
-})
+    local char, hrp, hum = getCharacter()
+    if not char or not hrp or not hum then return end
 
-AntiAFKGroupBox:AddLabel('Anti-AFK Keybind'):AddKeyPicker('AntiAFKKeybind', {
-    Default = 'None',
-    SyncToggleState = true,
-    Mode = 'Toggle',
-    Text = 'Anti-AFK Keybind',
-    Callback = function(Value)
-        Toggles.AntiAFK:SetValue(Value)
-    end,
-})
+    getgenv().spinAngle = getgenv().spinAngle + (getgenv().SpinSpeed * dt)
+    if getgenv().spinAngle > 360 then
+        getgenv().spinAngle = getgenv().spinAngle - 360
+    end
 
-AntiAFKGroupBox:AddDropdown('AntiAFKMethod', {
-    Values = { 'Click', 'Jump' },
-    Default = 1,
-    Multi = false,
-    Text = 'Anti-AFK Method',
-})
+    if getgenv().SpinAxis == 'Y' then
+        hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(0, math.rad(getgenv().spinAngle), 0)
+    elseif getgenv().SpinAxis == 'X' then
+        hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(math.rad(getgenv().spinAngle), 0, 0)
+    elseif getgenv().SpinAxis == 'Z' then
+        hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(0, 0, math.rad(getgenv().spinAngle))
+    elseif getgenv().SpinAxis == 'Random' then
+        local rx = math.random() * 2 - 1
+        local ry = math.random() * 2 - 1
+        local rz = math.random() * 2 - 1
+        hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(
+            math.rad(rx * getgenv().SpinSpeed),
+            math.rad(ry * getgenv().SpinSpeed),
+            math.rad(rz * getgenv().SpinSpeed)
+        )
+    end
+end), "Disconnect", "Spinbot_Heartbeat")
 
-AntiAFKGroupBox:AddSlider('AntiAFKInterval', {
-    Text = 'Interval (sec)',
-    Default = 60,
-    Min = 10,
-    Max = 300,
-    Rounding = 0,
-})
 
 local VirtualUser = game:GetService('VirtualUser')
 
@@ -2087,173 +2673,67 @@ local function antiAFKJump()
 end
 
 local function doAntiAFK()
-    local method = Options.AntiAFKMethod.Value
-
-    if method == 'Click' then
+    if getgenv().AntiAFKMethod == 'Click' then
         antiAFKClick()
-    elseif method == 'Jump' then
+    elseif getgenv().AntiAFKMethod == 'Jump' then
         antiAFKJump()
     end
 end
 
-Toggles.AntiAFK:OnChanged(function()
-    if Toggles.AntiAFK.Value then
-        task.spawn(function()
-            while Toggles.AntiAFK.Value do
-                doAntiAFK()
-                task.wait(Options.AntiAFKInterval.Value)
-            end
-        end)
-    end
-end)
-
-local MiscVisualsGroup = Tabs.Misc:AddLeftGroupbox('Visuals')
-
-MiscVisualsGroup:AddToggle('MiscFOVToggle', {
-    Text = 'Enable FOV Changer',
-    Default = false,
-})
-
-MiscVisualsGroup:AddSlider('MiscFOVValue', {
-    Text = 'Field of View',
-    Default = 70,
-    Min = 30,
-    Max = 120,
-    Rounding = 0,
-})
-
-MiscVisualsGroup:AddButton('Reset FOV', function()
-    Workspace.CurrentCamera.FieldOfView = Originals.FOV
-end)
-
-Toggles.MiscFOVToggle:OnChanged(function()
-    if Toggles.MiscFOVToggle.Value then
-        Workspace.CurrentCamera.FieldOfView = Options.MiscFOVValue.Value
-    else
-        Workspace.CurrentCamera.FieldOfView = Originals.FOV
-    end
-end)
-
-Options.MiscFOVValue:OnChanged(function()
-    if Toggles.MiscFOVToggle.Value then
-        Workspace.CurrentCamera.FieldOfView = Options.MiscFOVValue.Value
+task.spawn(function()
+    while true do
+        if getgenv().AntiAFKEnabled then
+            doAntiAFK()
+            task.wait(getgenv().AntiAFKInterval)
+        else
+            task.wait(0.5)
+        end
     end
 end)
 
 
-local spinAngle = 0
-
-RunService.Heartbeat:Connect(function(dt)
-    if not Toggles.SpinbotToggle.Value then return end
-
-    local char, hrp, hum = getCharacter()
-    if not char or not hrp or not hum then return end
-
-    local axis = Options.SpinAxis.Value
-    local speed = Options.SpinSpeed.Value
-
-    spinAngle = spinAngle + (speed * dt)
-    if spinAngle > 360 then
-        spinAngle = spinAngle - 360
-    end
-
-    if axis == 'Y' then
-        hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(0, math.rad(spinAngle), 0)
-    elseif axis == 'X' then
-        hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(math.rad(spinAngle), 0, 0)
-    elseif axis == 'Z' then
-        hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(0, 0, math.rad(spinAngle))
-    elseif axis == 'Random' then
-        local rx = math.random() * 2 - 1
-        local ry = math.random() * 2 - 1
-        local rz = math.random() * 2 - 1
-        hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(
-            math.rad(rx * speed),
-            math.rad(ry * speed),
-            math.rad(rz * speed)
-        )
+task.spawn(function()
+    while true do
+        if getgenv().MiscFOVEnabled then
+            Workspace.CurrentCamera.FieldOfView = getgenv().MiscFOVValue
+        else
+            Workspace.CurrentCamera.FieldOfView = Originals.FOV
+        end
+        task.wait(0.1)
     end
 end)
 
-local ChamsGroupBox = Tabs.Visuals:AddLeftGroupbox('Chams')
 
-ChamsGroupBox:AddToggle('ChamsToggle', {
-    Text = 'Enable Chams',
-    Default = false,
-})
+task.spawn(function()
+    while true do
+        if getgenv().FullbrightEnabled then
+            Lighting.Brightness = getgenv().BrightnessValue
+            Lighting.GlobalShadows = true
+            Lighting.Ambient = Color3.fromRGB(255, 255, 255)
+            Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+        else
+            Lighting.Brightness = Originals.Brightness
+            Lighting.GlobalShadows = Originals.GlobalShadows
+            Lighting.Ambient = Originals.Ambient
+            Lighting.OutdoorAmbient = Originals.OutdoorAmbient
+        end
 
-ChamsGroupBox:AddLabel('Chams Keybind'):AddKeyPicker('ChamsKeybind', {
-    Default = 'None',
-    SyncToggleState = true,
-    Mode = 'Toggle',
-    Text = 'Chams Keybind',
-    Callback = function(Value)
-        Toggles.ChamsToggle:SetValue(Value)
-    end,
-})
+        if getgenv().NoFogEnabled then
+            Lighting.FogEnd = 999999
+            Lighting.FogStart = 999999
+        else
+            Lighting.FogEnd = Originals.FogEnd
+            Lighting.FogStart = Originals.FogStart
+        end
+        task.wait(0.1)
+    end
+end)
 
-ChamsGroupBox:AddDropdown('ChamsMode', {
-    Values = { 'Highlight', 'Material', 'Engine' },
-    Default = 1,
-    Multi = false,
-    Text = 'Chams Mode',
-})
 
-ChamsGroupBox:AddDropdown('ChamsTarget', {
-    Values = { 'All', 'Head', 'Body', 'Arms', 'Legs', 'HumanoidRootPart' },
-    Default = 1,
-    Multi = true,
-    Text = 'Chams Target',
-})
-
-ChamsGroupBox:AddLabel('Chams Fill'):AddColorPicker('ChamsFillColor', {
-    Default = Color3.fromRGB(255, 0, 0),
-    Title = 'Fill Color',
-})
-
-ChamsGroupBox:AddLabel('Chams Outline'):AddColorPicker('ChamsOutlineColor', {
-    Default = Color3.fromRGB(0, 0, 0),
-    Title = 'Outline Color',
-})
-
-ChamsGroupBox:AddSlider('ChamsFillTransparency', {
-    Text = 'Fill Transparency',
-    Default = 0.5,
-    Min = 0,
-    Max = 1,
-    Rounding = 2,
-})
-
-ChamsGroupBox:AddSlider('ChamsOutlineTransparency', {
-    Text = 'Outline Transparency',
-    Default = 0,
-    Min = 0,
-    Max = 1,
-    Rounding = 2,
-})
-
-ChamsGroupBox:AddDropdown('ChamsMaterial', {
-    Values = { 'ForceField', 'Neon', 'Glass', 'SmoothPlastic', 'DiamondPlate', 'Chrome', 'WoodPlanks', 'Marble', 'Granite', 'Cobblestone', 'Brick', 'Sand', 'Grass' },
-    Default = 1,
-    Multi = false,
-    Text = 'Engine Material',
-})
-
-ChamsGroupBox:AddToggle('ChamsThroughWalls', {
-    Text = 'Through Walls',
-    Default = true,
-})
-
-ChamsGroupBox:AddToggle('ChamsOccluded', {
-    Text = 'Occluded',
-    Default = true,
-})
-
-local chamsInstances = {}
-local chamsHighlights = {}
+getgenv().chamsInstances = {}
+getgenv().chamsHighlights = {}
 
 local function getChamsTargets()
-    local selected = Options.ChamsTarget.Value
     local targets = {}
 
     local targetMap = {
@@ -2265,7 +2745,7 @@ local function getChamsTargets()
         ['HumanoidRootPart'] = { 'HumanoidRootPart' },
     }
 
-    for name, _ in pairs(selected) do
+    for name, _ in pairs(getgenv().ChamsTarget) do
         if targetMap[name] then
             for _, partName in ipairs(targetMap[name]) do
                 if not table.find(targets, partName) then
@@ -2279,19 +2759,19 @@ local function getChamsTargets()
 end
 
 local function clearChams(player)
-    if chamsHighlights[player] then
-        for _, highlight in pairs(chamsHighlights[player]) do
+    if getgenv().chamsHighlights[player] then
+        for _, highlight in pairs(getgenv().chamsHighlights[player]) do
             pcall(function()
                 if highlight and highlight.Parent then
                     highlight:Destroy()
                 end
             end)
         end
-        chamsHighlights[player] = nil
+        getgenv().chamsHighlights[player] = nil
     end
 
-    if chamsInstances[player] then
-        for _, data in pairs(chamsInstances[player]) do
+    if getgenv().chamsInstances[player] then
+        for _, data in pairs(getgenv().chamsInstances[player]) do
             pcall(function()
                 if type(data) == 'table' and data.part then
                     if data.part and data.part.Parent then
@@ -2320,35 +2800,33 @@ local function clearChams(player)
                 end
             end)
         end
-        chamsInstances[player] = nil
+        getgenv().chamsInstances[player] = nil
     end
 end
 
 local function createHighlightChams(player, char)
-    if chamsHighlights[player] then return end
-    chamsHighlights[player] = {}
+    if getgenv().chamsHighlights[player] then return end
+    getgenv().chamsHighlights[player] = {}
 
     local highlight = Instance.new('Highlight')
     highlight.Name = 'ChamsHighlight'
-    highlight.FillColor = Options.ChamsFillColor.Value
-    highlight.OutlineColor = Options.ChamsOutlineColor.Value
-    highlight.FillTransparency = Options.ChamsFillTransparency.Value
-    highlight.OutlineTransparency = Options.ChamsOutlineTransparency.Value
-    highlight.DepthMode = Toggles.ChamsThroughWalls.Value and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
+    highlight.FillColor = getgenv().ChamsFillColor
+    highlight.OutlineColor = getgenv().ChamsOutlineColor
+    highlight.FillTransparency = getgenv().ChamsFillTransparency
+    highlight.OutlineTransparency = getgenv().ChamsOutlineTransparency
+    highlight.DepthMode = getgenv().ChamsThroughWalls and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
     highlight.Adornee = char
     highlight.Parent = char
 
-    chamsHighlights[player] = { highlight = highlight }
+    getgenv().chamsHighlights[player] = { highlight = highlight }
 end
 
 local function createMaterialChams(player, char)
-    if chamsInstances[player] then return end
-    chamsInstances[player] = {}
+    if getgenv().chamsInstances[player] then return end
+    getgenv().chamsInstances[player] = {}
 
     local targets = getChamsTargets()
-    local material = Enum.Material[Options.ChamsMaterial.Value]
-    local fillColor = Options.ChamsFillColor.Value
-    local fillTransparency = Options.ChamsFillTransparency.Value
+    local material = Enum.Material[getgenv().ChamsMaterial]
 
     for _, partName in ipairs(targets) do
         local part = char:FindFirstChild(partName)
@@ -2359,8 +2837,8 @@ local function createMaterialChams(player, char)
             chamsPart.CFrame = part.CFrame
             chamsPart.Anchored = false
             chamsPart.CanCollide = false
-            chamsPart.Transparency = fillTransparency
-            chamsPart.Color = fillColor
+            chamsPart.Transparency = getgenv().ChamsFillTransparency
+            chamsPart.Color = getgenv().ChamsFillColor
             chamsPart.Material = material
             chamsPart.Parent = char
 
@@ -2369,17 +2847,16 @@ local function createMaterialChams(player, char)
             weld.Part1 = chamsPart
             weld.Parent = chamsPart
 
-            table.insert(chamsInstances[player], chamsPart)
+            table.insert(getgenv().chamsInstances[player], chamsPart)
         end
     end
 end
 
 local function createEngineChams(player, char)
-    if chamsInstances[player] then return end
-    chamsInstances[player] = {}
+    if getgenv().chamsInstances[player] then return end
+    getgenv().chamsInstances[player] = {}
 
     local targets = getChamsTargets()
-    local fillColor = Options.ChamsFillColor.Value
 
     for _, partName in ipairs(targets) do
         local part = char:FindFirstChild(partName)
@@ -2401,7 +2878,7 @@ local function createEngineChams(player, char)
                     }
 
                     if child:IsA('SpecialMesh') then
-                        child.VertexColor = Vector3.new(fillColor.R, fillColor.G, fillColor.B)
+                        child.VertexColor = Vector3.new(getgenv().ChamsFillColor.R, getgenv().ChamsFillColor.G, getgenv().ChamsFillColor.B)
                         child.TextureId = ""
                     end
 
@@ -2409,12 +2886,12 @@ local function createEngineChams(player, char)
                 end
             end
 
-            part.Color = fillColor
-            part.Transparency = math.clamp(Options.ChamsFillTransparency.Value, 0, 0.99)
+            part.Color = getgenv().ChamsFillColor
+            part.Transparency = math.clamp(getgenv().ChamsFillTransparency, 0, 0.99)
             part.Material = Enum.Material.SmoothPlastic
             part.CustomPhysicalProperties = PhysicalProperties.new(0.001, 0, 0, 0, 0)
 
-            table.insert(chamsInstances[player], meshData)
+            table.insert(getgenv().chamsInstances[player], meshData)
         end
     end
 end
@@ -2429,13 +2906,11 @@ local function applyChams(player)
 
     clearChams(player)
 
-    local mode = Options.ChamsMode.Value
-
-    if mode == 'Highlight' then
+    if getgenv().ChamsMode == 'Highlight' then
         createHighlightChams(player, char)
-    elseif mode == 'Material' then
+    elseif getgenv().ChamsMode == 'Material' then
         createMaterialChams(player, char)
-    elseif mode == 'Engine' then
+    elseif getgenv().ChamsMode == 'Engine' then
         createEngineChams(player, char)
     end
 end
@@ -2445,114 +2920,33 @@ local function removeChams(player)
 end
 
 local function cleanupChams()
-    for player, _ in pairs(chamsHighlights) do
+    for player, _ in pairs(getgenv().chamsHighlights) do
         clearChams(player)
     end
-    for player, _ in pairs(chamsInstances) do
+    for player, _ in pairs(getgenv().chamsInstances) do
         clearChams(player)
     end
-    chamsHighlights = {}
-    chamsInstances = {}
+    getgenv().chamsHighlights = {}
+    getgenv().chamsInstances = {}
 end
 
-Toggles.ChamsToggle:OnChanged(function()
-    if Toggles.ChamsToggle.Value then
-        for _, player in ipairs(Players:GetPlayers()) do
-            applyChams(player)
-        end
-    else
-        cleanupChams()
-    end
-end)
-
-Options.ChamsMode:OnChanged(function()
-    if Toggles.ChamsToggle.Value then
-        cleanupChams()
-        for _, player in ipairs(Players:GetPlayers()) do
-            applyChams(player)
-        end
-    end
-end)
-
-Options.ChamsTarget:OnChanged(function()
-    if Toggles.ChamsToggle.Value then
-        cleanupChams()
-        for _, player in ipairs(Players:GetPlayers()) do
-            applyChams(player)
-        end
-    end
-end)
-
-Options.ChamsFillColor:OnChanged(function()
-    if Toggles.ChamsToggle.Value then
-        cleanupChams()
-        for _, player in ipairs(Players:GetPlayers()) do
-            applyChams(player)
-        end
-    end
-end)
-
-Options.ChamsOutlineColor:OnChanged(function()
-    if Toggles.ChamsToggle.Value then
-        cleanupChams()
-        for _, player in ipairs(Players:GetPlayers()) do
-            applyChams(player)
-        end
-    end
-end)
-
-Options.ChamsFillTransparency:OnChanged(function()
-    if Toggles.ChamsToggle.Value then
-        cleanupChams()
-        for _, player in ipairs(Players:GetPlayers()) do
-            applyChams(player)
-        end
-    end
-end)
-
-Options.ChamsOutlineTransparency:OnChanged(function()
-    if Toggles.ChamsToggle.Value and Options.ChamsMode.Value == 'Highlight' then
-        for player, data in pairs(chamsHighlights) do
-            if data.highlight then
-                data.highlight.OutlineTransparency = Options.ChamsOutlineTransparency.Value
+task.spawn(function()
+    while true do
+        if getgenv().ChamsEnabled then
+            for _, player in ipairs(Players:GetPlayers()) do
+                applyChams(player)
             end
+        else
+            cleanupChams()
         end
-    end
-end)
-
-Options.ChamsMaterial:OnChanged(function()
-    if Toggles.ChamsToggle.Value and Options.ChamsMode.Value == 'Material' then
-        cleanupChams()
-        for _, player in ipairs(Players:GetPlayers()) do
-            applyChams(player)
-        end
-    end
-end)
-
-Toggles.ChamsThroughWalls:OnChanged(function()
-    if Toggles.ChamsToggle.Value and Options.ChamsMode.Value == 'Highlight' then
-        for player, data in pairs(chamsHighlights) do
-            if data.highlight then
-                data.highlight.DepthMode = Toggles.ChamsThroughWalls.Value and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
-            end
-        end
-    end
-end)
-
-Toggles.ChamsOccluded:OnChanged(function()
-    if Toggles.ChamsToggle.Value and Options.ChamsMode.Value == 'Highlight' then
-        for player, data in pairs(chamsHighlights) do
-            if data.highlight then
-                data.highlight.Occluded = Toggles.ChamsOccluded.Value
-            end
-        end
+        task.wait(0.5)
     end
 end)
 
 local function connectPlayerChams(player)
     player.CharacterAdded:Connect(function(char)
         task.wait(1)
-        if Toggles.ChamsToggle.Value then
+        if getgenv().ChamsEnabled then
             pcall(function()
                 clearChams(player)
                 applyChams(player)
@@ -2578,162 +2972,11 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 
 
-local LightingGroupBox = Tabs.Visuals:AddRightGroupbox('Lighting')
-
-LightingGroupBox:AddToggle('FullbrightToggle', {
-    Text = 'Fullbright',
-    Default = false,
-})
-
-LightingGroupBox:AddToggle('NoFogToggle', {
-    Text = 'No Fog',
-    Default = false,
-})
-
-LightingGroupBox:AddSlider('BrightnessValue', {
-    Text = 'Brightness',
-    Default = 2,
-    Min = 0,
-    Max = 10,
-    Rounding = 1,
-})
-
-LightingGroupBox:AddLabel('Time of Day'):AddColorPicker('AmbientColor', {
-    Default = Originals.Ambient,
-    Title = 'Ambient Color',
-})
-
-LightingGroupBox:AddButton('Reset Lighting', function()
-    Lighting.Brightness = Originals.Brightness
-    Lighting.GlobalShadows = Originals.GlobalShadows
-    Lighting.FogEnd = Originals.FogEnd
-    Lighting.FogStart = Originals.FogStart
-    Lighting.Ambient = Originals.Ambient
-    Lighting.OutdoorAmbient = Originals.OutdoorAmbient
-    Lighting.ClockTime = Originals.ClockTime
-end)
-
-Toggles.FullbrightToggle:OnChanged(function()
-    if Toggles.FullbrightToggle.Value then
-        Lighting.Brightness = Options.BrightnessValue.Value
-        Lighting.GlobalShadows = true
-        Lighting.Ambient = Color3.fromRGB(255, 255, 255)
-        Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
-    else
-        Lighting.Brightness = Originals.Brightness
-        Lighting.GlobalShadows = Originals.GlobalShadows
-        Lighting.Ambient = Originals.Ambient
-        Lighting.OutdoorAmbient = Originals.OutdoorAmbient
-    end
-end)
-
-Options.BrightnessValue:OnChanged(function()
-    if Toggles.FullbrightToggle.Value then
-        Lighting.Brightness = Options.BrightnessValue.Value
-    end
-end)
-
-Toggles.NoFogToggle:OnChanged(function()
-    if Toggles.NoFogToggle.Value then
-        Lighting.FogEnd = 999999
-        Lighting.FogStart = 999999
-    else
-        Lighting.FogEnd = Originals.FogEnd
-        Lighting.FogStart = Originals.FogStart
-    end
-end)
-
-local ESPGroupBox = Tabs.Visuals:AddLeftGroupbox('ESP')
-
-ESPGroupBox:AddToggle('ESPToggle', {
-    Text = 'Enable ESP',
-    Default = false,
-})
-
-ESPGroupBox:AddLabel('ESP Keybind'):AddKeyPicker('ESPKeybind', {
-    Default = 'None',
-    SyncToggleState = true,
-    Mode = 'Toggle',
-    Text = 'ESP Keybind',
-    Callback = function(Value)
-        Toggles.ESPToggle:SetValue(Value)
-    end,
-})
-
-ESPGroupBox:AddDropdown('ESPItems', {
-    Values = { 'Box', 'Name', 'Health', 'Distance', 'Tracers', 'LookAngle', 'Skeleton', 'Tool' },
-    Default = 1,
-    Multi = true,
-    Text = 'ESP Elements',
-})
-
-ESPGroupBox:AddLabel('ESP Color'):AddColorPicker('ESPColor', {
-    Default = Color3.fromRGB(255, 255, 255),
-    Title = 'ESP Color',
-})
-
-ESPGroupBox:AddLabel('Health Low'):AddColorPicker('ESPHealthLow', {
-    Default = Color3.fromRGB(255, 0, 0),
-    Title = 'Health Low',
-})
-
-ESPGroupBox:AddLabel('Health High'):AddColorPicker('ESPHealthHigh', {
-    Default = Color3.fromRGB(0, 255, 0),
-    Title = 'Health High',
-})
-
-ESPGroupBox:AddLabel('Team Color'):AddColorPicker('ESPTeamColor', {
-    Default = Color3.fromRGB(0, 255, 0),
-    Title = 'Team Color',
-})
-
-ESPGroupBox:AddLabel('Enemy Color'):AddColorPicker('ESPEnemyColor', {
-    Default = Color3.fromRGB(255, 255, 255),
-    Title = 'Enemy Color',
-})
-
-ESPGroupBox:AddDropdown('ESPFont', {
-    Values = { 'Code', 'ArialBold', 'GothamBold', 'Gotham', 'Legacy', 'Highway', 'Cartoon', 'SciFi' },
-    Default = 1,
-    Multi = false,
-    Text = 'Font',
-})
-
-ESPGroupBox:AddSlider('ESPThickness', {
-    Text = 'Line Thickness',
-    Default = 1,
-    Min = 1,
-    Max = 3,
-    Rounding = 0,
-})
-
-ESPGroupBox:AddSlider('ESPTextSize', {
-    Text = 'Text Size',
-    Default = 16,
-    Min = 10,
-    Max = 30,
-    Rounding = 0,
-})
-
-ESPGroupBox:AddSlider('ESPMaxDistance', {
-    Text = 'Max Distance',
-    Default = 1000,
-    Min = 100,
-    Max = 5000,
-    Rounding = 0,
-})
-
-ESPGroupBox:AddToggle('ESPShowTeam', {
-    Text = 'Show Teammates',
-    Default = true,
-})
-
-local espObjects = {}
+getgenv().espObjects = {}
 
 local function getSelectedESPItems()
-    local selected = Options.ESPItems.Value
     local items = {}
-    for name, _ in pairs(selected) do
+    for name, _ in pairs(getgenv().ESPItems) do
         items[name] = true
     end
     return items
@@ -2741,9 +2984,9 @@ end
 
 local function getESPColor(player)
     if player.Team and player.Team == LocalPlayer.Team then
-        return Options.ESPTeamColor.Value
+        return getgenv().ESPTeamColor
     end
-    return Options.ESPEnemyColor.Value
+    return getgenv().ESPEnemyColor
 end
 
 local function worldToScreen(position)
@@ -2781,9 +3024,9 @@ local function getBoxDimensions(player)
 end
 
 local function createESPObjects(player)
-    if espObjects[player] then return end
+    if getgenv().espObjects[player] then return end
 
-    espObjects[player] = {
+    getgenv().espObjects[player] = {
         BoxOutline = {
             Drawing.new('Line'), Drawing.new('Line'),
             Drawing.new('Line'), Drawing.new('Line')
@@ -2805,20 +3048,20 @@ local function createESPObjects(player)
         Skeleton = {
             Head = Drawing.new('Line'),
             Neck = Drawing.new('Line'),
+            Spine = Drawing.new('Line'),
             LeftShoulder = Drawing.new('Line'),
             LeftArm = Drawing.new('Line'),
             RightShoulder = Drawing.new('Line'),
             RightArm = Drawing.new('Line'),
-            Spine = Drawing.new('Line'),
             LeftHip = Drawing.new('Line'),
             LeftLeg = Drawing.new('Line'),
             RightHip = Drawing.new('Line'),
             RightLeg = Drawing.new('Line'),
-        },
+        }
     }
 
-    local thickness = Options.ESPThickness.Value
-    local textSize = Options.ESPTextSize.Value
+    local thickness = getgenv().ESPThickness
+    local textSize = getgenv().ESPTextSize
 
     local fontMap = {
         ['Code'] = 2,
@@ -2830,115 +3073,131 @@ local function createESPObjects(player)
         ['Cartoon'] = 7,
         ['SciFi'] = 8,
     }
-    local font = fontMap[Options.ESPFont.Value] or 2
+    local font = fontMap[getgenv().ESPFont] or 2
 
-    for _, line in ipairs(espObjects[player].BoxOutline) do
+    for _, line in ipairs(getgenv().espObjects[player].BoxOutline) do
         line.Visible = false
         line.Color = Color3.new(0, 0, 0)
         line.Thickness = thickness + 2
     end
 
-    for _, line in ipairs(espObjects[player].Box) do
+    for _, line in ipairs(getgenv().espObjects[player].Box) do
         line.Visible = false
         line.Thickness = thickness
     end
 
-    espObjects[player].Name.Visible = false
-    espObjects[player].Name.Font = font
-    espObjects[player].Name.Size = textSize
-    espObjects[player].Name.Center = true
-    espObjects[player].Name.Outline = true
-    espObjects[player].Name.OutlineColor = Color3.new(0, 0, 0)
+    getgenv().espObjects[player].Name.Visible = false
+    getgenv().espObjects[player].Name.Font = font
+    getgenv().espObjects[player].Name.Size = textSize
+    getgenv().espObjects[player].Name.Center = true
+    getgenv().espObjects[player].Name.Outline = true
+    getgenv().espObjects[player].Name.OutlineColor = Color3.new(0, 0, 0)
 
-    espObjects[player].HealthBarOutline.Visible = false
-    espObjects[player].HealthBarOutline.Color = Color3.new(0, 0, 0)
-    espObjects[player].HealthBarOutline.Thickness = 4
+    getgenv().espObjects[player].HealthBarOutline.Visible = false
+    getgenv().espObjects[player].HealthBarOutline.Color = Color3.new(0, 0, 0)
+    getgenv().espObjects[player].HealthBarOutline.Thickness = 4
 
-    espObjects[player].HealthBar.Visible = false
-    espObjects[player].HealthBar.Thickness = 2
+    getgenv().espObjects[player].HealthBar.Visible = false
+    getgenv().espObjects[player].HealthBar.Thickness = 2
 
-    espObjects[player].HealthText.Visible = false
-    espObjects[player].HealthText.Font = font
-    espObjects[player].HealthText.Size = textSize - 2
-    espObjects[player].HealthText.Center = true
-    espObjects[player].HealthText.Outline = true
-    espObjects[player].HealthText.OutlineColor = Color3.new(0, 0, 0)
+    getgenv().espObjects[player].HealthText.Visible = false
+    getgenv().espObjects[player].HealthText.Font = font
+    getgenv().espObjects[player].HealthText.Size = textSize - 2
+    getgenv().espObjects[player].HealthText.Center = true
+    getgenv().espObjects[player].HealthText.Outline = true
+    getgenv().espObjects[player].HealthText.OutlineColor = Color3.new(0, 0, 0)
 
-    espObjects[player].Distance.Visible = false
-    espObjects[player].Distance.Font = font
-    espObjects[player].Distance.Size = textSize - 2
-    espObjects[player].Distance.Center = true
-    espObjects[player].Distance.Outline = true
-    espObjects[player].Distance.OutlineColor = Color3.new(0, 0, 0)
+    getgenv().espObjects[player].Distance.Visible = false
+    getgenv().espObjects[player].Distance.Font = font
+    getgenv().espObjects[player].Distance.Size = textSize - 2
+    getgenv().espObjects[player].Distance.Center = true
+    getgenv().espObjects[player].Distance.Outline = true
+    getgenv().espObjects[player].Distance.OutlineColor = Color3.new(0, 0, 0)
 
-    espObjects[player].Tracer.Visible = false
-    espObjects[player].Tracer.Thickness = thickness
+    getgenv().espObjects[player].Tracer.Visible = false
+    getgenv().espObjects[player].Tracer.Thickness = thickness
 
-    espObjects[player].TracerOutline.Visible = false
-    espObjects[player].TracerOutline.Color = Color3.new(0, 0, 0)
-    espObjects[player].TracerOutline.Thickness = thickness + 2
+    getgenv().espObjects[player].TracerOutline.Visible = false
+    getgenv().espObjects[player].TracerOutline.Color = Color3.new(0, 0, 0)
+    getgenv().espObjects[player].TracerOutline.Thickness = thickness + 2
 
-    espObjects[player].LookAngle.Visible = false
-    espObjects[player].LookAngle.Thickness = thickness
+    getgenv().espObjects[player].LookAngle.Visible = false
+    getgenv().espObjects[player].LookAngle.Thickness = thickness
 
-    espObjects[player].LookAngleOutline.Visible = false
-    espObjects[player].LookAngleOutline.Color = Color3.new(0, 0, 0)
-    espObjects[player].LookAngleOutline.Thickness = thickness + 2
+    getgenv().espObjects[player].LookAngleOutline.Visible = false
+    getgenv().espObjects[player].LookAngleOutline.Color = Color3.new(0, 0, 0)
+    getgenv().espObjects[player].LookAngleOutline.Thickness = thickness + 2
 
-    espObjects[player].Tool.Visible = false
-    espObjects[player].Tool.Font = font
-    espObjects[player].Tool.Size = textSize - 2
-    espObjects[player].Tool.Center = false
-    espObjects[player].Tool.Outline = true
-    espObjects[player].Tool.OutlineColor = Color3.new(0, 0, 0)
+    getgenv().espObjects[player].Tool.Visible = false
+    getgenv().espObjects[player].Tool.Font = font
+    getgenv().espObjects[player].Tool.Size = textSize - 2
+    getgenv().espObjects[player].Tool.Center = false
+    getgenv().espObjects[player].Tool.Outline = true
+    getgenv().espObjects[player].Tool.OutlineColor = Color3.new(0, 0, 0)
 
-    for _, line in pairs(espObjects[player].Skeleton) do
+    for _, line in pairs(getgenv().espObjects[player].Skeleton) do
         line.Visible = false
         line.Thickness = thickness
     end
 end
 
 local function removeESPObjects(player)
-    if not espObjects[player] then return end
+    if not getgenv().espObjects[player] then return end
 
-    for _, line in ipairs(espObjects[player].BoxOutline) do line:Remove() end
-    for _, line in ipairs(espObjects[player].Box) do line:Remove() end
-    espObjects[player].Name:Remove()
-    espObjects[player].HealthBarOutline:Remove()
-    espObjects[player].HealthBar:Remove()
-    espObjects[player].HealthText:Remove()
-    espObjects[player].Distance:Remove()
-    espObjects[player].Tracer:Remove()
-    espObjects[player].TracerOutline:Remove()
-    espObjects[player].LookAngle:Remove()
-    espObjects[player].LookAngleOutline:Remove()
-    espObjects[player].Tool:Remove()
-    for _, line in pairs(espObjects[player].Skeleton) do line:Remove() end
+    for _, line in ipairs(getgenv().espObjects[player].BoxOutline) do line:Remove() end
+    for _, line in ipairs(getgenv().espObjects[player].Box) do line:Remove() end
+    getgenv().espObjects[player].Name:Remove()
+    getgenv().espObjects[player].HealthBarOutline:Remove()
+    getgenv().espObjects[player].HealthBar:Remove()
+    getgenv().espObjects[player].HealthText:Remove()
+    getgenv().espObjects[player].Distance:Remove()
+    getgenv().espObjects[player].Tracer:Remove()
+    getgenv().espObjects[player].TracerOutline:Remove()
+    getgenv().espObjects[player].LookAngle:Remove()
+    getgenv().espObjects[player].LookAngleOutline:Remove()
+    getgenv().espObjects[player].Tool:Remove()
+    for _, line in pairs(getgenv().espObjects[player].Skeleton) do line:Remove() end
 
-    espObjects[player] = nil
+    getgenv().espObjects[player] = nil
 end
 
 local function hideAll(player)
-    if not espObjects[player] then return end
-    for _, line in ipairs(espObjects[player].BoxOutline) do line.Visible = false end
-    for _, line in ipairs(espObjects[player].Box) do line.Visible = false end
-    espObjects[player].Name.Visible = false
-    espObjects[player].HealthBarOutline.Visible = false
-    espObjects[player].HealthBar.Visible = false
-    espObjects[player].HealthText.Visible = false
-    espObjects[player].Distance.Visible = false
-    espObjects[player].Tracer.Visible = false
-    espObjects[player].TracerOutline.Visible = false
-    espObjects[player].LookAngle.Visible = false
-    espObjects[player].LookAngleOutline.Visible = false
-    espObjects[player].Tool.Visible = false
-    for _, line in pairs(espObjects[player].Skeleton) do line.Visible = false end
+    if not getgenv().espObjects[player] then return end
+    for _, line in ipairs(getgenv().espObjects[player].BoxOutline) do line.Visible = false end
+    for _, line in ipairs(getgenv().espObjects[player].Box) do line.Visible = false end
+    getgenv().espObjects[player].Name.Visible = false
+    getgenv().espObjects[player].HealthBarOutline.Visible = false
+    getgenv().espObjects[player].HealthBar.Visible = false
+    getgenv().espObjects[player].HealthText.Visible = false
+    getgenv().espObjects[player].Distance.Visible = false
+    getgenv().espObjects[player].Tracer.Visible = false
+    getgenv().espObjects[player].TracerOutline.Visible = false
+    getgenv().espObjects[player].LookAngle.Visible = false
+    getgenv().espObjects[player].LookAngleOutline.Visible = false
+    getgenv().espObjects[player].Tool.Visible = false
+    for _, line in pairs(getgenv().espObjects[player].Skeleton) do line.Visible = false end
+end
+
+local function hideAllPlayers()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            hideAll(player)
+        end
+    end
+end
+
+local function removeAllESPObjects()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            removeESPObjects(player)
+        end
+    end
 end
 
 local function updateESP(player)
-    if not Toggles.ESPToggle.Value then return end
+    if not getgenv().ESPEnabled then return end
 
-    local esp = espObjects[player]
+    local esp = getgenv().espObjects[player]
     if not esp then return end
 
     local char = player.Character
@@ -2953,10 +3212,12 @@ local function updateESP(player)
     local cam = Workspace.CurrentCamera
     local myPos = cam.CFrame.Position
     local dist = (hrp.Position - myPos).Magnitude
-    if dist > Options.ESPMaxDistance.Value then hideAll(player) return end
+    if dist > getgenv().ESPMaxDistance then hideAll(player) return end
 
     local _, onScreen = cam:WorldToViewportPoint(hrp.Position)
     if not onScreen then hideAll(player) return end
+
+    if not getgenv().ESPShowTeam and player.Team == LocalPlayer.Team then hideAll(player) return end
 
     local items = getSelectedESPItems()
     local color = getESPColor(player)
@@ -3038,47 +3299,41 @@ local function updateESP(player)
 
             esp.HealthBar.From = Vector2.new(barX, barBottom)
             esp.HealthBar.To = Vector2.new(barX, fillY)
-            esp.HealthBar.Color = Options.ESPHealthLow.Value:Lerp(Options.ESPHealthHigh.Value, healthPercent)
+            esp.HealthBar.Color = healthPercent > 0.5 and getgenv().ESPHealthHigh or getgenv().ESPHealthLow
             esp.HealthBar.Visible = true
 
-            esp.HealthText.Text = math.floor(humanoid.Health) .. ' / ' .. math.floor(humanoid.MaxHealth)
-            esp.HealthText.Position = Vector2.new(barX - 2 - (esp.HealthText.Size * string.len(esp.HealthText.Text) * 0.6), box.Center.Y)
-            esp.HealthText.Center = false
+            esp.HealthText.Text = math.floor(humanoid.Health)
+            esp.HealthText.Position = Vector2.new(barX, barBottom + 12)
             esp.HealthText.Color = color
             esp.HealthText.Visible = true
         end
 
         if items['Tracers'] then
-            local screenSize = cam.ViewportSize
-            local fromPos = Vector2.new(screenSize.X / 2, screenSize.Y)
-
-            esp.TracerOutline.From = fromPos
-            esp.TracerOutline.To = Vector2.new(box.Center.X, box.Bottom.Y)
-            esp.TracerOutline.Visible = true
-
-            esp.Tracer.From = fromPos
-            esp.Tracer.To = Vector2.new(box.Center.X, box.Bottom.Y)
+            local mousePos = UserInputService:GetMouseLocation()
+            esp.Tracer.From = mousePos
+            esp.Tracer.To = box.Center
             esp.Tracer.Color = color
             esp.Tracer.Visible = true
+
+            esp.TracerOutline.From = mousePos
+            esp.TracerOutline.To = box.Center
+            esp.TracerOutline.Visible = true
         end
 
         if items['LookAngle'] then
-            local lookDir = hrp.CFrame.LookVector
-            local lookEnd = hrp.Position + lookDir * 5
-            local lookScreen, lookOnScreen = worldToScreen(lookEnd)
+            local lookCF = hrp.CFrame
+            local lookPos = lookCF.Position + lookCF.LookVector * 5
+            local screenLook, onScreenLook = cam:WorldToViewportPoint(lookPos)
 
-            if lookOnScreen then
-                esp.LookAngleOutline.From = Vector2.new(box.Center.X, box.Center.Y)
-                esp.LookAngleOutline.To = lookScreen
-                esp.LookAngleOutline.Visible = true
-
-                esp.LookAngle.From = Vector2.new(box.Center.X, box.Center.Y)
-                esp.LookAngle.To = lookScreen
+            if onScreenLook then
+                esp.LookAngle.From = box.Center
+                esp.LookAngle.To = Vector2.new(screenLook.X, screenLook.Y)
                 esp.LookAngle.Color = color
                 esp.LookAngle.Visible = true
-            else
-                esp.LookAngle.Visible = false
-                esp.LookAngleOutline.Visible = false
+
+                esp.LookAngleOutline.From = box.Center
+                esp.LookAngleOutline.To = Vector2.new(screenLook.X, screenLook.Y)
+                esp.LookAngleOutline.Visible = true
             end
         end
 
@@ -3086,119 +3341,93 @@ local function updateESP(player)
             local tool = char:FindFirstChildOfClass('Tool')
             if tool then
                 esp.Tool.Text = tool.Name
-                esp.Tool.Position = Vector2.new(box.Center.X + box.Width / 2 + 4, box.Center.Y)
+                esp.Tool.Position = Vector2.new(box.Center.X + box.Width / 2 + 5, box.Top.Y)
                 esp.Tool.Color = color
                 esp.Tool.Visible = true
-            else
-                esp.Tool.Visible = false
             end
         end
-    else
-        for _, line in ipairs(esp.Box) do line.Visible = false end
-        for _, line in ipairs(esp.BoxOutline) do line.Visible = false end
-    end
 
-    if items['Skeleton'] then
-        local r15 = char:FindFirstChild('UpperTorso') ~= nil
+        if items['Skeleton'] then
+            local isR15 = char:FindFirstChild('UpperTorso') ~= nil
+            local r15 = isR15
 
-        local function jointWorldPos(name)
-            local part
-            for _, child in ipairs(char:GetDescendants()) do
-                if child:IsA('Motor6D') and child.Name == name then
-                    part = child
-                    break
+            local function getScreen(cf)
+                if not cf then return nil end
+                local p = cf.Position
+                local pos, onScreen = cam:WorldToViewportPoint(p)
+                if not onScreen then return nil end
+                return Vector2.new(pos.X, pos.Y)
+            end
+
+            local function getPartScreen(name)
+                local part = char:FindFirstChild(name)
+                if not part then return nil end
+                local pos, onScreen = cam:WorldToViewportPoint(part.Position)
+                if not onScreen then return nil end
+                return Vector2.new(pos.X, pos.Y)
+            end
+
+            local function drawBone(lineName, from, to)
+                if from and to then
+                    esp.Skeleton[lineName].From = from
+                    esp.Skeleton[lineName].To = to
+                    esp.Skeleton[lineName].Color = color
+                    esp.Skeleton[lineName].Visible = true
+                else
+                    esp.Skeleton[lineName].Visible = false
                 end
             end
-            if not part then return nil end
-            local p0 = part.Part0
-            if not p0 then return nil end
-            return p0.CFrame * part.C0
-        end
 
-        local function getScreen(cf)
-            if not cf then return nil end
-            local p = cf.Position
-            local pos, onScreen = cam:WorldToViewportPoint(p)
-            if not onScreen then return nil end
-            return Vector2.new(pos.X, pos.Y)
-        end
+            if r15 then
+                local head = getPartScreen('Head')
+                local neck = getScreen(char:FindFirstChild('Neck', true) and char:FindFirstChild('Neck', true).CFrame)
+                local upperTorso = getPartScreen('UpperTorso')
+                local lowerTorso = getPartScreen('LowerTorso')
+                local la = getPartScreen('LeftUpperArm')
+                local lla = getPartScreen('LeftLowerArm')
+                local ra = getPartScreen('RightUpperArm')
+                local rla = getPartScreen('RightLowerArm')
+                local lul = getPartScreen('LeftUpperLeg')
+                local lll = getPartScreen('LeftLowerLeg')
+                local rul = getPartScreen('RightUpperLeg')
+                local rll = getPartScreen('RightLowerLeg')
 
-        local function getPartScreen(name)
-            local part = char:FindFirstChild(name)
-            if not part then return nil end
-            local pos, onScreen = cam:WorldToViewportPoint(part.Position)
-            if not onScreen then return nil end
-            return Vector2.new(pos.X, pos.Y)
-        end
-
-        local function drawBone(lineName, from, to)
-            if from and to then
-                esp.Skeleton[lineName].From = from
-                esp.Skeleton[lineName].To = to
-                esp.Skeleton[lineName].Color = color
-                esp.Skeleton[lineName].Visible = true
+                drawBone('Head', head, neck)
+                drawBone('Neck', neck, upperTorso)
+                drawBone('Spine', upperTorso, lowerTorso)
+                drawBone('LeftShoulder', neck, la)
+                drawBone('LeftArm', la, lla)
+                drawBone('RightShoulder', neck, ra)
+                drawBone('RightArm', ra, rla)
+                drawBone('LeftHip', lowerTorso, lul)
+                drawBone('LeftLeg', lul, lll)
+                drawBone('RightHip', lowerTorso, rul)
+                drawBone('RightLeg', rul, rll)
             else
-                esp.Skeleton[lineName].Visible = false
+                local head = getPartScreen('Head')
+                local torso = getPartScreen('Torso')
+                local la = getPartScreen('Left Arm')
+                local ra = getPartScreen('Right Arm')
+                local lul = getPartScreen('Left Leg')
+                local rul = getPartScreen('Right Leg')
+
+                drawBone('Head', head, torso)
+                drawBone('Neck', torso, torso)
+                drawBone('Spine', torso, torso)
+                drawBone('LeftShoulder', torso, la)
+                drawBone('LeftArm', la, la)
+                drawBone('RightShoulder', torso, ra)
+                drawBone('RightArm', ra, ra)
+                drawBone('LeftHip', torso, lul)
+                drawBone('LeftLeg', lul, lul)
+                drawBone('RightHip', torso, rul)
+                drawBone('RightLeg', rul, rul)
             end
-        end
-
-        if r15 then
-            local head = getPartScreen('Head')
-            local neck = getScreen(jointWorldPos('Neck'))
-            local upperTorso = getPartScreen('UpperTorso')
-            local lowerTorso = getPartScreen('LowerTorso')
-            local la = getPartScreen('LeftUpperArm')
-            local lla = getPartScreen('LeftLowerArm')
-            local ra = getPartScreen('RightUpperArm')
-            local rla = getPartScreen('RightLowerArm')
-            local lul = getPartScreen('LeftUpperLeg')
-            local lll = getPartScreen('LeftLowerLeg')
-            local rul = getPartScreen('RightUpperLeg')
-            local rll = getPartScreen('RightLowerLeg')
-
-            drawBone('Head', head, neck)
-            drawBone('Neck', neck, upperTorso)
-            drawBone('Spine', upperTorso, lowerTorso)
-            drawBone('LeftShoulder', neck, la)
-            drawBone('LeftArm', la, lla)
-            drawBone('RightShoulder', neck, ra)
-            drawBone('RightArm', ra, rla)
-            drawBone('LeftHip', lowerTorso, lul)
-            drawBone('LeftLeg', lul, lll)
-            drawBone('RightHip', lowerTorso, rul)
-            drawBone('RightLeg', rul, rll)
         else
-            local head = getPartScreen('Head')
-            local torso = getPartScreen('Torso')
-            local la = getPartScreen('Left Arm')
-            local ra = getPartScreen('Right Arm')
-            local lul = getPartScreen('Left Leg')
-            local rul = getPartScreen('Right Leg')
-
-            drawBone('Head', head, torso)
-            drawBone('Neck', torso, torso)
-            drawBone('Spine', torso, torso)
-            drawBone('LeftShoulder', torso, la)
-            drawBone('LeftArm', la, la)
-            drawBone('RightShoulder', torso, ra)
-            drawBone('RightArm', ra, ra)
-            drawBone('LeftHip', torso, lul)
-            drawBone('LeftLeg', lul, lul)
-            drawBone('RightHip', torso, rul)
-            drawBone('RightLeg', rul, rul)
+            for _, line in pairs(esp.Skeleton) do line.Visible = false end
         end
-    else
-        for _, line in pairs(esp.Skeleton) do line.Visible = false end
     end
 end
-
-Toggles.ESPToggle:OnChanged(function()
-    if not Toggles.ESPToggle.Value then
-        for player, _ in pairs(espObjects) do
-            hideAll(player)
-        end
-    end
-end)
 
 for _, player in ipairs(Players:GetPlayers()) do
     if player ~= LocalPlayer then
@@ -3206,23 +3435,23 @@ for _, player in ipairs(Players:GetPlayers()) do
     end
 end
 
-Players.PlayerAdded:Connect(function(player)
+janitor:Add(Players.PlayerAdded:Connect(function(player)
     player.CharacterAdded:Connect(function()
         task.wait(0.5)
         createESPObjects(player)
     end)
-end)
+end), "Disconnect", "PlayerAdded")
 
-Players.PlayerRemoving:Connect(function(player)
+janitor:Add(Players.PlayerRemoving:Connect(function(player)
     removeESPObjects(player)
-end)
+end), "Disconnect", "PlayerRemoving")
 
-RunService.RenderStepped:Connect(function()
-    if not Toggles.ESPToggle.Value then return end
+janitor:Add(RunService.RenderStepped:Connect(function()
+    if not getgenv().ESPEnabled then return end
 
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
-            if not espObjects[player] then
+            if not getgenv().espObjects[player] then
                 createESPObjects(player)
             end
             pcall(function()
@@ -3230,172 +3459,6 @@ RunService.RenderStepped:Connect(function()
             end)
         end
     end
-end)
+end), "Disconnect", "ESP_Render")
 
-Options.ESPThickness:OnChanged(function()
-    local thickness = Options.ESPThickness.Value
-    for player, esp in pairs(espObjects) do
-        for _, line in ipairs(esp.Box) do line.Thickness = thickness end
-        esp.Tracer.Thickness = thickness
-        esp.LookAngle.Thickness = thickness
-        for _, line in pairs(esp.Skeleton) do line.Thickness = thickness end
-    end
-end)
 
-Options.ESPTextSize:OnChanged(function()
-    local textSize = Options.ESPTextSize.Value
-    for player, esp in pairs(espObjects) do
-        esp.Name.Size = textSize
-        esp.HealthText.Size = textSize - 2
-        esp.Distance.Size = textSize - 2
-        esp.Tool.Size = textSize - 2
-    end
-end)
-
-Options.ESPFont:OnChanged(function()
-    local fontMap = {
-        ['Code'] = 2,
-        ['ArialBold'] = 1,
-        ['GothamBold'] = 3,
-        ['Gotham'] = 4,
-        ['Legacy'] = 5,
-        ['Highway'] = 6,
-        ['Cartoon'] = 7,
-        ['SciFi'] = 8,
-    }
-    local font = fontMap[Options.ESPFont.Value] or 2
-    for player, esp in pairs(espObjects) do
-        esp.Name.Font = font
-        esp.HealthText.Font = font
-        esp.Distance.Font = font
-        esp.Tool.Font = font
-    end
-end)
-
-Library:SetWatermarkVisibility(true)
-
-local FrameTimer = tick()
-local FrameCounter = 0
-local FPS = 60
-
-RunService.RenderStepped:Connect(function()
-    FrameCounter += 1
-    if (tick() - FrameTimer) >= 1 then
-        FPS = FrameCounter
-        FrameTimer = tick()
-        FrameCounter = 0
-    end
-    Library:SetWatermark(('Swift Hub | %s fps | %s ms'):format(
-        math.floor(FPS),
-        math.floor(game:GetService('Stats').Network.ServerStatsItem['Data Ping']:GetValue())
-    ))
-end)
-
-local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
-
-MenuGroup:AddButton('Unload', function() Library:Unload() end)
-
-Library:OnUnload(function()
-    stopHitbox()
-    getgenv().__HITBOX__ = nil
-    gcinfo()
-end)
-
-MenuGroup:AddToggle('LockUI', {
-    Text = 'Lock UI Position',
-    Default = false,
-    Callback = function(Value)
-        -- Swap MakeDraggable on/off by setting Active on the window holder
-        if Library.Window and Library.Window.Holder then
-            Library.Window.Holder.Active = not Value
-        end
-    end,
-})
-
-MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', {
-    Default = 'RightShift',
-    NoUI = false,
-    Text = 'Menu keybind'
-})
-
-Library.ToggleKeybind = Options.MenuKeybind
-
--- Mobile toggle button
-do
-    local MobileButton = Instance.new('TextButton')
-    MobileButton.Size = UDim2.new(0, 60, 0, 60)
-    MobileButton.Position = UDim2.new(0, 10, 0.5, -30)
-    MobileButton.BackgroundColor3 = Color3.fromRGB(0, 85, 255)
-    MobileButton.BorderSizePixel = 0
-    MobileButton.Text = '☰'
-    MobileButton.TextColor3 = Color3.new(1, 1, 1)
-    MobileButton.TextSize = 28
-    MobileButton.Font = Enum.Font.GothamBold
-    MobileButton.ZIndex = 999
-    MobileButton.Parent = game:GetService('CoreGui'):FindFirstChildOfClass('ScreenGui') or Library.ScreenGui
-
-    -- Rounded corners
-    local Corner = Instance.new('UICorner')
-    Corner.CornerRadius = UDim.new(0, 12)
-    Corner.Parent = MobileButton
-
-    -- Make the button draggable so user can reposition it
-    local dragging, dragInput, dragStart, startPos
-    MobileButton.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = MobileButton.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
-    MobileButton.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            local delta = input.Position - dragStart
-            -- Only reposition if dragged more than 5px (otherwise treat as tap)
-            if delta.Magnitude > 5 then
-                MobileButton.Position = UDim2.new(
-                    startPos.X.Scale,
-                    startPos.X.Offset + delta.X,
-                    startPos.Y.Scale,
-                    startPos.Y.Offset + delta.Y
-                )
-            end
-        end
-    end)
-
-    -- Tap to toggle UI
-    MobileButton.MouseButton1Click:Connect(function()
-        Library:Toggle()
-    end)
-
-    Library:OnUnload(function()
-        MobileButton:Destroy()
-    end)
-end
-
-ThemeManager:SetLibrary(Library)
-SaveManager:SetLibrary(Library)
-
-SaveManager:IgnoreThemeSettings()
-SaveManager:SetIgnoreIndexes({ 'MenuKeybind' })
-
-ThemeManager:SetFolder('SwiftHub')
-SaveManager:SetFolder('SwiftHub/specific-game')
-
-SaveManager:BuildConfigSection(Tabs['UI Settings'])
-ThemeManager:ApplyToTab(Tabs['UI Settings'])
-
-Library:OnUnload(function()
-    print('Unloaded!')
-    Library.Unloaded = true
-end)
