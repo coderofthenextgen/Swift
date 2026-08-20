@@ -144,8 +144,6 @@ if not keyValid then
         keyValid = true
         KeyWindow:Toggle()
         task.wait(0.2)
-        local keyGui = LocalPlayer.PlayerGui:FindFirstChild("Obsidian")
-        if keyGui then keyGui:Destroy() end
     else
         Library:Notify({
             Title = "swift",
@@ -210,7 +208,7 @@ local Window = Library:CreateWindow({
     ShowCustomCursor = true,
     AlwaysOnTop = true,
     Center = true,
-    Size = UDim2.new(0, 500, 0, 420),
+    Size = UDim2.new(0, 620, 0, 560),
 })
 
 local Tab = Window:AddTab("Main", "zap")
@@ -219,21 +217,13 @@ local Group = Tab:AddLeftGroupbox("Game", "gamepad-2")
 local gameInfo = findGame()
 
 if gameInfo then
-    local gameLabel = Group:AddLabel("Game: " .. gameInfo.Name, true, "GameLabel")
-    local placeLabel = Group:AddLabel("Place ID: " .. PlaceId, true, "PlaceLabel")
-
-    Group:AddDivider()
-
-    local profileLabel = Group:AddLabel("Loading profile...", true, "ProfileLabel")
-
-    Group:AddDivider()
-
-    local executed = false
+    local executing = false
     local executeButton = Group:AddButton({
         Text = "EXECUTE",
         Func = function()
-            if executed then return end
-            executed = true
+            if executing then return end
+            executing = true
+            executeButton:SetDisabled(true)
             executeButton:SetText("Executing...")
             task.spawn(function()
                 for _, scriptFunc in gameInfo.Scripts do
@@ -247,24 +237,36 @@ if gameInfo then
                         })
                     end
                 end
+                Library:Notify({
+                    Title = "swift",
+                    Description = gameInfo.Name .. " scripts executed!",
+                    Time = 3,
+                })
                 task.wait(1)
                 Window:Toggle()
             end)
         end,
     })
 
+    Group:AddLabel("Game: " .. gameInfo.Name, true)
+    Group:AddLabel("Place ID: " .. PlaceId, true)
+    Group:AddLabel("Game ID: " .. GameId, true)
+
+    Group:AddDivider()
+
+    local profileLabel = Group:AddLabel("Loading profile...", true)
+
     task.spawn(function()
         local profile = getProfile(gameInfo.UniverseIds[1])
         if profile then
             local creatorName = profile.creator and profile.creator.name or "Unknown"
             local desc = profile.description or "No description"
-            if #desc > 400 then
-                desc = desc:sub(1, 400) .. "..."
+            if #desc > 180 then
+                desc = desc:sub(1, 180) .. "..."
             end
-            local playing = profile.playing or 0
             profileLabel:SetText(
                 "Creator: " .. creatorName
-                .. "\nActive players: " .. tostring(playing)
+                .. "\nActive players: " .. tostring(profile.playing or 0)
                 .. "\n\n" .. desc
             )
         else
