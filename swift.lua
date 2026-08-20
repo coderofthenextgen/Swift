@@ -126,6 +126,16 @@ local GAMES = {
         UniverseIds = { 372226183 },
         Scripts = { vapeScript },
     },
+    {
+        Name = "Jujutsu Shenanigans",
+        PlaceIds = { 9391468976 },
+        UniverseIds = { 3508322461 },
+        Scripts = {
+            function()
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/NeziaReal/jjs/refs/heads/main/main.lua"))()
+            end,
+        },
+    },
 }
 
 local function checkKey(key)
