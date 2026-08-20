@@ -298,16 +298,16 @@ end
 local function searchScriptblox(gameName)
     local encoded = HttpService:UrlEncode(gameName)
     local success, response = pcall(function()
-        return game:HttpGet("https://scriptblox.com/api/scripts?q=" .. encoded .. "&mode=free&sort=mostliked&limit=5", true)
+        return game:HttpGet("https://scriptblox.com/api/script/search?q=" .. encoded .. "&mode=free&key=0&sortBy=likeCount&order=desc&max=5", true)
     end)
     if not success or not response then return nil end
     local ok, data = pcall(function()
         return HttpService:JSONDecode(response)
     end)
-    if not ok or not data or not data.scripts then return nil end
-    for _, s in data.scripts do
-        if type(s) == "table" and s.script and (s.key or "") == "" and (s.likes or 0) >= 25 then
-            return s
+    if not ok or not data or not data.result or not data.result.scripts then return nil end
+    for _, s in data.result.scripts do
+        if type(s) == "table" and s.script and s.key == false and (s.likeCount or 0) >= 25 then
+            return { title = s.title, likes = s.likeCount, script = s.script }
         end
     end
     return nil
@@ -315,24 +315,17 @@ end
 
 local function searchRscripts(gameName)
     local encoded = HttpService:UrlEncode(gameName)
-    for _, domain in { "rscripts.net", "rscripts.com" } do
-        local success, response = pcall(function()
-            return game:HttpGet("https://" .. domain .. "/search?q=" .. encoded, true)
-        end)
-        if success and response then
-            local slug
-            local _, _, s1 = string.find(response, 'href="https://rscripts%.com/raw/([^"]+)"')
-            local _, _, s2 = string.find(response, 'href="https://rscripts%.net/raw/([^"]+)"')
-            local _, _, s3 = string.find(response, 'href="/raw/([^"]+)"')
-            slug = s1 or s2 or s3
-            if slug then
-                local title = slug:gsub("%-?%d+$", ""):gsub("%-", " ")
-                return {
-                    title = title,
-                    likes = 0,
-                    rawUrl = "https://" .. domain .. "/raw/" .. slug,
-                }
-            end
+    local success, response = pcall(function()
+        return game:HttpGet("https://rscripts.net/api/v2/scripts?q=" .. encoded .. "&noKeySystem=true&orderBy=likes&sort=desc", true)
+    end)
+    if not success or not response then return nil end
+    local ok, data = pcall(function()
+        return HttpService:JSONDecode(response)
+    end)
+    if not ok or not data or not data.scripts then return nil end
+    for _, s in data.scripts do
+        if type(s) == "table" and s.keySystem == false and s.rawScript and (s.likes or 0) >= 10 then
+            return { title = s.title, likes = s.likes, rawUrl = s.rawScript }
         end
     end
     return nil
