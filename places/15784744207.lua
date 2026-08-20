@@ -59,7 +59,7 @@ local function getClosestEnemy()
     local camPos = Camera.CFrame.Position
     local closest = nil
     local closestDist = aimbotFOV
-    local mousePos = Vector2.new(Mouse.X, Mouse.Y)
+    local screenCenter = Camera.ViewportSize / 2
 
     for _, player in Players:GetPlayers() do
         if isEnemy(player) then
@@ -69,7 +69,7 @@ local function getClosestEnemy()
                 if hum and hum.Health > 0 then
                     local screenPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
                     if onScreen then
-                        local dist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
+                        local dist = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
                         if dist < closestDist then
                             closestDist = dist
                             closest = player
@@ -98,7 +98,7 @@ local function updateFOVCircle()
     FOVCircle.Visible = showFOVCircle and isAimbotActive
     FOVCircle.Radius = aimbotFOV
     FOVCircle.Color = aimbotColor
-    FOVCircle.Position = Vector2.new(Mouse.X, Mouse.Y)
+    FOVCircle.Position = Camera.ViewportSize / 2
 end
 
 local function setupFOVCircle()
