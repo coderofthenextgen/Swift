@@ -480,8 +480,11 @@ local lastPickupTime = 0
 Toggles.AutoPickupGun:OnChanged(function()
     if Toggles.AutoPickupGun.Value then
         connect("AutoPickupGun", RunService.Heartbeat:Connect(function()
+            local sheriff = getByRole("Sheriff")
+            if sheriff and sheriff.Character and sheriff.Character:FindFirstChildOfClass("Humanoid") and sheriff.Character:FindFirstChildOfClass("Humanoid").Health > 0 then return end
             local gun = getGunInWorld()
             if not gun then return end
+            if gun.Parent and gun.Parent:IsA("Model") and game.Players:GetPlayerFromCharacter(gun.Parent) then return end
             local handle = gun:FindFirstChild("Handle")
             if not handle then return end
             local myHrp = getHrp(LocalPlayer)
