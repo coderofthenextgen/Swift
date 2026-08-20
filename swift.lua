@@ -13,8 +13,8 @@ local GITHUB_API = "https://api.github.com/repos/coderofthenextgen/Swift-Hub/con
 local Loading = Library:CreateLoading({
     Title = "swift",
     TotalSteps = 100,
-    WindowWidth = 500,
-    WindowHeight = 250,
+    WindowWidth = 380,
+    WindowHeight = 200,
     LoadingIconTweenTime = 0,
 })
 
@@ -39,7 +39,7 @@ local Window = Library:CreateWindow({
     ShowCustomCursor = true,
     AlwaysOnTop = true,
     Center = true,
-    Size = UDim2.new(0, 500, 0, 300),
+    Size = UDim2.new(0, 380, 0, 250),
 })
 
 local Tab = Window:AddTab("Main", "zap")
