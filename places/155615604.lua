@@ -214,15 +214,17 @@ local lastPunchTime = 0
 Toggles.AutoPunch:OnChanged(function()
     if Toggles.AutoPunch.Value then
         connect("AutoPunch", RunService.Heartbeat:Connect(function()
-            if tick() - lastPunchTime < 0.5 then return end
+            if tick() - lastPunchTime < 1 then return end
             local target = getNearestEnemy()
             if not target then return end
             local targetHrp = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
             local myHrp = getHrp()
             if not targetHrp or not myHrp then return end
             local dist = (targetHrp.Position - myHrp.Position).Magnitude
-            if dist > 10 then return end
+            if dist > 8 then return end
             lastPunchTime = tick()
+            myHrp.CFrame = CFrame.new(myHrp.Position, Vector3.new(targetHrp.Position.X, myHrp.Position.Y, targetHrp.Position.Z))
+            task.wait(0.1)
             meleeEvent:FireServer(target, 1, 1)
         end))
     else
@@ -234,7 +236,7 @@ local lastShootTime = 0
 Toggles.AutoShoot:OnChanged(function()
     if Toggles.AutoShoot.Value then
         connect("AutoShoot", RunService.Heartbeat:Connect(function()
-            if tick() - lastShootTime < 0.5 then return end
+            if tick() - lastShootTime < 1 then return end
             local gun = getGun()
             if not gun then return end
             local target = getNearestEnemy()
@@ -263,7 +265,7 @@ Toggles.AutoArrest:OnChanged(function()
     if Toggles.AutoArrest.Value then
         connect("AutoArrest", RunService.Heartbeat:Connect(function()
             if not isGuard() then return end
-            if tick() - lastArrestTime < 1 then return end
+            if tick() - lastArrestTime < 2 then return end
             local target = getNearestEnemy()
             if not target then return end
             local targetHrp = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
@@ -552,6 +554,24 @@ connect("ESPUpdate", RunService.Heartbeat:Connect(function()
     pcall(updateESP)
 end))
 
+local function grabGun(gunName)
+    local hrp = getHrp()
+    if not hrp then return false end
+    local giver = workspace.Prison_ITEMS.giver:FindFirstChild(gunName)
+    if not giver then return false end
+    local part = giver:FindFirstChildWhichIsA("Part") or giver:FindFirstChildWhichIsA("MeshPart")
+    if not part then return false end
+    local savedCF = hrp.CFrame
+    hrp.CFrame = part.CFrame + Vector3.new(0, 3, 0)
+    task.wait(0.3)
+    pcall(function()
+        Remotes:WaitForChild("InteractWithItem"):InvokeServer(part)
+    end)
+    task.wait(0.3)
+    hrp.CFrame = savedCF
+    return true
+end
+
 MiscGroup:AddButton({
     Text = "Get All Guns",
     Func = function()
@@ -559,16 +579,20 @@ MiscGroup:AddButton({
             Library:Notify({ Title = "swift", Description = "Must be guard to get guns", Time = 3 })
             return
         end
-        Remotes:WaitForChild("GiverPressed"):FireServer("M9")
-        task.wait(0.2)
-        Remotes:WaitForChild("GiverPressed"):FireServer("Remington 870")
-        task.wait(0.2)
-        Remotes:WaitForChild("GiverPressed"):FireServer("AK-47")
-        task.wait(0.2)
-        Remotes:WaitForChild("GiverPressed"):FireServer("Riot Shield")
-        task.wait(0.2)
-        Remotes:WaitForChild("GiverPressed"):FireServer("Sniper")
-        Library:Notify({ Title = "swift", Description = "Requested all guns", Time = 3 })
+        task.spawn(function()
+            grabGun("M4A1")
+            task.wait(0.5)
+            grabGun("Remington 870")
+            task.wait(0.5)
+            grabGun("AK-47")
+            task.wait(0.5)
+            grabGun("MP5")
+            task.wait(0.5)
+            grabGun("Revolver")
+            task.wait(0.5)
+            grabGun("M700")
+            Library:Notify({ Title = "swift", Description = "Got all guns", Time = 3 })
+        end)
     end,
 })
 
@@ -579,7 +603,9 @@ MiscGroup:AddButton({
             Library:Notify({ Title = "swift", Description = "Must be guard to get taser", Time = 3 })
             return
         end
-        Remotes:WaitForChild("GiverPressed"):FireServer("Taser")
+        task.spawn(function()
+            grabGun("Taser")
+        end)
     end,
 })
 
@@ -587,6 +613,15 @@ MiscGroup:AddButton({
     Text = "Unlock Doors",
     Func = function()
         Remotes:WaitForChild("RequestCollisionChange"):FireServer()
+    end,
+})
+
+MiscGroup:AddButton({
+    Text = "Force Reload",
+    Func = function()
+        pcall(function()
+            GunRemotes:WaitForChild("FuncReload"):InvokeServer()
+        end)
     end,
 })
 
