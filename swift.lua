@@ -25,6 +25,16 @@ local GAMES = {
         },
     },
     {
+        Name = "MM2",
+        PlaceIds = { 142823291 },
+        UniverseIds = { 66654135 },
+        Scripts = {
+            function()
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/William2smod4u/Bunny-ware-script/refs/heads/main/Bunnyware"))()
+            end,
+        },
+    },
+    {
         Name = "Valley Prison",
         PlaceIds = { 15784744207 },
         UniverseIds = { 5456952508 },
