@@ -7,14 +7,14 @@ local HttpService = cloneref(game:GetService("HttpService"))
 local LocalPlayer = Players.LocalPlayer
 local PlaceId = game.PlaceId
 
-local GITHUB_REPO = "https://github.com/coderofthenextgen/Swift-Hub"
 local GITHUB_RAW = "https://raw.githubusercontent.com/coderofthenextgen/Swift-Hub/main"
 
 local Loading = Library:CreateLoading({
     Title = "swift",
     TotalSteps = 100,
-    WindowWidth = 300,
-    WindowHeight = 180,
+    WindowWidth = 400,
+    WindowHeight = 220,
+    LoadingIconTweenTime = 0,
 })
 
 Loading:SetMessage("Loading swift...")
@@ -34,11 +34,11 @@ Loading:Continue()
 local Window = Library:CreateWindow({
     Title = "swift",
     Footer = "checking games...",
-    Icon = 95816097006870,
     NotifySide = "Right",
     ShowCustomCursor = true,
     AlwaysOnTop = true,
     Center = true,
+    Size = UDim2.new(0, 420, 0, 280),
 })
 
 local Tab = Window:AddTab("Main", "zap")
@@ -77,7 +77,7 @@ task.spawn(function()
     if found then
         loadPlaceScript()
     else
-        statusLabel:SetText("Game not supported\nPlace ID: " .. PlaceId)
-        Window:SetFooter("not supported")
+        statusLabel:SetText("Game script not found\nPlace ID: " .. PlaceId)
+        Window:SetFooter("not found")
     end
 end)
