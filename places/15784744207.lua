@@ -30,11 +30,13 @@ local aimbotColor = Color3.fromRGB(255, 50, 50)
 local showFOVCircle = true
 local FOVCircle = nil
 
-local ENEMY_TEAMS = {
-    "Department of Corrections",
-    "Sheriff's Office",
-    "VCSO-SWAT",
-}
+local function isEnemy(player)
+    if player == LocalPlayer then return false end
+    if not player.Team or not LocalPlayer.Team then return false end
+    if player.Team == LocalPlayer.Team then return false end
+    if player.Team.Name == "Menu" then return false end
+    return true
+end
 
 local function getCharacter(player)
     return player and player.Character
@@ -47,13 +49,10 @@ end
 
 local function isEnemy(player)
     if player == LocalPlayer then return false end
-    if not player.Team then return false end
-    for _, t in ENEMY_TEAMS do
-        if player.Team.Name == t then
-            return true
-        end
-    end
-    return false
+    if not player.Team or not LocalPlayer.Team then return false end
+    if player.Team == LocalPlayer.Team then return false end
+    if player.Team.Name == "Menu" then return false end
+    return true
 end
 
 local function getClosestEnemy()
@@ -82,6 +81,16 @@ local function getClosestEnemy()
     end
 
     return closest
+end
+
+local function getAimCFrame()
+    local closest = getClosestEnemy()
+    if not closest or not closest.Character then return nil end
+    local head = closest.Character:FindFirstChild("Head")
+    if head then return head.CFrame end
+    local hrp = getHrp(closest)
+    if hrp then return hrp.CFrame end
+    return nil
 end
 
 local function updateFOVCircle()
@@ -182,12 +191,9 @@ setreadonly(rawMeta, false)
 
 rawMeta.__index = newcclosure(function(self, key)
     if not checkcaller() and self == Mouse and key == "Hit" and isAimbotActive then
-        local closest = getClosestEnemy()
-        if closest then
-            local hrp = getHrp(closest)
-            if hrp then
-                return hrp.CFrame
-            end
+        local aim = getAimCFrame()
+        if aim then
+            return aim
         end
     end
     return oldIndex(self, key)
