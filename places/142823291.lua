@@ -8,6 +8,12 @@ local HttpService = cloneref(game:GetService("HttpService"))
 
 local LocalPlayer = Players.LocalPlayer
 
+local savedPos = nil
+local savedBrightness = Lighting.Brightness
+local savedClockTime = Lighting.ClockTime
+local savedFogEnd = Lighting.FogEnd
+local savedFogStart = Lighting.FogStart
+
 local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local Options = Library.Options
@@ -522,21 +528,25 @@ end)
 
 Toggles.FullBright:OnChanged(function()
     if Toggles.FullBright.Value then
+        savedBrightness = Lighting.Brightness
+        savedClockTime = Lighting.ClockTime
         Lighting.Brightness = 2
         Lighting.ClockTime = 14
     else
-        Lighting.Brightness = 0
-        Lighting.ClockTime = 12
+        Lighting.Brightness = savedBrightness
+        Lighting.ClockTime = savedClockTime
     end
 end)
 
 Toggles.NoFog:OnChanged(function()
     if Toggles.NoFog.Value then
+        savedFogEnd = Lighting.FogEnd
+        savedFogStart = Lighting.FogStart
         Lighting.FogEnd = 999999
         Lighting.FogStart = 0
     else
-        Lighting.FogEnd = 100000
-        Lighting.FogStart = 0
+        Lighting.FogEnd = savedFogEnd
+        Lighting.FogStart = savedFogStart
     end
 end)
 
@@ -553,39 +563,38 @@ end)
 
 Toggles.AutoCollectCoins:OnChanged(function()
     if Toggles.AutoCollectCoins.Value then
-        connect("AutoCollectCoins", RunService.Heartbeat:Connect(function()
-            local myHrp = getHrp(LocalPlayer)
-            if not myHrp then return end
-            local coins = getCoins()
-            if #coins == 0 then return end
-            local nearest, nearDist
-            for _, coin in coins do
-                local d = (coin.Position - myHrp.Position).Magnitude
-                if not nearDist or d < nearDist then
-                    nearest, nearDist = coin, d
-                end
-            end
-            if nearest and nearDist and nearDist > 3 then
-                local belowY = nearest.Position.Y - 80
-                local coinPos = nearest.Position
-                myHrp.CFrame = CFrame.new(coinPos.X, belowY, coinPos.Z)
-                task.wait(0.2)
-                for i = 0, 1, 0.1 do
-                    local hrp = getHrp(LocalPlayer)
-                    if not hrp then break end
-                    local pos = Vector3.new(coinPos.X, belowY + (coinPos.Y + 3 - belowY) * i, coinPos.Z)
-                    hrp.CFrame = CFrame.new(pos)
-                    task.wait()
+        local myHrp = getHrp(LocalPlayer)
+        if myHrp then savedPos = myHrp.CFrame end
+        task.spawn(function()
+            while Toggles.AutoCollectCoins.Value do
+                local hrp = getHrp(LocalPlayer)
+                if not hrp then task.wait(0.5) continue end
+                local coins = getCoins()
+                if #coins == 0 then task.wait(0.5) continue end
+                local belowY = -50
+                hrp.CFrame = CFrame.new(hrp.Position.X, belowY, hrp.Position.Z)
+                task.wait(0.3)
+                for _, coin in coins do
+                    if not Toggles.AutoCollectCoins.Value then break end
+                    if coin and coin.Parent then
+                        local coinPos = coin.Position
+                        hrp.CFrame = CFrame.new(coinPos.X, belowY, coinPos.Z)
+                        task.wait(0.15)
+                        hrp.CFrame = CFrame.new(coinPos.X, coinPos.Y + 3, coinPos.Z)
+                        task.wait(0.2)
+                        hrp.CFrame = CFrame.new(coinPos.X, belowY, coinPos.Z)
+                        task.wait(0.15)
+                    end
                 end
                 task.wait(0.1)
-                local hrp2 = getHrp(LocalPlayer)
-                if hrp2 then
-                    hrp2.CFrame = CFrame.new(coinPos.X, belowY, coinPos.Z)
-                end
             end
-        end))
+        end)
     else
-        disconnect("AutoCollectCoins")
+        if savedPos then
+            local hrp = getHrp(LocalPlayer)
+            if hrp then hrp.CFrame = savedPos end
+            savedPos = nil
+        end
     end
 end)
 
