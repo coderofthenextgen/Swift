@@ -16,7 +16,7 @@ local KEY_FILE = "swift_key.json"
 
 local function checkKey(key)
     local success, response = pcall(function()
-        return game:HttpGet(KEY_API .. "?key=" .. key, true)
+        return game:HttpPost(KEY_API, HttpService:JSONEncode({ key = key }), "application/json")
     end)
     if success and response then
         local parseOk, data = pcall(function()
@@ -63,7 +63,7 @@ if not keyValid then
         ShowCustomCursor = true,
         AlwaysOnTop = true,
         Center = true,
-        Size = UDim2.new(0, 320, 0, 220),
+        Size = UDim2.new(0, 380, 0, 220),
     })
 
     local KeyTab = KeyWindow:AddTab("Key", "key")
