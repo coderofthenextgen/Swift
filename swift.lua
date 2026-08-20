@@ -8,12 +8,13 @@ local LocalPlayer = Players.LocalPlayer
 local PlaceId = game.PlaceId
 
 local GITHUB_RAW = "https://raw.githubusercontent.com/coderofthenextgen/Swift-Hub/main"
+local GITHUB_API = "https://api.github.com/repos/coderofthenextgen/Swift-Hub/contents/places"
 
 local Loading = Library:CreateLoading({
     Title = "swift",
     TotalSteps = 100,
-    WindowWidth = 400,
-    WindowHeight = 220,
+    WindowWidth = 500,
+    WindowHeight = 250,
     LoadingIconTweenTime = 0,
 })
 
@@ -38,7 +39,7 @@ local Window = Library:CreateWindow({
     ShowCustomCursor = true,
     AlwaysOnTop = true,
     Center = true,
-    Size = UDim2.new(0, 420, 0, 280),
+    Size = UDim2.new(0, 500, 0, 300),
 })
 
 local Tab = Window:AddTab("Main", "zap")
@@ -51,11 +52,26 @@ local statusLabel = Group:AddLabel({
 
 Group:AddDivider()
 
-local function checkPlaceFile()
-    local success, result = pcall(function()
-        return game:HttpGet(GITHUB_RAW .. "/places/" .. PlaceId .. ".lua", true)
+local function isGameScriptAvailable()
+    local success, response = pcall(function()
+        return game:HttpGet(GITHUB_API, true)
     end)
-    return success and result and #result > 0
+    if not success or not response then
+        return false
+    end
+    local parseSuccess, data = pcall(function()
+        return HttpService:JSONDecode(response)
+    end)
+    if not parseSuccess or type(data) ~= "table" then
+        return false
+    end
+    local targetFile = PlaceId .. ".lua"
+    for _, item in data do
+        if item.name == targetFile then
+            return true
+        end
+    end
+    return false
 end
 
 local function loadPlaceScript()
@@ -73,7 +89,7 @@ end
 
 task.spawn(function()
     task.wait(1)
-    local found = checkPlaceFile()
+    local found = isGameScriptAvailable()
     if found then
         loadPlaceScript()
     else
