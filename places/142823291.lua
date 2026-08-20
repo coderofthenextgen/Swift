@@ -189,12 +189,6 @@ MainGroup:AddToggle("AutoPickupGun", {
     Tooltip = "Teleports to and picks up the gun when it drops",
 })
 
-MainGroup:AddToggle("Hitbox", {
-    Text = "Expand Hitboxes",
-    Default = false,
-    Tooltip = "Makes all player hitboxes much larger",
-})
-
 PlayerGroup:AddSlider("WalkSpeed", {
     Text = "Walk Speed",
     Default = 16,
@@ -480,35 +474,6 @@ Toggles.AutoPickupGun:OnChanged(function()
         end))
     else
         disconnect("AutoPickupGun")
-    end
-end)
-
-Toggles.Hitbox:OnChanged(function()
-    if Toggles.Hitbox.Value then
-        connect("Hitbox", RunService.Heartbeat:Connect(function()
-            for _, p in Players:GetPlayers() do
-                if p ~= LocalPlayer and p.Character then
-                    for _, part in p.Character:GetDescendants() do
-                        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                            part.Size = Vector3.new(9, 9, 9)
-                        end
-                    end
-                end
-            end
-        end))
-    else
-        disconnect("Hitbox")
-        for _, p in Players:GetPlayers() do
-            if p ~= LocalPlayer and p.Character then
-                for _, part in p.Character:GetDescendants() do
-                    if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                        if part.Name:find("Right Arm") or part.Name:find("Left Arm") or part.Name:find("Right Leg") or part.Name:find("Left Leg") then
-                            part.Size = Vector3.new(2, 2, 2)
-                        end
-                    end
-                end
-            end
-        end
     end
 end)
 
