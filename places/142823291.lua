@@ -221,12 +221,6 @@ PlayerGroup:AddToggle("InfiniteJump", {
     Tooltip = "Jump forever",
 })
 
-PlayerGroup:AddToggle("GodMode", {
-    Text = "God Mode",
-    Default = false,
-    Tooltip = "Makes you harder to kill",
-})
-
 PlayerGroup:AddButton({
     Text = "Teleport to Sheriff",
     Func = function()
@@ -289,20 +283,6 @@ VisualGroup:AddToggle("NoFog", {
     Text = "No Fog",
     Default = false,
     Tooltip = "Removes all fog",
-})
-
-VisualGroup:AddToggle("ThirdPerson", {
-    Text = "Third Person",
-    Default = false,
-    Tooltip = "Enables third person view",
-})
-
-VisualGroup:AddSlider("ThirdPersonDist", {
-    Text = "Third Person Distance",
-    Default = 15,
-    Min = 5,
-    Max = 50,
-    Rounding = 0,
 })
 
 VisualGroup:AddToggle("NameTag", {
@@ -435,16 +415,6 @@ Toggles.NoFog:OnChanged(function()
     else
         Lighting.FogEnd = 100000
         Lighting.FogStart = 0
-    end
-end)
-
-Toggles.ThirdPerson:OnChanged(function()
-    if Toggles.ThirdPerson.Value then
-        LocalPlayer.CameraMinZoomDistance = 1
-        LocalPlayer.CameraMaxZoomDistance = Options.ThirdPersonDist.Value
-    else
-        LocalPlayer.CameraMinZoomDistance = 0.5
-        LocalPlayer.CameraMaxZoomDistance = 0.5
     end
 end)
 
@@ -657,21 +627,6 @@ Toggles.AutoShootMurderer:OnChanged(function()
         end))
     else
         disconnect("AutoShoot")
-    end
-end)
-
-Toggles.GodMode:OnChanged(function()
-    if Toggles.GodMode.Value then
-        connect("GodMode", RunService.Heartbeat:Connect(function()
-            if LocalPlayer.Character then
-                local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-                if hum then
-                    hum.Health = hum.MaxHealth
-                end
-            end
-        end))
-    else
-        disconnect("GodMode")
     end
 end)
 
