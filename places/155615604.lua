@@ -250,7 +250,7 @@ Toggles.AutoShoot:OnChanged(function()
             local targetCFrame = head and head.CFrame or targetHrp.CFrame
             local shootRemote = GunRemotes:FindFirstChild("ShootEvent")
             if shootRemote then
-                shootRemote:FireServer({{targetHrp.Position, targetCFrame, targetHrp, "Normal", tick()}})
+                shootRemote:FireServer({{targetHrp.Position, targetHrp.Position, targetHrp}})
             end
         end))
     else
