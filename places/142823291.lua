@@ -84,13 +84,16 @@ local function getNearestPlayer(roleFilter)
 end
 
 local function findKnifeTool(player)
-    for _, t in player.Character:GetChildren() do
-        if t:IsA("Tool") and t:FindFirstChild("KnifeServer") and t:FindFirstChild("KnifeClient") then
-            return t
+    local char = player.Character
+    if char then
+        for _, t in char:GetChildren() do
+            if t:IsA("Tool") and t:FindFirstChild("KnifeClient") then
+                return t
+            end
         end
     end
     for _, t in player.Backpack:GetChildren() do
-        if t:IsA("Tool") and t:FindFirstChild("KnifeServer") and t:FindFirstChild("KnifeClient") then
+        if t:IsA("Tool") and t:FindFirstChild("KnifeClient") then
             return t
         end
     end
@@ -420,6 +423,9 @@ Toggles.AutoStab:OnChanged(function()
             else
                 myHrp.CFrame = targetHrp.CFrame
                 local evt = knife:FindFirstChild("Events") and knife.Events:FindFirstChild("KnifeStabbed")
+                if not evt then
+                    evt = knife:FindFirstChild("KnifeStabbed")
+                end
                 if evt then
                     evt:FireServer()
                 end
@@ -547,32 +553,35 @@ end)
 
 Toggles.AutoCollectCoins:OnChanged(function()
     if Toggles.AutoCollectCoins.Value then
-        connect("AutoCollectCoins", coroutine.create(function()
-            while Toggles.AutoCollectCoins.Value do
-                local myHrp = getHrp(LocalPlayer)
-                if not myHrp then task.wait(0.5) continue end
-                local coins = getCoins()
-                if #coins == 0 then task.wait(0.5) continue end
-                for _, coin in coins do
-                    if not Toggles.AutoCollectCoins.Value then break end
-                    local coinPart = coin
-                    if coinPart and coinPart.Parent then
-                        local belowY = coinPart.Position.Y - 100
-                        local coinPos = coinPart.Position
-                        local hrp = getHrp(LocalPlayer)
-                        if hrp then
-                            hrp.CFrame = CFrame.new(hrp.Position.X, belowY, hrp.Position.Z)
-                            task.wait(0.15)
-                            hrp.CFrame = CFrame.new(coinPos.X, belowY, coinPos.Z)
-                            task.wait(0.3)
-                            hrp.CFrame = CFrame.new(coinPos.X, coinPos.Y + 2, coinPos.Z)
-                            task.wait(0.15)
-                            hrp.CFrame = CFrame.new(coinPos.X, belowY, coinPos.Z)
-                            task.wait(0.15)
-                        end
-                    end
+        connect("AutoCollectCoins", RunService.Heartbeat:Connect(function()
+            local myHrp = getHrp(LocalPlayer)
+            if not myHrp then return end
+            local coins = getCoins()
+            if #coins == 0 then return end
+            local nearest, nearDist
+            for _, coin in coins do
+                local d = (coin.Position - myHrp.Position).Magnitude
+                if not nearDist or d < nearDist then
+                    nearest, nearDist = coin, d
+                end
+            end
+            if nearest and nearDist and nearDist > 3 then
+                local belowY = nearest.Position.Y - 80
+                local coinPos = nearest.Position
+                myHrp.CFrame = CFrame.new(coinPos.X, belowY, coinPos.Z)
+                task.wait(0.2)
+                for i = 0, 1, 0.1 do
+                    local hrp = getHrp(LocalPlayer)
+                    if not hrp then break end
+                    local pos = Vector3.new(coinPos.X, belowY + (coinPos.Y + 3 - belowY) * i, coinPos.Z)
+                    hrp.CFrame = CFrame.new(pos)
+                    task.wait()
                 end
                 task.wait(0.1)
+                local hrp2 = getHrp(LocalPlayer)
+                if hrp2 then
+                    hrp2.CFrame = CFrame.new(coinPos.X, belowY, coinPos.Z)
+                end
             end
         end))
     else
