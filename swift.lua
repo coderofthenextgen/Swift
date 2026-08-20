@@ -136,6 +136,16 @@ local GAMES = {
             end,
         },
     },
+    {
+        Name = "Da Hood",
+        PlaceIds = { 2788229376 },
+        UniverseIds = { 1008451066 },
+        Scripts = {
+            function()
+                loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/606b846e88998801018fae498b9b8a3c.lua"))()
+            end,
+        },
+    },
 }
 
 local function checkKey(key)
