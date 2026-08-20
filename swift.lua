@@ -7,12 +7,52 @@ local HttpService = cloneref(game:GetService("HttpService"))
 
 local LocalPlayer = Players.LocalPlayer
 local PlaceId = game.PlaceId
+local GameId = game.GameId
 
-local GITHUB_RAW = "https://raw.githubusercontent.com/coderofthenextgen/Swift-Hub/main"
-local GITHUB_API = "https://api.github.com/repos/coderofthenextgen/Swift-Hub/contents/places"
 local KEY_API = "https://scripting.lollipopsyndrome.workers.dev/"
 local KEY_EXPIRY_HOURS = 24
 local KEY_FILE = "swift_key.json"
+
+local GAMES = {
+    {
+        Name = "Rivals",
+        PlaceIds = { 17625359962, 16583760599 },
+        UniverseIds = { 6035872082 },
+        Scripts = {
+            function()
+                loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/8a30cd5907985a2b8d68c8010312f185.lua"))()
+            end,
+        },
+    },
+    {
+        Name = "Valley Prison",
+        PlaceIds = { 15784744207 },
+        UniverseIds = { 5456952508 },
+        Scripts = {
+            function()
+                loadstring(game:HttpGet("https://api.lasion.world/loader"))()
+            end,
+        },
+    },
+    {
+        Name = "SCP: Roleplay",
+        PlaceIds = { 5041144419 },
+        UniverseIds = { 1742264997 },
+        Scripts = {
+            function()
+                loadstring(game:HttpGet("https://rawscripts.net/raw/SCP:-Roleplay-Highlights-any-Person-Thats-Equipping-a-tool-thats-a-weapon-71132"))()
+            end,
+            function()
+                loadstring(game:HttpGet("https://rawscripts.net/raw/SCP:-Roleplay-AutoReload-And-its-useless-71136"))()
+            end,
+            function()
+                getgenv().sneeky_silent_aim = true
+                getgenv().sneeky_fov_size = 300
+                loadstring(game:HttpGet("https://sneekysscripts.uk/Scripts/SCP_Roleplay/main.luau"))()
+            end,
+        },
+    },
+}
 
 local function checkKey(key)
     local success, response = pcall(function()
@@ -141,68 +181,104 @@ Loading:SetDescription("Starting...")
 task.wait(0.3)
 Loading:Continue()
 
+local function findGame()
+    for _, g in GAMES do
+        if table.find(g.PlaceIds, PlaceId) or table.find(g.UniverseIds, GameId) then
+            return g
+        end
+    end
+end
+
+local function getProfile(universeId)
+    local success, response = pcall(function()
+        return game:HttpGet("https://games.roblox.com/v1/games?universeIds=" .. universeId, true)
+    end)
+    if not success or not response then return nil end
+    local ok, data = pcall(function()
+        return HttpService:JSONDecode(response)
+    end)
+    if ok and data and data.data and data.data[1] then
+        return data.data[1]
+    end
+    return nil
+end
+
 local Window = Library:CreateWindow({
     Title = "swift",
-    Footer = "checking games...",
+    Footer = "script hub",
     NotifySide = "Right",
     ShowCustomCursor = true,
     AlwaysOnTop = true,
     Center = true,
-    Size = UDim2.new(0, 420, 0, 250),
+    Size = UDim2.new(0, 500, 0, 420),
 })
 
 local Tab = Window:AddTab("Main", "zap")
-local Group = Tab:AddLeftGroupbox("Status", "info")
+local Group = Tab:AddLeftGroupbox("Game", "gamepad-2")
 
-local statusLabel = Group:AddLabel({
-    Text = "Loading game...",
-    DoesWrap = true,
-})
+local gameInfo = findGame()
 
-Group:AddDivider()
+if gameInfo then
+    local gameLabel = Group:AddLabel("Game: " .. gameInfo.Name, true, "GameLabel")
+    local placeLabel = Group:AddLabel("Place ID: " .. PlaceId, true, "PlaceLabel")
 
-local function isGameScriptAvailable()
-    local success, response = pcall(function()
-        return game:HttpGet(GITHUB_API, true)
-    end)
-    if not success or not response then
-        return false
-    end
-    local parseSuccess, data = pcall(function()
-        return HttpService:JSONDecode(response)
-    end)
-    if not parseSuccess or type(data) ~= "table" then
-        return false
-    end
-    local targetFile = PlaceId .. ".lua"
-    for _, item in data do
-        if item.name == targetFile then
-            return true
+    Group:AddDivider()
+
+    local profileLabel = Group:AddLabel("Loading profile...", true, "ProfileLabel")
+
+    Group:AddDivider()
+
+    local executed = false
+    local executeButton = Group:AddButton({
+        Text = "EXECUTE",
+        Func = function()
+            if executed then return end
+            executed = true
+            executeButton:SetText("Executing...")
+            task.spawn(function()
+                for _, scriptFunc in gameInfo.Scripts do
+                    local ok, err = pcall(scriptFunc)
+                    if not ok then
+                        Library:Notify({
+                            Title = "swift",
+                            Description = "Script error: " .. tostring(err),
+                            Icon = "x-circle",
+                            Time = 5,
+                        })
+                    end
+                end
+                task.wait(1)
+                Window:Toggle()
+            end)
+        end,
+    })
+
+    task.spawn(function()
+        local profile = getProfile(gameInfo.UniverseIds[1])
+        if profile then
+            local creatorName = profile.creator and profile.creator.name or "Unknown"
+            local desc = profile.description or "No description"
+            if #desc > 400 then
+                desc = desc:sub(1, 400) .. "..."
+            end
+            local playing = profile.playing or 0
+            profileLabel:SetText(
+                "Creator: " .. creatorName
+                .. "\nActive players: " .. tostring(playing)
+                .. "\n\n" .. desc
+            )
+        else
+            profileLabel:SetText("Could not fetch profile")
         end
-    end
-    return false
-end
-
-local function loadPlaceScript()
-    local success, scriptContent = pcall(function()
-        return game:HttpGet(GITHUB_RAW .. "/places/" .. PlaceId .. ".lua", true)
     end)
-    if success and scriptContent and #scriptContent > 0 then
-        Window:SetFooter("found game!")
-        statusLabel:SetText("Found game!\nExecuting script...")
-        task.wait(1)
-        Window:Toggle()
-        loadstring(scriptContent)()
-    end
+else
+    Group:AddLabel("No supported script for this game", true)
+    Group:AddLabel("Place ID: " .. PlaceId, true)
+    Group:AddLabel("Game ID: " .. GameId, true)
 end
 
-task.spawn(function()
-    task.wait(1)
-    local found = isGameScriptAvailable()
-    if found then
-        loadPlaceScript()
-    else
-        statusLabel:SetText("Game script not found\nPlace ID: " .. PlaceId)
-        Window:SetFooter("not found")
-    end
-end)
+Library:Notify({
+    Title = "swift",
+    Description = "swift hub loaded!",
+    Time = 4,
+})
