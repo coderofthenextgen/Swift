@@ -701,11 +701,31 @@ local function updateCoinESP()
     end
 end
 
+local lastESPUpdate = 0
 connect("ESPUpdate", RunService.Heartbeat:Connect(function()
+    if tick() - lastESPUpdate < 0.1 then return end
+    lastESPUpdate = tick()
     pcall(updateESP)
     pcall(updateWeaponESP)
     pcall(updateCoinESP)
 end))
+
+CollectionService:GetInstanceAddedSignal("CoinVisual"):Connect(function(coin)
+    task.wait(0.1)
+    if Toggles.CoinESP.Value and not coin:GetAttribute("Delete") then
+        local part = coin:FindFirstChildWhichIsA("BasePart")
+        if part and not coin:FindFirstChild("swift_coin_esp") then
+            local h = Instance.new("Highlight")
+            h.Name = "swift_coin_esp"
+            h.FillColor = Color3.fromRGB(255, 220, 50)
+            h.FillTransparency = 0.2
+            h.OutlineColor = Color3.fromRGB(255, 220, 50)
+            h.OutlineTransparency = 0
+            h.Adornee = part
+            h.Parent = part
+        end
+    end
+end)
 
 local function refreshLabels()
     local role = getRole(LocalPlayer)
