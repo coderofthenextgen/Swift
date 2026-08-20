@@ -295,19 +295,44 @@ local function getProfile(universeId)
     return nil
 end
 
-local function searchScripts(gameName)
+local function searchScriptblox(gameName)
     local encoded = HttpService:UrlEncode(gameName)
     local success, response = pcall(function()
         return game:HttpGet("https://scriptblox.com/api/scripts?q=" .. encoded .. "&mode=free&sort=mostliked&limit=5", true)
     end)
-    if not success or not response then return false end
+    if not success or not response then return nil end
     local ok, data = pcall(function()
         return HttpService:JSONDecode(response)
     end)
-    if not ok or not data or not data.scripts then return false end
+    if not ok or not data or not data.scripts then return nil end
     for _, s in data.scripts do
         if type(s) == "table" and s.script and (s.key or "") == "" and (s.likes or 0) >= 25 then
             return s
+        end
+    end
+    return nil
+end
+
+local function searchRscripts(gameName)
+    local encoded = HttpService:UrlEncode(gameName)
+    for _, domain in { "rscripts.net", "rscripts.com" } do
+        local success, response = pcall(function()
+            return game:HttpGet("https://" .. domain .. "/search?q=" .. encoded, true)
+        end)
+        if success and response then
+            local slug
+            local _, _, s1 = string.find(response, 'href="https://rscripts%.com/raw/([^"]+)"')
+            local _, _, s2 = string.find(response, 'href="https://rscripts%.net/raw/([^"]+)"')
+            local _, _, s3 = string.find(response, 'href="/raw/([^"]+)"')
+            slug = s1 or s2 or s3
+            if slug then
+                local title = slug:gsub("%-?%d+$", ""):gsub("%-", " ")
+                return {
+                    title = title,
+                    likes = 0,
+                    rawUrl = "https://" .. domain .. "/raw/" .. slug,
+                }
+            end
         end
     end
     return nil
@@ -408,10 +433,11 @@ else
             searchLabel:SetText("Could not search: failed to get game name")
             return
         end
-        local found = searchScripts(gameName)
-        if found == false then
-            searchLabel:SetText("Script search unavailable right now")
-        elseif found then
+        local found = searchScriptblox(gameName)
+        if not found then
+            found = searchRscripts(gameName)
+        end
+        if found then
             searchLabel:SetText(
                 "Your game isn't supported, but we found a script for it:\n"
                 .. tostring(found.title)
@@ -431,7 +457,11 @@ else
                     end)
                     task.spawn(function()
                         local ok, err = pcall(function()
-                            loadstring(found.script)()
+                            if found.script then
+                                loadstring(found.script)()
+                            else
+                                loadstring(game:HttpGet(found.rawUrl, true))()
+                            end
                         end)
                         if not ok then
                             Library:Notify({
