@@ -35,6 +35,18 @@ local GAMES = {
         },
     },
     {
+        Name = "BedWars",
+        PlaceIds = { 6872265039 },
+        UniverseIds = { 2619619496 },
+        Scripts = {
+            function()
+                loadstring(game:HttpGet("https://api.catvape.dev/script?key=zf32415VmT8vEoHMijplLlzsiBtq9UYDcqF0V3VV529tqe1D"))({
+                    Closet = false,
+                })
+            end,
+        },
+    },
+    {
         Name = "Valley Prison",
         PlaceIds = { 15784744207 },
         UniverseIds = { 5456952508 },
