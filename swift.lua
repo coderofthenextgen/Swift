@@ -30,8 +30,7 @@ local function checkKey(key)
 end
 
 local function saveKeyData(key, expiry)
-    local data = { key = key, expiry = expiry }
-    writefile(KEY_FILE, HttpService:JSONEncode(data))
+    writefile(KEY_FILE, HttpService:JSONEncode({ key = key, expiry = expiry }))
 end
 
 local function loadKeyData()
@@ -63,7 +62,7 @@ if not keyValid then
         ShowCustomCursor = true,
         AlwaysOnTop = true,
         Center = true,
-        Size = UDim2.new(0, 380, 0, 220),
+        Size = UDim2.new(0, 420, 0, 220),
     })
 
     local KeyTab = KeyWindow:AddTab("Key", "key")
@@ -101,11 +100,12 @@ if not keyValid then
 
     local valid = checkKey(submittedKey)
     if valid then
-        local expiry = os.time() + (KEY_EXPIRY_HOURS * 60 * 60)
-        saveKeyData(submittedKey, expiry)
+        saveKeyData(submittedKey, os.time() + (KEY_EXPIRY_HOURS * 60 * 60))
         keyValid = true
         KeyWindow:Toggle()
-        task.wait(0.3)
+        task.wait(0.2)
+        local keyGui = LocalPlayer.PlayerGui:FindFirstChild("Obsidian")
+        if keyGui then keyGui:Destroy() end
     else
         Library:Notify({
             Title = "swift",
@@ -122,7 +122,7 @@ end
 local Loading = Library:CreateLoading({
     Title = "swift",
     TotalSteps = 100,
-    WindowWidth = 380,
+    WindowWidth = 420,
     WindowHeight = 200,
     LoadingIconTweenTime = 0,
 })
@@ -148,7 +148,7 @@ local Window = Library:CreateWindow({
     ShowCustomCursor = true,
     AlwaysOnTop = true,
     Center = true,
-    Size = UDim2.new(0, 380, 0, 250),
+    Size = UDim2.new(0, 420, 0, 250),
 })
 
 local Tab = Window:AddTab("Main", "zap")
