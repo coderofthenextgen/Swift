@@ -274,7 +274,7 @@ Toggles.AutoArrest:OnChanged(function()
                 myHrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, 2)
             else
                 lastArrestTime = tick()
-                Remotes:WaitForChild("ArrestPlayer"):InvokeServer(target)
+                Remotes:WaitForChild("ArrestPlayer"):InvokeServer(target, 1)
             end
         end))
     else
