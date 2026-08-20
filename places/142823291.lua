@@ -413,21 +413,26 @@ MiscGroup:AddButton({
     end,
 })
 
+local lastStabTime = 0
 Toggles.AutoStab:OnChanged(function()
     if Toggles.AutoStab.Value then
         connect("AutoStab", RunService.Heartbeat:Connect(function()
             if getRole(LocalPlayer) ~= "Murderer" then return end
             local knife = findKnifeTool(LocalPlayer)
             if not knife then return end
+            local m = getByRole("Murderer")
+            if not m or m ~= LocalPlayer then return end
             local target = getNearestPlayer()
             local targetHrp = getHrp(target)
             local myHrp = getHrp(LocalPlayer)
             if not targetHrp or not myHrp then return end
             local dist = (targetHrp.Position - myHrp.Position).Magnitude
-            if dist > 8 then
+            if dist > 10 then
                 myHrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, 2)
             else
-                myHrp.CFrame = targetHrp.CFrame
+                myHrp.CFrame = CFrame.new(myHrp.Position, Vector3.new(targetHrp.Position.X, myHrp.Position.Y, targetHrp.Position.Z))
+                if tick() - lastStabTime < 0.5 then return end
+                lastStabTime = tick()
                 local evt = knife:FindFirstChild("Events") and knife.Events:FindFirstChild("KnifeStabbed")
                 if not evt then
                     evt = knife:FindFirstChild("KnifeStabbed")
@@ -442,6 +447,7 @@ Toggles.AutoStab:OnChanged(function()
     end
 end)
 
+local lastShootTime = 0
 Toggles.AutoShoot:OnChanged(function()
     if Toggles.AutoShoot.Value then
         connect("AutoShoot", RunService.Heartbeat:Connect(function()
@@ -455,15 +461,14 @@ Toggles.AutoShoot:OnChanged(function()
             if not targetHrp or not myHrp then return end
             local dist = (targetHrp.Position - myHrp.Position).Magnitude
             if dist > 200 then return end
-            local char = LocalPlayer.Character
-            local attach = char and char:FindFirstChild("HumanoidRootPart") and char.HumanoidRootPart:FindFirstChild("GunRaycastAttachment")
-            local gunCFrame = attach and attach.WorldCFrame or (char and char:FindFirstChild("HumanoidRootPart") and char.HumanoidRootPart.CFrame) or CFrame.new()
+            if tick() - lastShootTime < 0.8 then return end
+            lastShootTime = tick()
             local head = m.Character and m.Character:FindFirstChild("Head")
             local target = head and head.CFrame or targetHrp.CFrame
             myHrp.CFrame = CFrame.new(myHrp.Position, Vector3.new(targetHrp.Position.X, myHrp.Position.Y, targetHrp.Position.Z))
             local shootRemote = gun:FindFirstChild("Shoot") or (gun.Events and gun.Events:FindFirstChild("Shoot"))
             if shootRemote then
-                shootRemote:FireServer(gunCFrame, target)
+                shootRemote:FireServer(myHrp.CFrame, target)
             end
         end))
     else
@@ -471,6 +476,7 @@ Toggles.AutoShoot:OnChanged(function()
     end
 end)
 
+local lastPickupTime = 0
 Toggles.AutoPickupGun:OnChanged(function()
     if Toggles.AutoPickupGun.Value then
         connect("AutoPickupGun", RunService.Heartbeat:Connect(function()
@@ -481,13 +487,22 @@ Toggles.AutoPickupGun:OnChanged(function()
             local myHrp = getHrp(LocalPlayer)
             if not myHrp then return end
             local dist = (handle.Position - myHrp.Position).Magnitude
-            if dist > 10 then
+            if dist > 5 then
                 myHrp.CFrame = CFrame.new(handle.Position + Vector3.new(0, 3, 0))
             else
-                local hrp = getHrp(LocalPlayer)
-                if hrp then
-                    firetouchinterest(hrp, handle, 0)
-                    firetouchinterest(hrp, handle, 1)
+                if tick() - lastPickupTime < 0.5 then return end
+                lastPickupTime = tick()
+                firetouchinterest(myHrp, handle, 0)
+                firetouchinterest(myHrp, handle, 1)
+                firetouchinterest(handle, myHrp, 0)
+                firetouchinterest(handle, myHrp, 1)
+                task.wait(0.1)
+                local char = LocalPlayer.Character
+                if char then
+                    local hum = char:FindFirstChildOfClass("Humanoid")
+                    if hum then
+                        pcall(function() hum:EquipTool(gun) end)
+                    end
                 end
             end
         end))
