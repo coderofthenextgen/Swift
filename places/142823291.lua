@@ -97,13 +97,16 @@ local function findKnifeTool(player)
 end
 
 local function findGunTool(player)
-    for _, t in player.Character:GetChildren() do
-        if t:IsA("Tool") and t:FindFirstChild("GunClient") and t.Events and t.Events:FindFirstChild("Shoot") then
-            return t
+    local char = player.Character
+    if char then
+        for _, t in char:GetChildren() do
+            if t:IsA("Tool") and t:FindFirstChild("GunClient") and t:FindFirstChild("Shoot") then
+                return t
+            end
         end
     end
     for _, t in player.Backpack:GetChildren() do
-        if t:IsA("Tool") and t:FindFirstChild("GunClient") and t.Events and t.Events:FindFirstChild("Shoot") then
+        if t:IsA("Tool") and t:FindFirstChild("GunClient") and t:FindFirstChild("Shoot") then
             return t
         end
     end
@@ -111,7 +114,7 @@ end
 
 local function getGunInWorld()
     for _, obj in Workspace:GetDescendants() do
-        if obj:IsA("Tool") and obj:FindFirstChild("GunClient") and obj.Events and obj.Events:FindFirstChild("Shoot") then
+        if obj:IsA("Tool") and obj:FindFirstChild("GunClient") and obj:FindFirstChild("Shoot") then
             return obj
         end
     end
@@ -434,6 +437,7 @@ Toggles.AutoShoot:OnChanged(function()
             local gun = findGunTool(LocalPlayer)
             if not gun then return end
             local m = getByRole("Murderer")
+            if not m or not m.Character then return end
             local targetHrp = getHrp(m)
             local myHrp = getHrp(LocalPlayer)
             if not targetHrp or not myHrp then return end
@@ -445,7 +449,10 @@ Toggles.AutoShoot:OnChanged(function()
             local head = m.Character and m.Character:FindFirstChild("Head")
             local target = head and head.CFrame or targetHrp.CFrame
             myHrp.CFrame = CFrame.new(myHrp.Position, Vector3.new(targetHrp.Position.X, myHrp.Position.Y, targetHrp.Position.Z))
-            gun.Events.Shoot:FireServer(gunCFrame, target)
+            local shootRemote = gun:FindFirstChild("Shoot") or (gun.Events and gun.Events:FindFirstChild("Shoot"))
+            if shootRemote then
+                shootRemote:FireServer(gunCFrame, target)
+            end
         end))
     else
         disconnect("AutoShoot")
@@ -540,21 +547,32 @@ end)
 
 Toggles.AutoCollectCoins:OnChanged(function()
     if Toggles.AutoCollectCoins.Value then
-        connect("AutoCollectCoins", RunService.Heartbeat:Connect(function()
-            local myHrp = getHrp(LocalPlayer)
-            if not myHrp then return end
-            local coins = getCoins()
-            local nearest, dist
-            for _, coin in coins do
-                local d = (coin.Position - myHrp.Position).Magnitude
-                if not dist or d < dist then
-                    nearest, dist = coin, d
+        connect("AutoCollectCoins", coroutine.create(function()
+            while Toggles.AutoCollectCoins.Value do
+                local myHrp = getHrp(LocalPlayer)
+                if not myHrp then task.wait(0.5) continue end
+                local coins = getCoins()
+                if #coins == 0 then task.wait(0.5) continue end
+                for _, coin in coins do
+                    if not Toggles.AutoCollectCoins.Value then break end
+                    local coinPart = coin
+                    if coinPart and coinPart.Parent then
+                        local belowY = coinPart.Position.Y - 100
+                        local coinPos = coinPart.Position
+                        local hrp = getHrp(LocalPlayer)
+                        if hrp then
+                            hrp.CFrame = CFrame.new(hrp.Position.X, belowY, hrp.Position.Z)
+                            task.wait(0.15)
+                            hrp.CFrame = CFrame.new(coinPos.X, belowY, coinPos.Z)
+                            task.wait(0.3)
+                            hrp.CFrame = CFrame.new(coinPos.X, coinPos.Y + 2, coinPos.Z)
+                            task.wait(0.15)
+                            hrp.CFrame = CFrame.new(coinPos.X, belowY, coinPos.Z)
+                            task.wait(0.15)
+                        end
+                    end
                 end
-            end
-            if nearest and dist then
-                if dist > 5 then
-                    myHrp.CFrame = CFrame.new(nearest.Position + Vector3.new(0, 2, 0))
-                end
+                task.wait(0.1)
             end
         end))
     else
