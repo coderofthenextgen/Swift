@@ -295,6 +295,24 @@ local function getProfile(universeId)
     return nil
 end
 
+local function searchScripts(gameName)
+    local encoded = HttpService:UrlEncode(gameName)
+    local success, response = pcall(function()
+        return game:HttpGet("https://scriptblox.com/api/scripts?q=" .. encoded .. "&mode=free&sort=mostliked&limit=5", true)
+    end)
+    if not success or not response then return false end
+    local ok, data = pcall(function()
+        return HttpService:JSONDecode(response)
+    end)
+    if not ok or not data or not data.scripts then return false end
+    for _, s in data.scripts do
+        if type(s) == "table" and s.script and (s.key or "") == "" and (s.likes or 0) >= 25 then
+            return s
+        end
+    end
+    return nil
+end
+
 local Window = Library:CreateWindow({
     Title = "swift",
     Footer = "script hub",
@@ -375,9 +393,71 @@ if gameInfo then
         end
     end)
 else
-    Group:AddLabel("No supported script for this game", true)
+    Group:AddLabel("Your game isn't supported", true)
     Group:AddLabel("Place ID: " .. PlaceId, true)
     Group:AddLabel("Game ID: " .. GameId, true)
+
+    Group:AddDivider()
+
+    local searchLabel = Group:AddLabel("Searching scriptblox.com...", true)
+
+    task.spawn(function()
+        local profile = getProfile(GameId)
+        local gameName = profile and profile.name or nil
+        if not gameName then
+            searchLabel:SetText("Could not search: failed to get game name")
+            return
+        end
+        local found = searchScripts(gameName)
+        if found == false then
+            searchLabel:SetText("Script search unavailable right now")
+        elseif found then
+            searchLabel:SetText(
+                "Your game isn't supported, but we found a script for it:\n"
+                .. tostring(found.title)
+                .. "\n(" .. tostring(found.likes or 0) .. " likes, keyless)"
+            )
+            local execButton
+            execButton = Group:AddButton({
+                Text = "EXECUTE FOUND SCRIPT",
+                Func = function()
+                    if found.executing then return end
+                    found.executing = true
+                    pcall(function()
+                        if execButton and execButton.SetDisabled then
+                            execButton:SetDisabled(true)
+                            execButton:SetText("Executing...")
+                        end
+                    end)
+                    task.spawn(function()
+                        local ok, err = pcall(function()
+                            loadstring(found.script)()
+                        end)
+                        if not ok then
+                            Library:Notify({
+                                Title = "swift",
+                                Description = "Script error: " .. tostring(err),
+                                Icon = "x-circle",
+                                Time = 5,
+                            })
+                        else
+                            Library:Notify({
+                                Title = "swift",
+                                Description = "Script executed!",
+                                Time = 3,
+                            })
+                        end
+                        task.wait(1)
+                        pcall(function()
+                            Window:Toggle()
+                        end)
+                    end)
+                end,
+            })
+        else
+            searchLabel:SetText("No supported script found for this game")
+        end
+    end)
 end
 
 Library:Notify({
