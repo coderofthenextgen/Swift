@@ -1,5 +1,6 @@
 local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
+local Options = Library.Options
 
 local Players = cloneref(game:GetService("Players"))
 local HttpService = cloneref(game:GetService("HttpService"))
@@ -62,7 +63,7 @@ if not keyValid then
         ShowCustomCursor = true,
         AlwaysOnTop = true,
         Center = true,
-        Size = UDim2.new(0, 320, 0, 160),
+        Size = UDim2.new(0, 320, 0, 220),
     })
 
     local KeyTab = KeyWindow:AddTab("Key", "key")
