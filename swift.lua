@@ -240,13 +240,18 @@ local gameInfo = findGame()
 
 if gameInfo then
     local executing = false
-    local executeButton = Group:AddButton({
+    local executeButton
+    executeButton = Group:AddButton({
         Text = "EXECUTE",
         Func = function()
             if executing then return end
             executing = true
-            executeButton:SetDisabled(true)
-            executeButton:SetText("Executing...")
+            pcall(function()
+                if executeButton and executeButton.SetDisabled then
+                    executeButton:SetDisabled(true)
+                    executeButton:SetText("Executing...")
+                end
+            end)
             task.spawn(function()
                 for _, scriptFunc in gameInfo.Scripts do
                     local ok, err = pcall(scriptFunc)
@@ -265,7 +270,9 @@ if gameInfo then
                     Time = 3,
                 })
                 task.wait(1)
-                Window:Toggle()
+                pcall(function()
+                    Window:Toggle()
+                end)
             end)
         end,
     })
