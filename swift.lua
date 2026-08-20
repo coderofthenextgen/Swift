@@ -13,6 +13,10 @@ local KEY_API = "https://scripting.lollipopsyndrome.workers.dev/"
 local KEY_EXPIRY_HOURS = 24
 local KEY_FILE = "swift_key.json"
 
+local vapeScript = function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/NewMainScript.lua", true))()
+end
+
 local GAMES = {
     {
         Name = "Rivals",
@@ -73,6 +77,54 @@ local GAMES = {
                 loadstring(game:HttpGet("https://sneekysscripts.uk/Scripts/SCP_Roleplay/main.luau"))()
             end,
         },
+    },
+    {
+        Name = "Block Tales",
+        PlaceIds = { 16483433878 },
+        UniverseIds = { 5678284602 },
+        Scripts = { vapeScript },
+    },
+    {
+        Name = "Frontlines",
+        PlaceIds = { 5938036553 },
+        UniverseIds = { 2132866904 },
+        Scripts = { vapeScript },
+    },
+    {
+        Name = "Skywars Voxel",
+        PlaceIds = { 8542259458 },
+        UniverseIds = { 3258873704 },
+        Scripts = { vapeScript },
+    },
+    {
+        Name = "Prison Life",
+        PlaceIds = { 155615604 },
+        UniverseIds = { 73885730 },
+        Scripts = { vapeScript },
+    },
+    {
+        Name = "1.8 Arena",
+        PlaceIds = { 77790193039862 },
+        UniverseIds = { 9984669476 },
+        Scripts = { vapeScript },
+    },
+    {
+        Name = "Blockwars",
+        PlaceIds = { 12998806177 },
+        UniverseIds = { 4544243950 },
+        Scripts = { vapeScript },
+    },
+    {
+        Name = "Jailbreak",
+        PlaceIds = { 606849621 },
+        UniverseIds = { 245662005 },
+        Scripts = { vapeScript },
+    },
+    {
+        Name = "Flee the Facility",
+        PlaceIds = { 893973440 },
+        UniverseIds = { 372226183 },
+        Scripts = { vapeScript },
     },
 }
 
