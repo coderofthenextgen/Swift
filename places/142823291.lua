@@ -146,7 +146,7 @@ local function connect(name, conn)
 end
 
 local Window = Library:CreateWindow({
-    Title = "swift - murder mystery 2",
+    Title = "swift - MM2",
     Footer = "place: 142823291",
     NotifySide = "Right",
     ShowCustomCursor = true,
