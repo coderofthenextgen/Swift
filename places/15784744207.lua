@@ -112,6 +112,7 @@ local function setupFOVCircle()
         FOVCircle.Radius = aimbotFOV
         FOVCircle.Color = aimbotColor
         FOVCircle.Filled = false
+        FOVCircle.Transparency = 0
         FOVCircle.Visible = false
         FOVCircle.ZIndex = 999
     end
