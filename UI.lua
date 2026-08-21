@@ -447,7 +447,7 @@ function SwiftUI:Notify(Config)
 
     local Accent = self:Create("Frame", {
         BackgroundColor3 = AccentOverride,
-        Size = UDim2.new(0, 6, 1, -2),
+        Size = UDim2.new(0, 6, 1, 0),
         Position = UDim2.new(0, -14, 0, 0),
         ZIndex = 5,
         Parent = Frame,
