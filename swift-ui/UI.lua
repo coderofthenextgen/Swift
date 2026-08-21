@@ -161,6 +161,42 @@ function SwiftUI:HookHover(Instance, OnEnter, OnLeave)
     Instance.MouseLeave:Connect(OnLeave)
 end
 
+function SwiftUI:CreateTooltip(Parent, Text)
+    local Tip = SwiftUI:Create("Frame", {
+        BackgroundColor3 = SwiftUI.Theme.Main,
+        Size = UDim2.new(0, 0, 0, 22),
+        Position = UDim2.new(0, 0, 1, 4),
+        Visible = false,
+        ZIndex = 100,
+        Parent = Parent,
+    })
+    SwiftUI:ApplyCorner(Tip, 0)
+    SwiftUI:ApplyStroke(Tip, SwiftUI.Theme.Outline, 1)
+    SwiftUI:Create("UIPadding", {
+        PaddingLeft = UDim.new(0, 6),
+        PaddingRight = UDim.new(0, 6),
+        Parent = Tip,
+    })
+    local Label = SwiftUI:Create("TextLabel", {
+        BackgroundTransparency = 1,
+        Text = Text,
+        FontFace = SwiftUI.Font,
+        TextSize = 11,
+        TextColor3 = SwiftUI.Theme.FontDim,
+        Size = UDim2.new(1, 0, 1, 0),
+        Parent = Tip,
+    })
+    local Bounds = SwiftUI:GetTextBounds(Text, 11, SwiftUI.Font, 400)
+    Tip.Size = UDim2.new(0, Bounds.X + 12, 0, 22)
+    Parent.MouseEnter:Connect(function()
+        Tip.Visible = true
+    end)
+    Parent.MouseLeave:Connect(function()
+        Tip.Visible = false
+    end)
+    return Tip
+end
+
 local ScreenGui = SwiftUI:Create("ScreenGui", {
     Name = "SwiftUI",
     DisplayOrder = 999,
@@ -208,10 +244,20 @@ function SwiftUI:Notify(Config)
     local Frame = self:Create("Frame", {
         BackgroundColor3 = self.Theme.Main,
         Size = UDim2.new(1, 0, 0, 64),
+        ClipsDescendants = true,
         Parent = NotificationHolder,
     })
     self:ApplyCorner(Frame, 0)
     self:ApplyStroke(Frame, self.Theme.Outline, 1)
+    self:ApplyStroke(Frame, Color3.fromRGB(0,0,0), 2)
+    local Progress = self:Create("Frame", {
+        BackgroundColor3 = self.Theme.Accent,
+        Size = UDim2.new(1, 0, 0, 2),
+        Position = UDim2.new(0, 0, 1, -2),
+        BorderSizePixel = 0,
+        ZIndex = 2,
+        Parent = Frame,
+    })
     self:Create("UIPadding", {
         PaddingTop = UDim.new(0, 10),
         PaddingBottom = UDim.new(0, 10),
@@ -263,10 +309,19 @@ function SwiftUI:Notify(Config)
     self:Tween(DescLabel, {TextTransparency = 0}, TweenInfoMedium)
     self:Tween(Accent, {BackgroundTransparency = 0}, TweenInfoMedium)
 
+    self:Tween(Progress, {Size = UDim2.new(0, 0, 0, 2)}, TweenInfoMedium)
+    task.delay(0.05, function()
+        self:Tween(Progress, {Size = UDim2.new(0, 0, 0, 2)}, TweenInfoFast)
+        TweenService:Create(Progress, TweenInfo.new(Time, Enum.EasingStyle.Linear), {Size = UDim2.new(0, 0, 0, 2)}):Play()
+        -- animate progress
+        Progress.Size = UDim2.new(1, 0, 0, 2)
+        self:Tween(Progress, {Size = UDim2.new(0, 0, 0, 2)}, TweenInfo.new(Time, Enum.EasingStyle.Linear))
+    end)
     task.delay(Time, function()
         self:Tween(Frame, {BackgroundTransparency = 1}, TweenInfoMedium)
         self:Tween(TitleLabel, {TextTransparency = 1}, TweenInfoMedium)
         self:Tween(DescLabel, {TextTransparency = 1}, TweenInfoMedium)
+        self:Tween(Progress, {BackgroundTransparency = 1}, TweenInfoMedium)
         task.wait(0.25)
         if Frame.Parent then Frame:Destroy() end
     end)
@@ -311,6 +366,16 @@ function SwiftUI:CreateWindow(Config)
     self:ApplyCorner(Main, 0)
     self:ApplyStroke(Main, Color3.fromRGB(0, 0, 0), 2)
     self:ApplyStroke(Main, self.Theme.Outline, 1)
+    local Highlight = self:Create("Frame", {
+        BackgroundColor3 = Color3.fromRGB(255,255,255),
+        BackgroundTransparency = 0.92,
+        Size = UDim2.new(1, 0, 0, 1),
+        Position = UDim2.new(0, 0, 0, 0),
+        BorderSizePixel = 0,
+        ZIndex = 2,
+        Parent = Main,
+    })
+    Highlight.BackgroundTransparency = 0.96
 
     local Titlebar = self:Create("Frame", {
         Name = "Titlebar",
@@ -363,6 +428,75 @@ function SwiftUI:CreateWindow(Config)
         TitleLabel.Position = UDim2.new(0, 14, 0, 6)
     end
 
+    local SearchHolder = self:Create("Frame", {
+        BackgroundColor3 = self.Theme.Element,
+        Size = UDim2.fromOffset(140, 24),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        ZIndex = 3,
+        Parent = Titlebar,
+    })
+    self:ApplyCorner(SearchHolder, 0)
+    self:ApplyStroke(SearchHolder, self.Theme.Outline, 1)
+    local SearchIcon = self:Create("TextLabel", {
+        BackgroundTransparency = 1,
+        Text = "⌕",
+        FontFace = self.Font,
+        TextSize = 12,
+        TextColor3 = self.Theme.FontDark,
+        Size = UDim2.fromOffset(20, 24),
+        Position = UDim2.new(0, 0, 0, 0),
+        Parent = SearchHolder,
+    })
+    local SearchBox = self:Create("TextBox", {
+        BackgroundTransparency = 1,
+        Text = "",
+        PlaceholderText = "Search",
+        PlaceholderColor3 = self.Theme.FontDark,
+        FontFace = self.Font,
+        TextSize = 12,
+        TextColor3 = self.Theme.Font,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ClearTextOnFocus = false,
+        Size = UDim2.new(1, -24, 1, 0),
+        Position = UDim2.new(0, 20, 0, 0),
+        Parent = SearchHolder,
+    })
+    SearchBox.Focused:Connect(function()
+        local S = SearchHolder:FindFirstChildOfClass("UIStroke")
+        if S then self:Tween(S, {Color = self.Theme.Accent}, TweenInfoFast) end
+    end)
+    SearchBox.FocusLost:Connect(function()
+        local S = SearchHolder:FindFirstChildOfClass("UIStroke")
+        if S then self:Tween(S, {Color = self.Theme.Outline}, TweenInfoFast) end
+    end)
+    SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+        local Query = SearchBox.Text:lower()
+        for _, Tab in ipairs(Window.Tabs) do
+            for _, Group in ipairs(Tab.Groupboxes) do
+                local VisibleCount = 0
+                for _, Elem in ipairs(Group.Elements) do
+                    if Elem.Text then
+                        local Match = Query == "" or Elem.Text:lower():find(Query, 1, true) ~= nil
+                        Elem.Holder.Visible = Match
+                        if Match then VisibleCount = VisibleCount + 1 end
+                    else
+                        Elem.Holder.Visible = Query == ""
+                        if Query == "" then VisibleCount = VisibleCount + 1 end
+                    end
+                end
+                Group.Box.Visible = VisibleCount > 0 or Query == ""
+                Group.BoxHolder.Visible = VisibleCount > 0 or Query == ""
+            end
+            if Window.ActiveTab then Window.ActiveTab.Page.Visible = true end
+        end
+        for _, Tab in ipairs(Window.Tabs) do
+            if Tab.Page.Visible then
+                Tab.Page.CanvasSize = UDim2.new(0,0,0,0)
+            end
+        end
+    end)
+
     local Controls = self:Create("Frame", {
         BackgroundTransparency = 1,
         AnchorPoint = Vector2.new(1, 0.5),
@@ -408,7 +542,7 @@ function SwiftUI:CreateWindow(Config)
         Name = "Body",
         BackgroundTransparency = 1,
         Position = UDim2.new(0, 0, 0, 44),
-        Size = UDim2.new(1, 0, 1, -44),
+        Size = UDim2.new(1, 0, 1, -66),
         ZIndex = 1,
         Parent = Main,
     })
@@ -457,13 +591,39 @@ function SwiftUI:CreateWindow(Config)
         Parent = Body,
     })
 
+    local Footer = self:Create("Frame", {
+        Name = "Footer",
+        BackgroundColor3 = self.Theme.Sidebar,
+        Size = UDim2.new(1, 0, 0, 22),
+        Position = UDim2.new(0, 0, 1, -22),
+        ZIndex = 2,
+        Parent = Main,
+    })
+    self:Create("Frame", {
+        BackgroundColor3 = self.Theme.Outline,
+        Size = UDim2.new(1, 0, 0, 1),
+        Position = UDim2.new(0, 0, 0, 0),
+        Parent = Footer,
+    })
+    local FooterLabelBottom = self:Create("TextLabel", {
+        BackgroundTransparency = 1,
+        Text = "place: " .. tostring(game.PlaceId),
+        FontFace = self.Font,
+        TextSize = 10,
+        TextColor3 = self.Theme.FontDark,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        Size = UDim2.fromScale(1, 1),
+        ZIndex = 2,
+        Parent = Footer,
+    })
+
     local ResizeHandle = self:Create("Frame", {
         BackgroundTransparency = 1,
         AnchorPoint = Vector2.new(1, 1),
         Position = UDim2.new(1, 0, 1, 0),
         Size = UDim2.fromOffset(18, 18),
-        ZIndex = 10,
-        Parent = Main,
+        ZIndex = 3,
+        Parent = Footer,
     })
     local ResizeIcon = self:Create("TextLabel", {
         BackgroundTransparency = 1,
@@ -476,6 +636,7 @@ function SwiftUI:CreateWindow(Config)
     })
 
     self:MakeDraggable(Titlebar, Container)
+    self:MakeDraggable(Footer, Container)
 
     do
         local Resizing = false
@@ -515,10 +676,20 @@ function SwiftUI:CreateWindow(Config)
         Visible = true,
     }
 
+    Container.Size = Size
+    Container.Position = Center and UDim2.fromScale(0.5, 0.5) or UDim2.fromOffset(100, 100)
+    Container.AnchorPoint = Center and Vector2.new(0.5, 0.5) or Vector2.new(0, 0)
+    Main.Size = UDim2.fromScale(1, 1)
+    Main.BackgroundTransparency = 1
+    Main.Visible = true
+    SwiftUI:Tween(Main, {BackgroundTransparency = 0}, TweenInfoMedium)
+    Container.Visible = true
     function Window:Toggle()
         Window.Visible = not Window.Visible
         Container.Visible = Window.Visible
         if Window.Visible then
+            Main.BackgroundTransparency = 1
+            SwiftUI:Tween(Main, {BackgroundTransparency = 0}, TweenInfoFast)
             SwiftUI:Tween(Container, {BackgroundTransparency = 1}, TweenInfoFast)
             Main.Visible = true
         end
@@ -564,6 +735,14 @@ function SwiftUI:CreateWindow(Config)
         })
         SwiftUI:ApplyCorner(TabButton, 0)
 
+        local TabAccent = SwiftUI:Create("Frame", {
+            BackgroundColor3 = SwiftUI.Theme.Accent,
+            Size = UDim2.new(0, 2, 1, 0),
+            Position = UDim2.new(0, 0, 0, 0),
+            Visible = false,
+            ZIndex = 3,
+            Parent = TabButton,
+        })
         local TabIcon = SwiftUI:Create("TextLabel", {
             BackgroundTransparency = 1,
             Text = Icon or "•",
@@ -659,6 +838,12 @@ function SwiftUI:CreateWindow(Config)
             for _, T in ipairs(Window.Tabs) do
                 T.Page.Visible = false
                 T.Button.BackgroundTransparency = 1
+                local AccentBar = T.Button:FindFirstChild("TabAccent") or T.Button:FindFirstChildWhichIsA("Frame")
+                for _, Ch in ipairs(T.Button:GetChildren()) do
+                    if Ch:IsA("Frame") and Ch.Size.X.Offset == 2 then
+                        Ch.Visible = false
+                    end
+                end
                 T.Button:FindFirstChildOfClass("TextLabel").TextColor3 = SwiftUI.Theme.FontDim
                 for _, Label in ipairs(T.Button:GetChildren()) do
                     if Label:IsA("TextLabel") then
@@ -671,6 +856,8 @@ function SwiftUI:CreateWindow(Config)
             TabButton.BackgroundColor3 = SwiftUI.Theme.Element
             TabLabel.TextColor3 = SwiftUI.Theme.Font
             TabIcon.TextColor3 = SwiftUI.Theme.Accent
+            TabAccent.Visible = true
+            TabAccent.BackgroundColor3 = SwiftUI.Theme.Accent
             Window.ActiveTab = Tab
             UpdateCanvas()
         end
@@ -710,6 +897,12 @@ function SwiftUI:CreateWindow(Config)
                 PaddingRight = UDim.new(0, 8),
                 Parent = Box,
             })
+            local Header = SwiftUI:Create("Frame", {
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 0, 14),
+                LayoutOrder = 0,
+                Parent = Box,
+            })
             local TitleLbl = SwiftUI:Create("TextLabel", {
                 BackgroundTransparency = 1,
                 Text = Name:upper(),
@@ -717,9 +910,28 @@ function SwiftUI:CreateWindow(Config)
                 TextSize = 11,
                 TextColor3 = SwiftUI.Theme.Font,
                 TextXAlignment = Enum.TextXAlignment.Left,
-                Size = UDim2.new(1, 0, 0, 14),
-                LayoutOrder = 0,
-                Parent = Box,
+                Size = UDim2.new(1, -18, 1, 0),
+                Parent = Header,
+            })
+            local CollapseArrow = SwiftUI:Create("TextLabel", {
+                BackgroundTransparency = 1,
+                Text = ">",
+                FontFace = SwiftUI.FontBold,
+                TextSize = 11,
+                TextColor3 = SwiftUI.Theme.FontDim,
+                TextXAlignment = Enum.TextXAlignment.Center,
+                Size = UDim2.fromOffset(14, 14),
+                AnchorPoint = Vector2.new(1, 0.5),
+                Position = UDim2.new(1, 0, 0.5, 0),
+                Rotation = 90,
+                Parent = Header,
+            })
+            local HeaderBtn = SwiftUI:Create("TextButton", {
+                BackgroundTransparency = 1,
+                Text = "",
+                Size = UDim2.fromScale(1, 1),
+                ZIndex = 2,
+                Parent = Header,
             })
             local Line = SwiftUI:Create("Frame", {
                 BackgroundColor3 = SwiftUI.Theme.Outline,
@@ -750,7 +962,26 @@ function SwiftUI:CreateWindow(Config)
                 Box = Box,
                 Container = ContainerFrame,
                 Elements = {},
+                Collapsed = false,
+                Header = Header,
             }
+
+            HeaderBtn.MouseButton1Click:Connect(function()
+                Groupbox.Collapsed = not Groupbox.Collapsed
+                ContainerFrame.Visible = not Groupbox.Collapsed
+                Line.Visible = not Groupbox.Collapsed
+                if Groupbox.Collapsed then
+                    SwiftUI:Tween(CollapseArrow, {Rotation = 0}, TweenInfoFast)
+                else
+                    SwiftUI:Tween(CollapseArrow, {Rotation = 90}, TweenInfoFast)
+                end
+                task.defer(AutoResize)
+            end)
+            SwiftUI:HookHover(HeaderBtn, function()
+                CollapseArrow.TextColor3 = SwiftUI.Theme.Font
+            end, function()
+                CollapseArrow.TextColor3 = SwiftUI.Theme.FontDim
+            end)
 
             local function AutoResize()
                 local Y = 14 + 1 + 8 + 8
@@ -765,7 +996,11 @@ function SwiftUI:CreateWindow(Config)
                         ContentSize = ContentSize + Child.AbsoluteSize.Y + 6
                     end
                 end
-                Box.Size = UDim2.new(1, 0, 0, 28 + ContentSize + 12)
+                if Groupbox.Collapsed then
+                    Box.Size = UDim2.new(1, 0, 0, 28)
+                else
+                    Box.Size = UDim2.new(1, 0, 0, 28 + ContentSize + 12)
+                end
                 task.defer(UpdateCanvas)
             end
             ContainerFrame.ChildAdded:Connect(function() task.defer(AutoResize) end)
@@ -802,7 +1037,39 @@ function SwiftUI:CreateWindow(Config)
                 return Api
             end
 
-            function Groupbox:AddDivider()
+            function Groupbox:AddDivider(Text)
+                if Text and Text ~= "" then
+                    local HolderDiv = SwiftUI:Create("Frame", {
+                        BackgroundTransparency = 1,
+                        Size = UDim2.new(1, 0, 0, 14),
+                        Parent = ContainerFrame,
+                    })
+                    local LineL = SwiftUI:Create("Frame", {
+                        BackgroundColor3 = SwiftUI.Theme.Outline,
+                        Size = UDim2.new(0.5, -20, 0, 1),
+                        Position = UDim2.new(0, 0, 0.5, 0),
+                        Parent = HolderDiv,
+                    })
+                    local LineR = SwiftUI:Create("Frame", {
+                        BackgroundColor3 = SwiftUI.Theme.Outline,
+                        Size = UDim2.new(0.5, -20, 0, 1),
+                        Position = UDim2.new(0.5, 20, 0.5, 0),
+                        Parent = HolderDiv,
+                    })
+                    local Label = SwiftUI:Create("TextLabel", {
+                        BackgroundTransparency = 1,
+                        Text = Text:upper(),
+                        FontFace = SwiftUI.FontBold,
+                        TextSize = 10,
+                        TextColor3 = SwiftUI.Theme.FontDark,
+                        Size = UDim2.new(0, 40, 1, 0),
+                        Position = UDim2.new(0.5, -20, 0, 0),
+                        Parent = HolderDiv,
+                    })
+                    table.insert(Groupbox.Elements, {Type = "Divider", Holder = HolderDiv, Text = Text})
+                    task.defer(AutoResize)
+                    return HolderDiv
+                end
                 local Div = SwiftUI:Create("Frame", {
                     BackgroundColor3 = SwiftUI.Theme.Outline,
                     Size = UDim2.new(1, 0, 0, 1),
@@ -817,10 +1084,11 @@ function SwiftUI:CreateWindow(Config)
                 Config = Config or {}
                 local Text = Config.Text or "Button"
                 local Callback = Config.Callback or Config.Func or function() end
+                local Tooltip = Config.Tooltip
 
                 local Btn = SwiftUI:Create("TextButton", {
                     BackgroundColor3 = SwiftUI.Theme.Element,
-                    Text = Text,
+                    Text = Config.Icon and (Config.Icon .. "  " .. Text) or Text,
                     FontFace = SwiftUI.Font,
                     TextSize = 13,
                     TextColor3 = SwiftUI.Theme.Font,
@@ -828,6 +1096,7 @@ function SwiftUI:CreateWindow(Config)
                     AutoButtonColor = false,
                     Parent = ContainerFrame,
                 })
+                if Tooltip then SwiftUI:CreateTooltip(Btn, Tooltip) end
                 SwiftUI:ApplyCorner(Btn, 0)
                 SwiftUI:ApplyStroke(Btn, SwiftUI.Theme.Outline, 1)
 
@@ -888,14 +1157,35 @@ function SwiftUI:CreateWindow(Config)
                     Parent = Holder,
                 })
                 SwiftUI:ApplyCorner(Track, 10)
-                SwiftUI:ApplyStroke(Track, SwiftUI.Theme.Outline, 1)
+                local TrackStroke = SwiftUI:ApplyStroke(Track, SwiftUI.Theme.Outline, 1)
+                SwiftUI:HookHover(Holder, function()
+                    if not Toggle.Value then
+                        SwiftUI:Tween(TrackStroke, {Color = SwiftUI.Theme.OutlineLight}, TweenInfoFast)
+                    end
+                end, function()
+                    if not Toggle.Value then
+                        SwiftUI:Tween(TrackStroke, {Color = SwiftUI.Theme.Outline}, TweenInfoFast)
+                    end
+                end)
                 local Thumb = SwiftUI:Create("Frame", {
                     BackgroundColor3 = SwiftUI.Theme.FontDark,
                     Size = UDim2.fromOffset(14, 14),
                     Position = UDim2.new(0, 3, 0.5, -7),
+                    ZIndex = 2,
                     Parent = Track,
                 })
                 SwiftUI:ApplyCorner(Thumb, 7)
+                local ThumbIcon = SwiftUI:Create("TextLabel", {
+                    BackgroundTransparency = 1,
+                    Text = "✓",
+                    FontFace = SwiftUI.FontBold,
+                    TextSize = 9,
+                    TextColor3 = Color3.new(1,1,1),
+                    TextXAlignment = Enum.TextXAlignment.Center,
+                    TextTransparency = 1,
+                    Size = UDim2.fromScale(1,1),
+                    Parent = Thumb,
+                })
 
                 local ToggleColor = Config.Color or Config.ColorPicker or Config.DefaultColor
                 local ToggleColorPreview = nil
@@ -927,9 +1217,12 @@ function SwiftUI:CreateWindow(Config)
                     if Value then
                         SwiftUI:Tween(Track, {BackgroundColor3 = SwiftUI.Theme.Accent}, TweenInfoMedium)
                         SwiftUI:Tween(Thumb, {BackgroundColor3 = Color3.new(1,1,1), Position = UDim2.new(1, -17, 0.5, -7)}, TweenInfoMedium)
+                        SwiftUI:Tween(ThumbIcon, {TextTransparency = 0}, TweenInfoFast)
+                        ThumbIcon.TextColor3 = SwiftUI.Theme.Accent
                     else
                         SwiftUI:Tween(Track, {BackgroundColor3 = SwiftUI.Theme.Element}, TweenInfoMedium)
                         SwiftUI:Tween(Thumb, {BackgroundColor3 = SwiftUI.Theme.FontDark, Position = UDim2.new(0, 3, 0.5, -7)}, TweenInfoMedium)
+                        SwiftUI:Tween(ThumbIcon, {TextTransparency = 1}, TweenInfoFast)
                     end
                 end
                 UpdateVisual(Default)
@@ -1194,9 +1487,19 @@ function SwiftUI:CreateWindow(Config)
                     Slider:SetValue(Value)
                 end
 
+                SwiftUI:HookHover(Track, function()
+                    SwiftUI:Tween(Track, {BackgroundColor3 = SwiftUI.Theme.ElementHover}, TweenInfoFast)
+                    SwiftUI:Tween(Thumb, {Size = UDim2.fromOffset(14,14)}, TweenInfoFast)
+                end, function()
+                    if not Dragging then
+                        SwiftUI:Tween(Track, {BackgroundColor3 = SwiftUI.Theme.Element}, TweenInfoFast)
+                    end
+                end)
                 Track.InputBegan:Connect(function(Input)
                     if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
                         Dragging = true
+                        SwiftUI:Tween(Thumb, {Size = UDim2.fromOffset(16,16)}, TweenInfoFast)
+                        SwiftUI:Tween(ValueLabel, {BackgroundColor3 = SwiftUI.Theme.Accent, TextColor3 = Color3.new(1,1,1)}, TweenInfoFast)
                         UpdateFromInput(Input)
                     end
                 end)
@@ -1207,6 +1510,10 @@ function SwiftUI:CreateWindow(Config)
                 end)
                 UserInputService.InputEnded:Connect(function(Input)
                     if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        if Dragging then
+                            SwiftUI:Tween(Thumb, {Size = UDim2.fromOffset(12,12)}, TweenInfoFast)
+                            SwiftUI:Tween(ValueLabel, {BackgroundColor3 = SwiftUI.Theme.Element, TextColor3 = SwiftUI.Theme.Font}, TweenInfoFast)
+                        end
                         Dragging = false
                     end
                 end)
@@ -1380,6 +1687,10 @@ function SwiftUI:CreateWindow(Config)
                     RefreshOptions()
                 end
 
+                ListFrame.BackgroundTransparency = 1
+                for _, Ch in ipairs(ListFrame:GetChildren()) do
+                    if Ch:IsA("GuiObject") then Ch.BackgroundTransparency = 1 end
+                end
                 Button.MouseButton1Click:Connect(function()
                     IsOpen = not IsOpen
                     ListFrame.Visible = IsOpen
@@ -1389,9 +1700,13 @@ function SwiftUI:CreateWindow(Config)
                         ListFrame.Size = UDim2.new(1, 0, 0, Height)
                         Holder.Size = UDim2.new(1, 0, 0, 44 + Height + 6)
                         SwiftUI:Tween(Arrow, {Rotation = 270}, TweenInfoFast)
+                        SwiftUI:Tween(ListFrame, {BackgroundTransparency = 0}, TweenInfoFast)
                     else
                         Holder.Size = UDim2.new(1, 0, 0, 44)
                         SwiftUI:Tween(Arrow, {Rotation = 90}, TweenInfoFast)
+                        SwiftUI:Tween(ListFrame, {BackgroundTransparency = 1}, TweenInfoFast)
+                        task.wait(0.12)
+                        if not IsOpen then ListFrame.Visible = false end
                     end
                     task.defer(AutoResize)
                 end)
@@ -1449,6 +1764,15 @@ function SwiftUI:CreateWindow(Config)
                     Position = UDim2.new(0, 6, 0, 0),
                     Parent = BoxHolder,
                 })
+                local BoxStroke = BoxHolder:FindFirstChildOfClass("UIStroke")
+                TextBox.Focused:Connect(function()
+                    if BoxStroke then SwiftUI:Tween(BoxStroke, {Color = SwiftUI.Theme.Accent}, TweenInfoFast) end
+                    SwiftUI:Tween(BoxHolder, {BackgroundColor3 = SwiftUI.Theme.ElementHover}, TweenInfoFast)
+                end)
+                TextBox.FocusLost:Connect(function()
+                    if BoxStroke then SwiftUI:Tween(BoxStroke, {Color = SwiftUI.Theme.Outline}, TweenInfoFast) end
+                    SwiftUI:Tween(BoxHolder, {BackgroundColor3 = SwiftUI.Theme.Element}, TweenInfoFast)
+                end)
 
                 local Input = {Value = Default, Type = "Input", Text = Text}
 
@@ -1862,6 +2186,13 @@ function SwiftUI:CreateWindow(Config)
         return Tab
     end
 
+    function Window:SetWatermark(Text)
+        FooterLabelBottom.Text = Text
+    end
+    function Window:SetFooter(Text)
+        FooterLabelBottom.Text = Text
+        TitleLabel.Text = Window.Title
+    end
     table.insert(SwiftUI.Windows, Window)
     return Window
 end
