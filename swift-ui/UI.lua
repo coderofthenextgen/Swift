@@ -222,8 +222,8 @@ function SwiftUI:Notify(Config)
 
     local Accent = self:Create("Frame", {
         BackgroundColor3 = self.Theme.Accent,
-        Size = UDim2.new(0, 3, 1, -2),
-        Position = UDim2.new(0, 1, 0, 1),
+        Size = UDim2.new(0, 4, 1, 0),
+        Position = UDim2.new(0, 0, 0, 0),
         Parent = Frame,
     })
     self:ApplyCorner(Accent, 0)
@@ -430,7 +430,7 @@ function SwiftUI:CreateWindow(Config)
         PaddingTop = UDim.new(0, 8),
         PaddingBottom = UDim.new(0, 8),
         PaddingLeft = UDim.new(0, 8),
-        PaddingRight = UDim.new(0, 12),
+        PaddingRight = UDim.new(0, 16),
         Parent = Sidebar,
     })
     local TabList = self:Create("ScrollingFrame", {
@@ -897,10 +897,30 @@ function SwiftUI:CreateWindow(Config)
                 })
                 SwiftUI:ApplyCorner(Thumb, 7)
 
+                local ToggleColor = Config.Color or Config.ColorPicker or Config.DefaultColor
+                local ToggleColorPreview = nil
+                local ToggleColorPickerFrame = nil
+                local ToggleColorOpen = false
+                local ToggleColorValue = ToggleColor or Color3.fromRGB(124, 92, 255)
+                local ToggleColorCallback = nil
+                if ToggleColor then
+                    Label.Size = UDim2.new(1, -76, 1, 0)
+                    ToggleColorPreview = SwiftUI:Create("Frame", {
+                        BackgroundColor3 = ToggleColorValue,
+                        Size = UDim2.fromOffset(20, 16),
+                        AnchorPoint = Vector2.new(1, 0.5),
+                        Position = UDim2.new(1, -46, 0.5, 0),
+                        Parent = Holder,
+                    })
+                    SwiftUI:ApplyCorner(ToggleColorPreview, 0)
+                    SwiftUI:ApplyStroke(ToggleColorPreview, SwiftUI.Theme.Outline, 1)
+                end
+
                 local Toggle = {
                     Value = Default,
                     Type = "Toggle",
                     Text = Text,
+                    ColorValue = ToggleColorValue,
                 }
 
                 local function UpdateVisual(Value)
@@ -928,6 +948,112 @@ function SwiftUI:CreateWindow(Config)
                     Callback = Func
                 end
 
+                function Toggle:SetColor(Color)
+                    Toggle.ColorValue = Color
+                    if ToggleColorPreview then
+                        ToggleColorPreview.BackgroundColor3 = Color
+                    end
+                    if Id then SwiftUI.Options[Id] = Toggle end
+                end
+
+                function Toggle:AddColorPicker(Config2)
+                    Config2 = Config2 or {}
+                    local Def = Config2.Default or Toggle.ColorValue
+                    Toggle.ColorValue = Def
+                    if not ToggleColorPreview then
+                        Label.Size = UDim2.new(1, -76, 1, 0)
+                        ToggleColorPreview = SwiftUI:Create("Frame", {
+                            BackgroundColor3 = Def,
+                            Size = UDim2.fromOffset(20, 16),
+                            AnchorPoint = Vector2.new(1, 0.5),
+                            Position = UDim2.new(1, -46, 0.5, 0),
+                            Parent = Holder,
+                        })
+                        SwiftUI:ApplyCorner(ToggleColorPreview, 0)
+                        SwiftUI:ApplyStroke(ToggleColorPreview, SwiftUI.Theme.Outline, 1)
+                    else
+                        ToggleColorPreview.BackgroundColor3 = Def
+                    end
+                    return Toggle
+                end
+
+                if ToggleColor then
+                    local ColorBtn = SwiftUI:Create("TextButton", {
+                        BackgroundTransparency = 1,
+                        Text = "",
+                        Size = UDim2.fromOffset(20, 16),
+                        AnchorPoint = Vector2.new(1, 0.5),
+                        Position = UDim2.new(1, -46, 0.5, 0),
+                        ZIndex = 3,
+                        Parent = Holder,
+                    })
+                    local function OpenTogglePicker()
+                        if ToggleColorPickerFrame then ToggleColorPickerFrame:Destroy() ToggleColorPickerFrame=nil end
+                        if ToggleColorOpen then
+                            ToggleColorOpen = false
+                            Holder.Size = UDim2.new(1, 0, 0, 28)
+                            task.defer(AutoResize)
+                            return
+                        end
+                        ToggleColorOpen = true
+                        ToggleColorPickerFrame = SwiftUI:Create("Frame", {
+                            BackgroundColor3 = SwiftUI.Theme.Main,
+                            Size = UDim2.fromOffset(162, 142),
+                            Position = UDim2.new(1, -162, 0, 24),
+                            ZIndex = 50,
+                            Parent = Holder,
+                        })
+                        SwiftUI:ApplyCorner(ToggleColorPickerFrame, 0)
+                        SwiftUI:ApplyStroke(ToggleColorPickerFrame, SwiftUI.Theme.Outline, 1)
+                        SwiftUI:Create("UIPadding", {
+                            PaddingTop = UDim.new(0, 8),
+                            PaddingBottom = UDim.new(0, 8),
+                            PaddingLeft = UDim.new(0, 8),
+                            PaddingRight = UDim.new(0, 8),
+                            Parent = ToggleColorPickerFrame,
+                        })
+                        SwiftUI:Create("UIListLayout", {
+                            FillDirection = Enum.FillDirection.Vertical,
+                            Padding = UDim.new(0, 6),
+                            Parent = ToggleColorPickerFrame,
+                        })
+                        local Colors2 = {
+                            Color3.fromRGB(124,92,255), Color3.fromRGB(46,204,113), Color3.fromRGB(52,152,219),
+                            Color3.fromRGB(231,76,60), Color3.fromRGB(241,196,15), Color3.fromRGB(230,126,34),
+                            Color3.fromRGB(255,255,255), Color3.fromRGB(150,150,150), Color3.fromRGB(0,0,0),
+                        }
+                        local Grid2 = SwiftUI:Create("Frame", {
+                            BackgroundTransparency = 1,
+                            Size = UDim2.new(1, 0, 0, 96),
+                            Parent = ToggleColorPickerFrame,
+                        })
+                        SwiftUI:Create("UIGridLayout", {
+                            CellSize = UDim2.fromOffset(28, 28),
+                            CellPadding = UDim2.fromOffset(6,6),
+                            Parent = Grid2,
+                        })
+                        for _, C in ipairs(Colors2) do
+                            local Btn2 = SwiftUI:Create("TextButton", {
+                                BackgroundColor3 = C,
+                                Text = "",
+                                AutoButtonColor = false,
+                                Parent = Grid2,
+                            })
+                            SwiftUI:ApplyCorner(Btn2, 0)
+                            SwiftUI:ApplyStroke(Btn2, SwiftUI.Theme.Outline, 1)
+                            Btn2.MouseButton1Click:Connect(function()
+                                Toggle:SetColor(C)
+                                ToggleColorPreview.BackgroundColor3 = C
+                                if ToggleColorCallback then ToggleColorCallback(C) end
+                            end)
+                        end
+                        Holder.Size = UDim2.new(1, 0, 0, 28 + 150)
+                        task.defer(AutoResize)
+                    end
+                    ColorBtn.MouseButton1Click:Connect(OpenTogglePicker)
+                    function Toggle:OnColorChanged(Func) ToggleColorCallback = Func end
+                end
+
                 local Button = SwiftUI:Create("TextButton", {
                     BackgroundTransparency = 1,
                     Text = "",
@@ -936,6 +1062,13 @@ function SwiftUI:CreateWindow(Config)
                     Parent = Holder,
                 })
                 Button.MouseButton1Click:Connect(function()
+                    if ToggleColorPreview then
+                        local MousePos = UserInputService:GetMouseLocation()
+                        if ToggleColorPreview.AbsolutePosition.X <= MousePos.X and MousePos.X <= ToggleColorPreview.AbsolutePosition.X + ToggleColorPreview.AbsoluteSize.X
+                        and ToggleColorPreview.AbsolutePosition.Y <= MousePos.Y and MousePos.Y <= ToggleColorPreview.AbsolutePosition.Y + ToggleColorPreview.AbsoluteSize.Y then
+                            return
+                        end
+                    end
                     Toggle:SetValue(not Toggle.Value)
                 end)
 
@@ -1409,12 +1542,24 @@ function SwiftUI:CreateWindow(Config)
                         math.clamp(Value.B * 255 + 14, 0, 255)
                     )
                     for _, Desc in ipairs(SwiftUI.ScreenGui:GetDescendants()) do
-                        if Desc:IsA("GuiObject") then
-                            pcall(function()
-                                if Desc.BackgroundColor3 == OldAccent then
-                                    Desc.BackgroundColor3 = Value
+                        pcall(function()
+                            if Desc:IsA("GuiObject") and Desc.BackgroundColor3 == OldAccent then
+                                Desc.BackgroundColor3 = Value
+                            end
+                            if (Desc:IsA("TextLabel") or Desc:IsA("TextButton") or Desc:IsA("TextBox")) and Desc.TextColor3 == OldAccent then
+                                Desc.TextColor3 = Value
+                            end
+                        end)
+                    end
+                    for _, W in ipairs(SwiftUI.Windows) do
+                        for _, T in ipairs(W.Tabs) do
+                            if T.Button and W.ActiveTab == T then
+                                for _, Ch in ipairs(T.Button:GetDescendants()) do
+                                    if Ch:IsA("TextLabel") and Ch.TextColor3 == OldAccent then
+                                        Ch.TextColor3 = Value
+                                    end
                                 end
-                            end)
+                            end
                         end
                     end
                     SwiftUI:SafeCallback(Callback, Value)
@@ -1428,7 +1573,7 @@ function SwiftUI:CreateWindow(Config)
                         if PickerFrame then PickerFrame:Destroy() end
                         PickerFrame = SwiftUI:Create("Frame", {
                             BackgroundColor3 = SwiftUI.Theme.Main,
-                            Size = UDim2.fromOffset(162, 112),
+                            Size = UDim2.fromOffset(162, 170),
                             Position = UDim2.new(1, -162, 0, 24),
                             ZIndex = 50,
                             Parent = Holder,
@@ -1454,7 +1599,7 @@ function SwiftUI:CreateWindow(Config)
                         }
                         local Grid = SwiftUI:Create("Frame", {
                             BackgroundTransparency = 1,
-                            Size = UDim2.new(1, 0, 0, 60),
+                            Size = UDim2.new(1, 0, 0, 96),
                             Parent = PickerFrame,
                         })
                         SwiftUI:Create("UIGridLayout", {
@@ -1475,6 +1620,40 @@ function SwiftUI:CreateWindow(Config)
                                 ColorPicker:SetValue(C)
                             end)
                         end
+                        local HexHolder = SwiftUI:Create("Frame", {
+                            BackgroundColor3 = SwiftUI.Theme.Element,
+                            Size = UDim2.new(1, 0, 0, 22),
+                            Parent = PickerFrame,
+                        })
+                        SwiftUI:ApplyCorner(HexHolder, 0)
+                        SwiftUI:ApplyStroke(HexHolder, SwiftUI.Theme.Outline, 1)
+                        local HexBox = SwiftUI:Create("TextBox", {
+                            BackgroundTransparency = 1,
+                            Text = "",
+                            PlaceholderText = "#RRGGBB",
+                            PlaceholderColor3 = SwiftUI.Theme.FontDark,
+                            FontFace = SwiftUI.FontCode,
+                            TextSize = 11,
+                            TextColor3 = SwiftUI.Theme.Font,
+                            TextXAlignment = Enum.TextXAlignment.Center,
+                            ClearTextOnFocus = false,
+                            Size = UDim2.fromScale(1, 1),
+                            Parent = HexHolder,
+                        })
+                        HexBox.FocusLost:Connect(function(Enter)
+                            if not Enter then return end
+                            local Hex = HexBox.Text:gsub("#",""):gsub(" ","")
+                            if #Hex == 6 then
+                                local R = tonumber(Hex:sub(1,2), 16)
+                                local G = tonumber(Hex:sub(3,4), 16)
+                                local B = tonumber(Hex:sub(5,6), 16)
+                                if R and G and B then
+                                    local C = Color3.fromRGB(R,G,B)
+                                    ColorPicker:SetValue(C)
+                                    HexBox.Text = ""
+                                end
+                            end
+                        end)
                         local RainbowBtn = SwiftUI:Create("TextButton", {
                             BackgroundColor3 = SwiftUI.Theme.Accent,
                             Text = "Rainbow",
@@ -1486,15 +1665,48 @@ function SwiftUI:CreateWindow(Config)
                             Parent = PickerFrame,
                         })
                         SwiftUI:ApplyCorner(RainbowBtn, 0)
+                        local RainbowEnabled = false
+                        local RainbowConn = nil
                         RainbowBtn.MouseButton1Click:Connect(function()
-                            local Hue = tick() % 5 / 5
-                            local C = Color3.fromHSV(Hue, 0.8, 1)
-                            ColorPicker:SetValue(C)
+                            RainbowEnabled = not RainbowEnabled
+                            if RainbowEnabled then
+                                RainbowBtn.Text = "Rainbow: ON"
+                                RainbowBtn.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
+                                local RainbowOld = SwiftUI.Theme.Accent
+                                RainbowConn = SwiftUI:GiveSignal(RunService.Heartbeat:Connect(function()
+                                    local Hue = tick() % 5 / 5
+                                    local C = Color3.fromHSV(Hue, 0.85, 1)
+                                    Preview.BackgroundColor3 = C
+                                    SwiftUI.Theme.Accent = C
+                                    SwiftUI.Theme.AccentHover = Color3.fromRGB(
+                                        math.clamp(C.R * 255 + 14, 0, 255),
+                                        math.clamp(C.G * 255 + 14, 0, 255),
+                                        math.clamp(C.B * 255 + 14, 0, 255)
+                                    )
+                                    for _, Desc in ipairs(SwiftUI.ScreenGui:GetDescendants()) do
+                                        pcall(function()
+                                            if Desc:IsA("GuiObject") and Desc.BackgroundColor3 == RainbowOld then
+                                                Desc.BackgroundColor3 = C
+                                            end
+                                            if (Desc:IsA("TextLabel") or Desc:IsA("TextButton") or Desc:IsA("TextBox")) and Desc.TextColor3 == RainbowOld then
+                                                Desc.TextColor3 = C
+                                            end
+                                        end)
+                                    end
+                                    RainbowOld = C
+                                    ColorPicker.Value = C
+                                end))
+                            else
+                                RainbowBtn.Text = "Rainbow"
+                                RainbowBtn.BackgroundColor3 = SwiftUI.Theme.Accent
+                                if RainbowConn then RainbowConn:Disconnect() RainbowConn = nil end
+                            end
                         end)
-                        Holder.Size = UDim2.new(1, 0, 0, 28 + 118)
+                        Holder.Size = UDim2.new(1, 0, 0, 194)
                         task.defer(AutoResize)
                     else
                         if PickerFrame then PickerFrame:Destroy() PickerFrame=nil end
+                        if RainbowConn then pcall(function() RainbowConn:Disconnect() end) RainbowConn=nil end
                         Holder.Size = UDim2.new(1, 0, 0, 28)
                         task.defer(AutoResize)
                     end
