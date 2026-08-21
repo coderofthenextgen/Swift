@@ -3,7 +3,7 @@ local SwiftUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/coder
 local Window = SwiftUI:CreateWindow({
     Title = "Swift UI",
     Footer = "Quick Test",
-    Size = UDim2.fromOffset(520, 380),
+    Size = UDim2.fromOffset(640, 480),
     ToggleKeybind = Enum.KeyCode.RightShift,
 })
 

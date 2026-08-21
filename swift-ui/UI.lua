@@ -554,7 +554,7 @@ function SwiftUI:CreateWindow(Config)
     Config = Config or {}
     local Title = Config.Title or "Swift UI"
     local Footer = Config.Footer or "Swift"
-    local Size = Config.Size or UDim2.fromOffset(620, 520)
+    local Size = Config.Size or UDim2.fromOffset(750, 600)
     local Center = Config.Center
     if Center == nil then Center = true end
     local ToggleKeybind = Config.ToggleKeybind or self.ToggleKeybind
@@ -855,25 +855,50 @@ function SwiftUI:CreateWindow(Config)
         Parent = Footer,
     })
 
-    local ResizeHandle = self:Create("Frame", {
+    local ResizeHandle = self:Create("TextButton", {
         BackgroundTransparency = 1,
+        Text = "",
+        AutoButtonColor = false,
         AnchorPoint = Vector2.new(1, 1),
         Position = UDim2.new(1, 0, 1, 0),
-        Size = UDim2.fromOffset(18, 18),
+        Size = UDim2.fromOffset(28, 28),
         ZIndex = 3,
         Parent = Footer,
     })
+    local GripBg = self:Create("Frame", {
+        BackgroundColor3 = self.Theme.Element,
+        BackgroundTransparency = 0.4,
+        Size = UDim2.fromOffset(22, 22),
+        AnchorPoint = Vector2.new(1, 1),
+        Position = UDim2.new(1, -3, 1, -3),
+        ZIndex = 3,
+        Parent = ResizeHandle,
+    })
+    self:ApplyCorner(GripBg, 0)
+    self:ApplyStroke(GripBg, self.Theme.Outline, 1)
     for i = 0, 2 do
         local Dot = self:Create("Frame", {
-            BackgroundColor3 = self.Theme.FontDark,
-            Size = UDim2.fromOffset(2, 2),
-            Position = UDim2.new(1, -5 - i*4, 1, -5 - i*4),
-            ZIndex = 2,
+            BackgroundColor3 = self.Theme.FontDim,
+            Size = UDim2.fromOffset(3, 3),
+            Position = UDim2.new(1, -6 - i*5, 1, -6 - i*5),
+            ZIndex = 4,
             Active = false,
-            Parent = ResizeHandle,
+            Parent = GripBg,
         })
         self:ApplyCorner(Dot, 1)
     end
+    self:HookHover(ResizeHandle, function()
+        GripBg.BackgroundTransparency = 0
+        GripBg.BackgroundColor3 = self.Theme.ElementHover
+        for _, Ch in ipairs(GripBg:GetChildren()) do
+            if Ch:IsA("Frame") then Ch.BackgroundColor3 = self.Theme.Font end
+        end
+    end, function()
+        GripBg.BackgroundTransparency = 1
+        for _, Ch in ipairs(GripBg:GetChildren()) do
+            if Ch:IsA("Frame") then Ch.BackgroundColor3 = self.Theme.FontDim end
+        end
+    end)
     local ResizeIcon = self:Create("TextLabel", {
         BackgroundTransparency = 1,
         Text = "",
