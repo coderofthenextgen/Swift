@@ -4,11 +4,11 @@ ThemeManager.Folder = "SwiftUI"
 ThemeManager.FileName = "SwiftUI/theme.json"
 ThemeManager.BuiltInThemes = {
     SwiftDark = {
-        Background = Color3.fromRGB(13, 13, 15),
-        Main = Color3.fromRGB(20, 20, 22),
-        Sidebar = Color3.fromRGB(16, 16, 18),
-        Element = Color3.fromRGB(28, 28, 31),
-        Outline = Color3.fromRGB(42, 42, 46),
+        Background = Color3.fromRGB(10, 10, 12),
+        Main = Color3.fromRGB(14, 14, 16),
+        Sidebar = Color3.fromRGB(12, 12, 14),
+        Element = Color3.fromRGB(22, 22, 26),
+        Outline = Color3.fromRGB(48, 48, 52),
         Accent = Color3.fromRGB(124, 92, 255),
         Font = Color3.fromRGB(240, 240, 240),
     },
