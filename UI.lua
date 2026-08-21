@@ -1322,24 +1322,8 @@ function SwiftUI:CreateWindow(Config)
                 Header = Header,
             }
 
-            HeaderBtn.MouseButton1Click:Connect(function()
-                Groupbox.Collapsed = not Groupbox.Collapsed
-                ContainerFrame.Visible = not Groupbox.Collapsed
-                Line.Visible = not Groupbox.Collapsed
-                if Groupbox.Collapsed then
-                    SwiftUI:Tween(CollapseArrow, {Rotation = 0}, TweenInfoFast)
-                else
-                    SwiftUI:Tween(CollapseArrow, {Rotation = 90}, TweenInfoFast)
-                end
-                task.defer(AutoResize)
-            end)
-            SwiftUI:HookHover(HeaderBtn, function()
-                CollapseArrow.TextColor3 = SwiftUI.Theme.Font
-            end, function()
-                CollapseArrow.TextColor3 = SwiftUI.Theme.FontDim
-            end)
-
-            local function AutoResize()
+            local AutoResize
+            AutoResize = function()
                 local Y = 14 + 1 + 8 + 8
                 for _, Child in ipairs(ContainerFrame:GetChildren()) do
                     if Child:IsA("GuiObject") and Child.Visible and not Child:IsA("UIListLayout") then
@@ -1362,6 +1346,23 @@ function SwiftUI:CreateWindow(Config)
             ContainerFrame.ChildAdded:Connect(function() task.defer(AutoResize) end)
             ContainerFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(AutoResize)
             RunService.RenderStepped:Connect(AutoResize)
+
+            HeaderBtn.MouseButton1Click:Connect(function()
+                Groupbox.Collapsed = not Groupbox.Collapsed
+                ContainerFrame.Visible = not Groupbox.Collapsed
+                Line.Visible = not Groupbox.Collapsed
+                if Groupbox.Collapsed then
+                    SwiftUI:Tween(CollapseArrow, {Rotation = 0}, TweenInfoFast)
+                else
+                    SwiftUI:Tween(CollapseArrow, {Rotation = 90}, TweenInfoFast)
+                end
+                task.defer(AutoResize)
+            end)
+            SwiftUI:HookHover(HeaderBtn, function()
+                CollapseArrow.TextColor3 = SwiftUI.Theme.Font
+            end, function()
+                CollapseArrow.TextColor3 = SwiftUI.Theme.FontDim
+            end)
 
             function Groupbox:Resize()
                 AutoResize()
