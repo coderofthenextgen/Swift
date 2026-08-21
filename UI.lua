@@ -222,8 +222,8 @@ function SwiftUI:Notify(Config)
 
     local Accent = self:Create("Frame", {
         BackgroundColor3 = self.Theme.Accent,
-        Size = UDim2.new(0, 3, 1, 0),
-        Position = UDim2.new(0, 0, 0, 0),
+        Size = UDim2.new(0, 3, 1, -2),
+        Position = UDim2.new(0, 1, 0, 1),
         Parent = Frame,
     })
     self:ApplyCorner(Accent, 0)
@@ -430,7 +430,7 @@ function SwiftUI:CreateWindow(Config)
         PaddingTop = UDim.new(0, 8),
         PaddingBottom = UDim.new(0, 8),
         PaddingLeft = UDim.new(0, 8),
-        PaddingRight = UDim.new(0, 8),
+        PaddingRight = UDim.new(0, 12),
         Parent = Sidebar,
     })
     local TabList = self:Create("ScrollingFrame", {
@@ -1399,8 +1399,24 @@ function SwiftUI:CreateWindow(Config)
                 local ColorPicker = {Value = Default, Type = "ColorPicker", Text = Text}
 
                 function ColorPicker:SetValue(Value)
+                    local OldAccent = SwiftUI.Theme.Accent
                     ColorPicker.Value = Value
                     Preview.BackgroundColor3 = Value
+                    SwiftUI.Theme.Accent = Value
+                    SwiftUI.Theme.AccentHover = Color3.fromRGB(
+                        math.clamp(Value.R * 255 + 14, 0, 255),
+                        math.clamp(Value.G * 255 + 14, 0, 255),
+                        math.clamp(Value.B * 255 + 14, 0, 255)
+                    )
+                    for _, Desc in ipairs(SwiftUI.ScreenGui:GetDescendants()) do
+                        if Desc:IsA("GuiObject") then
+                            pcall(function()
+                                if Desc.BackgroundColor3 == OldAccent then
+                                    Desc.BackgroundColor3 = Value
+                                end
+                            end)
+                        end
+                    end
                     SwiftUI:SafeCallback(Callback, Value)
                     if Id then SwiftUI.Options[Id] = ColorPicker end
                 end
@@ -1412,9 +1428,9 @@ function SwiftUI:CreateWindow(Config)
                         if PickerFrame then PickerFrame:Destroy() end
                         PickerFrame = SwiftUI:Create("Frame", {
                             BackgroundColor3 = SwiftUI.Theme.Main,
-                            Size = UDim2.fromOffset(160, 110),
-                            Position = UDim2.new(1, -160, 1, 4),
-                            ZIndex = 25,
+                            Size = UDim2.fromOffset(162, 112),
+                            Position = UDim2.new(1, -162, 0, 24),
+                            ZIndex = 50,
                             Parent = Holder,
                         })
                         SwiftUI:ApplyCorner(PickerFrame, 0)
@@ -1552,13 +1568,24 @@ function SwiftUI:CreateWindow(Config)
                 function KeyPicker:SetState(State) KeyPicker.Toggled = State end
 
                 local Listening = false
+                local function UpdateToggledVisual()
+                    if KeyPicker.Toggled then
+                        KeyButton.BackgroundColor3 = SwiftUI.Theme.Accent
+                        KeyButton.TextColor3 = Color3.new(1,1,1)
+                    else
+                        KeyButton.BackgroundColor3 = SwiftUI.Theme.Element
+                        KeyButton.TextColor3 = SwiftUI.Theme.Font
+                    end
+                end
+
                 KeyButton.MouseButton1Click:Connect(function()
                     if Listening then return end
                     Listening = true
                     KeyButton.Text = "..."
+                    KeyButton.BackgroundColor3 = SwiftUI.Theme.Element
                     local Conn
-                    Conn = UserInputService.InputBegan:Connect(function(Input, GameProcessed)
-                        if Input.UserInputType == Enum.UserInputType.Keyboard then
+                    Conn = SwiftUI:GiveSignal(UserInputService.InputBegan:Connect(function(Input, GameProcessed)
+                        if Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode ~= Enum.KeyCode.Unknown then
                             if Input.KeyCode == Enum.KeyCode.Escape then
                                 KeyButton.Text = typeof(KeyPicker.Value) == "EnumItem" and KeyPicker.Value.Name or tostring(KeyPicker.Value)
                                 Listening = false
@@ -1567,33 +1594,38 @@ function SwiftUI:CreateWindow(Config)
                             end
                             KeyPicker:SetValue(Input.KeyCode)
                             Listening = false
+                            UpdateToggledVisual()
                             Conn:Disconnect()
                         end
-                    end)
+                    end))
                 end)
 
                 if Mode == "Toggle" then
-                    UserInputService.InputBegan:Connect(function(Input, GameProcessed)
+                    SwiftUI:GiveSignal(UserInputService.InputBegan:Connect(function(Input, GameProcessed)
                         if GameProcessed then return end
-                        if Input.KeyCode == KeyPicker.Value then
+                        if typeof(KeyPicker.Value) == "EnumItem" and Input.KeyCode == KeyPicker.Value then
                             KeyPicker.Toggled = not KeyPicker.Toggled
+                            UpdateToggledVisual()
                             SwiftUI:SafeCallback(ChangedCallback, KeyPicker.Toggled)
                         end
-                    end)
+                    end))
                 elseif Mode == "Hold" then
-                    UserInputService.InputBegan:Connect(function(Input)
-                        if Input.KeyCode == KeyPicker.Value then
+                    SwiftUI:GiveSignal(UserInputService.InputBegan:Connect(function(Input)
+                        if typeof(KeyPicker.Value) == "EnumItem" and Input.KeyCode == KeyPicker.Value then
                             KeyPicker.Toggled = true
+                            UpdateToggledVisual()
                             SwiftUI:SafeCallback(ChangedCallback, true)
                         end
-                    end)
-                    UserInputService.InputEnded:Connect(function(Input)
-                        if Input.KeyCode == KeyPicker.Value then
+                    end))
+                    SwiftUI:GiveSignal(UserInputService.InputEnded:Connect(function(Input)
+                        if typeof(KeyPicker.Value) == "EnumItem" and Input.KeyCode == KeyPicker.Value then
                             KeyPicker.Toggled = false
+                            UpdateToggledVisual()
                             SwiftUI:SafeCallback(ChangedCallback, false)
                         end
-                    end)
+                    end))
                 end
+                UpdateToggledVisual()
 
                 if Id then SwiftUI.Options[Id] = KeyPicker end
                 table.insert(Groupbox.Elements, {Type = "KeyPicker", Holder = Holder, Text = Text})
