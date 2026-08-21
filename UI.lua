@@ -867,34 +867,33 @@ function SwiftUI:CreateWindow(Config)
     })
     local GripBg = self:Create("Frame", {
         BackgroundColor3 = self.Theme.Element,
-        BackgroundTransparency = 0.3,
-        Size = UDim2.fromOffset(22, 10),
+        BackgroundTransparency = 0.4,
+        Size = UDim2.fromOffset(20, 10),
         AnchorPoint = Vector2.new(1, 1),
         Position = UDim2.new(1, -2, 1, -2),
         ZIndex = 3,
         Parent = ResizeHandle,
     })
-    self:ApplyCorner(GripBg, 0)
-    self:ApplyStroke(GripBg, self.Theme.Outline, 1)
+    self:ApplyCorner(GripBg, 4)
     for i = 0, 2 do
         local Dot = self:Create("Frame", {
-            BackgroundColor3 = self.Theme.Font,
-            Size = UDim2.fromOffset(6, 2),
-            Position = UDim2.new(0, 2 + i*6, 0.5, -1),
+            BackgroundColor3 = self.Theme.FontDim,
+            Size = UDim2.fromOffset(4, 4),
+            Position = UDim2.new(0, 3 + i*6, 0.5, -2),
             ZIndex = 4,
             Active = false,
             Parent = GripBg,
         })
-        self:ApplyCorner(Dot, 1)
+        self:ApplyCorner(Dot, 4)
     end
     self:HookHover(ResizeHandle, function()
-        GripBg.BackgroundTransparency = 0
+        GripBg.BackgroundTransparency = 0.15
         GripBg.BackgroundColor3 = self.Theme.ElementHover
         for _, Ch in ipairs(GripBg:GetChildren()) do
             if Ch:IsA("Frame") then Ch.BackgroundColor3 = self.Theme.Font end
         end
     end, function()
-        GripBg.BackgroundTransparency = 0.3
+        GripBg.BackgroundTransparency = 0.4
         GripBg.BackgroundColor3 = self.Theme.Element
         for _, Ch in ipairs(GripBg:GetChildren()) do
             if Ch:IsA("Frame") then Ch.BackgroundColor3 = self.Theme.FontDim end
