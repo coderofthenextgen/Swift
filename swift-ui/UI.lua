@@ -286,14 +286,31 @@ SwiftUI:Create("UIListLayout", {
 })
 
 function SwiftUI:ShowConfirm(Title, Message, OnYes, OnNo)
+    print("[SwiftUI] ShowConfirm:", Title)
+    local ModalGui = self:Create("ScreenGui", {
+        Name = "SwiftUI_Confirm",
+        DisplayOrder = 10000,
+        ResetOnSpawn = false,
+        IgnoreGuiInset = true,
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+    })
+    pcall(ProtectGui, ModalGui)
+    local Succ = pcall(function() ModalGui.Parent = GetHui() end)
+    if not Succ or not ModalGui.Parent then
+        pcall(function() ModalGui.Parent = CoreGui end)
+        if not ModalGui.Parent then
+            ModalGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+        end
+    end
     local Modal = self:Create("Frame", {
         BackgroundColor3 = Color3.new(0,0,0),
-        BackgroundTransparency = 0.45,
+        BackgroundTransparency = 0.35,
         Size = UDim2.fromScale(1, 1),
         Position = UDim2.fromScale(0, 0),
         ZIndex = 1000,
         Active = true,
-        Parent = self.ScreenGui,
+        BorderSizePixel = 0,
+        Parent = ModalGui,
     })
     local Blocker = self:Create("TextButton", {
         BackgroundTransparency = 1,
@@ -377,6 +394,7 @@ function SwiftUI:ShowConfirm(Title, Message, OnYes, OnNo)
     self:HookHover(NoBtn, function() NoBtn.BackgroundColor3 = self.Theme.ElementHover end, function() NoBtn.BackgroundColor3 = self.Theme.Element end)
     self:HookHover(YesBtn, function() YesBtn.BackgroundColor3 = self.Theme.AccentHover end, function() YesBtn.BackgroundColor3 = self.Theme.Accent end)
     local function Close()
+        if ModalGui and ModalGui.Parent then ModalGui:Destroy() end
         if Modal.Parent then Modal:Destroy() end
     end
     NoBtn.MouseButton1Click:Connect(function()
@@ -388,7 +406,8 @@ function SwiftUI:ShowConfirm(Title, Message, OnYes, OnNo)
         if OnYes then pcall(OnYes) end
     end)
     Blocker.MouseButton1Click:Connect(function() Close() end)
-    return Modal
+    -- also allow clicking dialog background to close? no
+    return ModalGui
 end
 
 function SwiftUI:Notify(Config)
@@ -1784,7 +1803,10 @@ function SwiftUI:CreateWindow(Config)
                 local Values = Config.Values or {}
                 local Default = Config.Default or Config.Value or Values[1]
                 local Multi = Config.Multi or false
+                local Searchable = Config.Searchable or Config.Search or false
+                local MaxVisible = Config.MaxVisible or 6
                 local Callback = Config.Callback or Config.Changed or function() end
+                local Placeholder = Config.Placeholder or "Select..." 
 
                 local Holder = SwiftUI:Create("Frame", {
                     BackgroundTransparency = 1,
@@ -1807,6 +1829,7 @@ function SwiftUI:CreateWindow(Config)
                     Size = UDim2.new(1, 0, 0, 24),
                     Position = UDim2.new(0, 0, 0, 18),
                     AutoButtonColor = false,
+                    ClipsDescendants = false,
                     Parent = Holder,
                 })
                 SwiftUI:ApplyCorner(Button, 0)
@@ -1844,13 +1867,37 @@ function SwiftUI:CreateWindow(Config)
                     ZIndex = 20,
                     CanvasSize = UDim2.new(0,0,0,0),
                     ScrollBarThickness = 2,
+                    ClipsDescendants = true,
                     Parent = Holder,
                 })
                 SwiftUI:ApplyCorner(ListFrame, 0)
                 SwiftUI:ApplyStroke(ListFrame, SwiftUI.Theme.Outline, 1)
+                local SearchBox2 = nil
+                if Searchable then
+                    local SearchHolder2 = SwiftUI:Create("Frame", {
+                        BackgroundColor3 = SwiftUI.Theme.Main,
+                        Size = UDim2.new(1, 0, 0, 22),
+                        Parent = ListFrame,
+                    })
+                    SwiftUI:ApplyCorner(SearchHolder2, 0)
+                    SearchBox2 = SwiftUI:Create("TextBox", {
+                        BackgroundTransparency = 1,
+                        Text = "",
+                        PlaceholderText = "Search...",
+                        PlaceholderColor3 = SwiftUI.Theme.FontDark,
+                        FontFace = SwiftUI.Font,
+                        TextSize = 11,
+                        TextColor3 = SwiftUI.Theme.Font,
+                        ClearTextOnFocus = false,
+                        Size = UDim2.new(1, -8, 1, 0),
+                        Position = UDim2.new(0, 4, 0, 0),
+                        Parent = SearchHolder2,
+                    })
+                end
                 SwiftUI:Create("UIListLayout", {
                     FillDirection = Enum.FillDirection.Vertical,
                     Padding = UDim.new(0, 2),
+                    SortOrder = Enum.SortOrder.LayoutOrder,
                     Parent = ListFrame,
                 })
                 SwiftUI:Create("UIPadding", {
@@ -1869,22 +1916,41 @@ function SwiftUI:CreateWindow(Config)
                 }
                 local IsOpen = false
 
+                local FilterQuery = ""
+                if SearchBox2 then
+                    SearchBox2:GetPropertyChangedSignal("Text"):Connect(function()
+                        FilterQuery = SearchBox2.Text:lower()
+                        RefreshOptions()
+                        -- resize
+                        local Cnt = 0
+                        for _, V in ipairs(Values) do
+                            if FilterQuery == "" or V:lower():find(FilterQuery, 1, true) then Cnt = Cnt + 1 end
+                        end
+                        local H = math.clamp(Cnt * 26 + (Searchable and 30 or 8), 0, MaxVisible * 26 + 10)
+                        ListFrame.Size = UDim2.new(1, 0, 0, H)
+                        Holder.Size = UDim2.new(1, 0, 0, 44 + H + 6)
+                    end)
+                end
                 local function RefreshOptions()
                     for _, Child in ipairs(ListFrame:GetChildren()) do
                         if Child:IsA("TextButton") then Child:Destroy() end
                     end
                     local Count = 0
+                    local VisibleCount = 0
                     for _, Value in ipairs(Values) do
-                        Count = Count + 1
-                        local IsSelected = false
-                        if Multi and type(Dropdown.Value) == "table" then
-                            IsSelected = table.find(Dropdown.Value, Value) ~= nil
-                        else
-                            IsSelected = Dropdown.Value == Value
-                        end
-                        local Opt = SwiftUI:Create("TextButton", {
+                        local PassFilter = FilterQuery == "" or Value:lower():find(FilterQuery, 1, true)
+                        if PassFilter then
+                            VisibleCount = VisibleCount + 1
+                            Count = Count + 1
+                            local IsSelected = false
+                            if Multi and type(Dropdown.Value) == "table" then
+                                IsSelected = table.find(Dropdown.Value, Value) ~= nil
+                            else
+                                IsSelected = Dropdown.Value == Value
+                            end
+                            local Opt = SwiftUI:Create("TextButton", {
                             BackgroundColor3 = IsSelected and SwiftUI.Theme.Accent or SwiftUI.Theme.Element,
-                            Text = Value,
+                            Text = (IsSelected and (Multi and "✓ " or "• ") or "  ") .. Value,
                             FontFace = SwiftUI.Font,
                             TextSize = 12,
                             TextColor3 = IsSelected and Color3.new(1,1,1) or SwiftUI.Theme.FontDim,
@@ -1913,6 +1979,7 @@ function SwiftUI:CreateWindow(Config)
                             end
                             if Id then SwiftUI.Options[Id] = Dropdown end
                         end)
+                        end
                     end
                     ListFrame.CanvasSize = UDim2.new(0,0,0, Count * 26 + 8)
                 end
@@ -1943,12 +2010,18 @@ function SwiftUI:CreateWindow(Config)
                     IsOpen = not IsOpen
                     ListFrame.Visible = IsOpen
                     if IsOpen then
-                        local Count = #Values
-                        local Height = math.clamp(Count * 26 + 8, 0, 140)
+                        local Count = 0
+                        if Searchable and FilterQuery ~= "" then
+                            for _, V in ipairs(Values) do if V:lower():find(FilterQuery,1,true) then Count = Count + 1 end end
+                        else
+                            Count = #Values
+                        end
+                        local Height = math.clamp(Count * 26 + (Searchable and 30 or 8), 0, MaxVisible * 26 + 10)
                         ListFrame.Size = UDim2.new(1, 0, 0, Height)
                         Holder.Size = UDim2.new(1, 0, 0, 44 + Height + 6)
                         SwiftUI:Tween(Arrow, {Rotation = 270}, TweenInfoFast)
                         SwiftUI:Tween(ListFrame, {BackgroundTransparency = 0}, TweenInfoFast)
+                        if SearchBox2 then task.defer(function() SearchBox2:CaptureFocus() end) end
                     else
                         Holder.Size = UDim2.new(1, 0, 0, 44)
                         SwiftUI:Tween(Arrow, {Rotation = 90}, TweenInfoFast)
@@ -1963,6 +2036,83 @@ function SwiftUI:CreateWindow(Config)
                 table.insert(Groupbox.Elements, {Type = "Dropdown", Holder = Holder, Text = Text})
                 task.defer(AutoResize)
                 return Dropdown
+            end
+
+            function Groupbox:AddListbox(Id, Config)
+                if typeof(Id) == "table" then Config = Id; Id = Config.Text or "Listbox" end
+                Config = Config or {}
+                local Text = Config.Text or Id or "Listbox"
+                local Values = Config.Values or {}
+                local Default = Config.Default
+                local Multi = Config.Multi or false
+                local Callback = Config.Callback or function() end
+                local Height = Config.Height or 100
+                local Holder2 = SwiftUI:Create("Frame", {
+                    BackgroundTransparency = 1,
+                    Size = UDim2.new(1, 0, 0, Height + 18),
+                    Parent = ContainerFrame,
+                })
+                SwiftUI:Create("TextLabel", {
+                    BackgroundTransparency = 1,
+                    Text = Text,
+                    FontFace = SwiftUI.Font,
+                    TextSize = 12,
+                    TextColor3 = SwiftUI.Theme.FontDim,
+                    Size = UDim2.new(1,0,0,16),
+                    Parent = Holder2,
+                })
+                local Box = SwiftUI:Create("ScrollingFrame", {
+                    BackgroundColor3 = SwiftUI.Theme.Element,
+                    Size = UDim2.new(1,0,1,-18),
+                    Position = UDim2.new(0,0,0,18),
+                    CanvasSize = UDim2.new(0,0,0,0),
+                    ScrollBarThickness = 2,
+                    AutomaticCanvasSize = Enum.AutomaticSize.Y,
+                    Parent = Holder2,
+                })
+                SwiftUI:ApplyCorner(Box, 0)
+                SwiftUI:ApplyStroke(Box, SwiftUI.Theme.Outline, 1)
+                SwiftUI:Create("UIListLayout", {Padding = UDim.new(0,2), SortOrder = Enum.SortOrder.LayoutOrder, Parent = Box})
+                SwiftUI:Create("UIPadding", {PaddingTop=UDim.new(0,4), PaddingBottom=UDim.new(0,4), PaddingLeft=UDim.new(0,4), PaddingRight=UDim.new(0,4), Parent=Box})
+                local Value = Default
+                if Multi and type(Value) ~= "table" and Value ~= nil then Value = {Value} end
+                local function Refresh()
+                    for _,c in ipairs(Box:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
+                    for _,V in ipairs(Values) do
+                        local Sel = Multi and type(Value)=="table" and table.find(Value,V) or Value==V
+                        local Btn = SwiftUI:Create("TextButton", {
+                            BackgroundColor3 = Sel and SwiftUI.Theme.Accent or SwiftUI.Theme.Element,
+                            Text = (Sel and "✓ " or "  ")..V,
+                            FontFace = SwiftUI.Font,
+                            TextSize = 12,
+                            TextColor3 = Sel and Color3.new(1,1,1) or SwiftUI.Theme.FontDim,
+                            Size = UDim2.new(1,0,0,22),
+                            AutoButtonColor = false,
+                            Parent = Box,
+                        })
+                        SwiftUI:ApplyCorner(Btn,0)
+                        Btn.MouseButton1Click:Connect(function()
+                            if Multi then
+                                if not Value then Value={} end
+                                local idx=table.find(Value,V)
+                                if idx then table.remove(Value,idx) else table.insert(Value,V) end
+                            else
+                                Value=V
+                            end
+                            Refresh()
+                            SwiftUI:SafeCallback(Callback, Value)
+                            if Id then SwiftUI.Options[Id] = {Value=Value, Type="Listbox"} end
+                        end)
+                    end
+                end
+                Refresh()
+                local Api = {Value=Value, Type="Listbox"}
+                function Api:SetValue(V) Value=V Refresh() end
+                function Api:GetValue() return Value end
+                if Id then SwiftUI.Options[Id]=Api end
+                table.insert(Groupbox.Elements, {Type="Listbox", Holder=Holder2, Text=Text})
+                task.defer(AutoResize)
+                return Api
             end
 
             function Groupbox:AddInput(Id, Config)
@@ -2184,7 +2334,7 @@ function SwiftUI:CreateWindow(Config)
                             BackgroundColor3 = SwiftUI.Theme.Sidebar,
                             Size = UDim2.new(1, 0, 0, 24),
                             ZIndex = 2,
-                            Parent = PickerContent,
+                            Parent = PickerFrame,
                         })
                         SwiftUI:Create("Frame", {
                             BackgroundColor3 = SwiftUI.Theme.Outline,

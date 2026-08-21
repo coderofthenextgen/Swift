@@ -18,6 +18,8 @@ local TC = Left:AddToggle("TestToggleColor", {Text = "Toggle + Color", Default =
 TC:OnColorChanged(function(C) print("Color", C) SwiftUI:SetAccent(C) end)
 Left:AddSlider("TestSlider", {Text = "Slider", Min = 0, Max = 100, Default = 50, Rounding = 0, Suffix = "%", Callback = function(V) print(V) end})
 Left:AddDropdown("TestDropdown", {Text = "Dropdown", Values = {"A","B","C"}, Default = "A", Callback = function(V) print(V) end})
+Left:AddDropdown("MultiDropdown", {Text = "Multi Dropdown", Values = {"Apple","Banana","Cherry","Date","Elderberry"}, Multi = true, Default = {"Apple"}, Callback = function(V) print("Multi", table.concat(V,",")) end})
+Left:AddDropdown("SearchDropdown", {Text = "Searchable", Values = {"Alpha","Beta","Gamma","Delta","Epsilon","Zeta"}, Searchable = true, MaxVisible = 4, Placeholder = "Search...", Callback = function(V) print(V) end})
 
 Right:AddInput("TestInput", {Text = "Input", Default = "", Placeholder = "Type...", Callback = function(V) print(V) end})
 Right:AddColorPicker("TestColor", {Text = "Color", Default = Color3.fromRGB(124,92,255), Callback = function(V) print(V) end})
