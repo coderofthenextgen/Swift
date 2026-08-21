@@ -601,6 +601,7 @@ function SwiftUI:CreateWindow(Config)
         TitleLabel.Position = UDim2.new(0, 14, 0, 6)
     end
 
+    local Window
     local SearchHolder = self:Create("Frame", {
         BackgroundColor3 = self.Theme.Element,
         Size = UDim2.fromOffset(140, 24),
@@ -849,7 +850,7 @@ function SwiftUI:CreateWindow(Config)
         end)
     end
 
-    local Window = {
+    Window = {
         Container = Container,
         Main = Main,
         Titlebar = Titlebar,
@@ -867,18 +868,21 @@ function SwiftUI:CreateWindow(Config)
     Container.Position = Center and UDim2.fromScale(0.5, 0.5) or UDim2.fromOffset(100, 100)
     Container.AnchorPoint = Center and Vector2.new(0.5, 0.5) or Vector2.new(0, 0)
     Main.Size = UDim2.fromScale(1, 1)
-    Main.BackgroundTransparency = 1
+    Main.BackgroundTransparency = 0
     Main.Visible = true
-    SwiftUI:Tween(Main, {BackgroundTransparency = 0}, TweenInfoMedium)
     Container.Visible = true
+    task.defer(function()
+        Main.BackgroundTransparency = 0
+        Container.Visible = true
+        Window.Visible = true
+    end)
     function Window:Toggle()
         Window.Visible = not Window.Visible
         Container.Visible = Window.Visible
+        Main.Visible = Window.Visible
         if Window.Visible then
-            Main.BackgroundTransparency = 1
-            SwiftUI:Tween(Main, {BackgroundTransparency = 0}, TweenInfoFast)
-            SwiftUI:Tween(Container, {BackgroundTransparency = 1}, TweenInfoFast)
-            Main.Visible = true
+            Main.BackgroundTransparency = 0
+            Container.Visible = true
         end
     end
 
