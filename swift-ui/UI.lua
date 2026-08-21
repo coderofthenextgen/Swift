@@ -433,9 +433,13 @@ function SwiftUI:CreateWindow(Config)
         PaddingRight = UDim.new(0, 8),
         Parent = Sidebar,
     })
-    local TabList = self:Create("Frame", {
+    local TabList = self:Create("ScrollingFrame", {
         BackgroundTransparency = 1,
         Size = UDim2.new(1, 0, 1, 0),
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        ScrollBarThickness = 0,
+        ScrollingDirection = Enum.ScrollingDirection.Y,
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
         Parent = Sidebar,
     })
     self:Create("UIListLayout", {
@@ -587,8 +591,10 @@ function SwiftUI:CreateWindow(Config)
             BackgroundTransparency = 1,
             Size = UDim2.fromScale(1, 1),
             CanvasSize = UDim2.new(0, 0, 0, 0),
-            ScrollBarThickness = 2,
+            ScrollBarThickness = 0,
             ScrollBarImageColor3 = SwiftUI.Theme.OutlineLight,
+            ScrollingDirection = Enum.ScrollingDirection.Y,
+            VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
             Visible = false,
             Parent = Content,
         })
@@ -1131,13 +1137,14 @@ function SwiftUI:CreateWindow(Config)
                 })
                 local Arrow = SwiftUI:Create("TextLabel", {
                     BackgroundTransparency = 1,
-                    Text = "▾",
+                    Text = ">",
                     FontFace = SwiftUI.FontBold,
-                    TextSize = 14,
+                    TextSize = 13,
                     TextColor3 = SwiftUI.Theme.FontDim,
-                    Size = UDim2.fromOffset(16, 16),
+                    Size = UDim2.fromOffset(14, 14),
                     AnchorPoint = Vector2.new(1, 0.5),
                     Position = UDim2.new(1, -6, 0.5, 0),
+                    Rotation = 90,
                     Parent = Button,
                 })
 
@@ -1211,7 +1218,7 @@ function SwiftUI:CreateWindow(Config)
                                 SelectedLabel.Text = Value
                                 IsOpen = false
                                 ListFrame.Visible = false
-                                SwiftUI:Tween(Arrow, {Rotation = 0}, TweenInfoFast)
+                                SwiftUI:Tween(Arrow, {Rotation = 90}, TweenInfoFast)
                                 Holder.Size = UDim2.new(1, 0, 0, 44)
                                 SwiftUI:SafeCallback(Callback, Value)
                                 RefreshOptions()
@@ -1248,10 +1255,10 @@ function SwiftUI:CreateWindow(Config)
                         local Height = math.clamp(Count * 26 + 8, 0, 140)
                         ListFrame.Size = UDim2.new(1, 0, 0, Height)
                         Holder.Size = UDim2.new(1, 0, 0, 44 + Height + 6)
-                        SwiftUI:Tween(Arrow, {Rotation = 180}, TweenInfoFast)
+                        SwiftUI:Tween(Arrow, {Rotation = 270}, TweenInfoFast)
                     else
                         Holder.Size = UDim2.new(1, 0, 0, 44)
-                        SwiftUI:Tween(Arrow, {Rotation = 0}, TweenInfoFast)
+                        SwiftUI:Tween(Arrow, {Rotation = 90}, TweenInfoFast)
                     end
                     task.defer(AutoResize)
                 end)
