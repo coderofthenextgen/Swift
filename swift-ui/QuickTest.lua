@@ -14,6 +14,8 @@ local Right = Tab:AddRightGroupbox("Settings")
 Left:AddLabel("Quick test — all MVP controls")
 Left:AddButton({Text = "Notify", Func = function() SwiftUI:Notify({Title = "Swift", Description = "Button works!", Time = 2}) end})
 Left:AddToggle("TestToggle", {Text = "Toggle", Default = false, Callback = function(V) print("Toggle", V) end})
+local TC = Left:AddToggle("TestToggleColor", {Text = "Toggle + Color", Default = false, Color = Color3.fromRGB(124,92,255), Callback = function(V) print("Toggle+Color", V) end})
+TC:OnColorChanged(function(C) print("Color", C) SwiftUI:SetAccent(C) end)
 Left:AddSlider("TestSlider", {Text = "Slider", Min = 0, Max = 100, Default = 50, Rounding = 0, Suffix = "%", Callback = function(V) print(V) end})
 Left:AddDropdown("TestDropdown", {Text = "Dropdown", Values = {"A","B","C"}, Default = "A", Callback = function(V) print(V) end})
 

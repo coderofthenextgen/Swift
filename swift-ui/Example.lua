@@ -53,6 +53,13 @@ SaveManager:SetFolder("SwiftUI")
 SaveManager:BuildConfigSection(SettingsTab)
 ThemeManager:BuildThemeSection(SettingsTab)
 
+local CustomGroup = SettingsTab:AddLeftGroupbox("Customization")
+CustomGroup:AddLabel("Make it very customizable", true)
+CustomGroup:AddSlider("CornerRadius", {Text = "Corner Radius", Min = 0, Max = 12, Default = 0, Rounding = 0, Callback = function(V) SwiftUI:SetCornerRadius(V) end})
+CustomGroup:AddSlider("UIScale", {Text = "UI Scale", Min = 80, Max = 120, Default = 100, Suffix = "%", Callback = function(V) SwiftUI:SetScale(V/100) end})
+CustomGroup:AddSlider("Transparency", {Text = "Transparency", Min = 0, Max = 50, Default = 0, Suffix = "%", Callback = function(V) SwiftUI:SetTransparency(V/100) end})
+CustomGroup:AddButton({Text = "Reset Custom", Func = function() SwiftUI:SetCornerRadius(0) SwiftUI:SetScale(1) SwiftUI:SetTransparency(0) SwiftUI:SetAccent(Color3.fromRGB(124,92,255)) end})
+
 local Info = SettingsTab:AddRightGroupbox("About")
 Info:AddLabel("Swift UI • Straight boxy dark • Accent updates live", true)
 Info:AddDivider("Info")
