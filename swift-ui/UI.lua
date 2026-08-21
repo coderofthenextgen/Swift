@@ -929,7 +929,6 @@ function SwiftUI:CreateWindow(Config)
         end
         LastTap = Now
     end)
-    Window.MobileButton = MobileBtn
 
     local ResizeHandle = self:Create("TextButton", {
         BackgroundTransparency = 1,
@@ -1026,6 +1025,7 @@ function SwiftUI:CreateWindow(Config)
         Visible = true,
         BaseSize = BaseSize,
     }
+    Window.MobileButton = MobileBtn
 
     Container.Size = Size
     Container.Position = Center and UDim2.fromScale(0.5, 0.5) or UDim2.fromOffset(100, 100)
