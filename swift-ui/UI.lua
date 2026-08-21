@@ -861,14 +861,14 @@ function SwiftUI:CreateWindow(Config)
         AutoButtonColor = false,
         AnchorPoint = Vector2.new(1, 1),
         Position = UDim2.new(1, 0, 1, 0),
-        Size = UDim2.fromOffset(18, 18),
+        Size = UDim2.fromOffset(24, 14),
         ZIndex = 3,
         Parent = Footer,
     })
     local GripBg = self:Create("Frame", {
         BackgroundColor3 = self.Theme.Element,
         BackgroundTransparency = 1,
-        Size = UDim2.fromOffset(10, 10),
+        Size = UDim2.fromOffset(20, 8),
         AnchorPoint = Vector2.new(1, 1),
         Position = UDim2.new(1, -2, 1, -2),
         ZIndex = 3,
@@ -878,8 +878,8 @@ function SwiftUI:CreateWindow(Config)
     for i = 0, 2 do
         local Dot = self:Create("Frame", {
             BackgroundColor3 = self.Theme.FontDim,
-            Size = UDim2.fromOffset(1.5, 1.5),
-            Position = UDim2.new(1, -3 - i*2.5, 1, -3 - i*2.5),
+            Size = UDim2.fromOffset(4, 2),
+            Position = UDim2.new(0, 3 + i*6, 0.5, -1),
             ZIndex = 4,
             Active = false,
             Parent = GripBg,
