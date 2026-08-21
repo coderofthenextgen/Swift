@@ -1873,13 +1873,18 @@ function SwiftUI:CreateWindow(Config)
                 SwiftUI:ApplyCorner(ListFrame, 0)
                 SwiftUI:ApplyStroke(ListFrame, SwiftUI.Theme.Outline, 1)
                 local SearchBox2 = nil
+                local SearchHolder2 = nil
                 if Searchable then
-                    local SearchHolder2 = SwiftUI:Create("Frame", {
+                    SearchHolder2 = SwiftUI:Create("Frame", {
                         BackgroundColor3 = SwiftUI.Theme.Main,
                         Size = UDim2.new(1, 0, 0, 22),
-                        Parent = ListFrame,
+                        Position = UDim2.new(0, 0, 0, 44),
+                        Visible = false,
+                        ZIndex = 21,
+                        Parent = Holder,
                     })
                     SwiftUI:ApplyCorner(SearchHolder2, 0)
+                    SwiftUI:ApplyStroke(SearchHolder2, SwiftUI.Theme.Outline, 1)
                     SearchBox2 = SwiftUI:Create("TextBox", {
                         BackgroundTransparency = 1,
                         Text = "",
@@ -2009,6 +2014,7 @@ function SwiftUI:CreateWindow(Config)
                 Button.MouseButton1Click:Connect(function()
                     IsOpen = not IsOpen
                     ListFrame.Visible = IsOpen
+                    if SearchHolder2 then SearchHolder2.Visible = IsOpen and Searchable end
                     if IsOpen then
                         local Count = 0
                         if Searchable and FilterQuery ~= "" then
@@ -2016,18 +2022,34 @@ function SwiftUI:CreateWindow(Config)
                         else
                             Count = #Values
                         end
-                        local Height = math.clamp(Count * 26 + (Searchable and 30 or 8), 0, MaxVisible * 26 + 10)
-                        ListFrame.Size = UDim2.new(1, 0, 0, Height)
-                        Holder.Size = UDim2.new(1, 0, 0, 44 + Height + 6)
+                        local ListHeight = math.clamp(Count * 26 + 8, 0, MaxVisible * 26 + 8)
+                        local SearchHeight = Searchable and 22 or 0
+                        local Gap = Searchable and 6 or 0
+                        local TotalHeight = ListHeight + SearchHeight + Gap
+                        if Searchable then
+                            SearchHolder2.Position = UDim2.new(0, 0, 0, 44)
+                            SearchHolder2.Size = UDim2.new(1, 0, 0, 22)
+                            ListFrame.Position = UDim2.new(0, 0, 0, 44 + SearchHeight + Gap)
+                            ListFrame.Size = UDim2.new(1, 0, 0, ListHeight)
+                        else
+                            ListFrame.Position = UDim2.new(0, 0, 0, 44)
+                            ListFrame.Size = UDim2.new(1, 0, 0, ListHeight)
+                        end
+                        Holder.Size = UDim2.new(1, 0, 0, 44 + TotalHeight + 6)
                         SwiftUI:Tween(Arrow, {Rotation = 270}, TweenInfoFast)
                         SwiftUI:Tween(ListFrame, {BackgroundTransparency = 0}, TweenInfoFast)
+                        if SearchHolder2 then SwiftUI:Tween(SearchHolder2, {BackgroundTransparency = 0}, TweenInfoFast) end
                         if SearchBox2 then task.defer(function() SearchBox2:CaptureFocus() end) end
                     else
                         Holder.Size = UDim2.new(1, 0, 0, 44)
                         SwiftUI:Tween(Arrow, {Rotation = 90}, TweenInfoFast)
                         SwiftUI:Tween(ListFrame, {BackgroundTransparency = 1}, TweenInfoFast)
+                        if SearchHolder2 then SwiftUI:Tween(SearchHolder2, {BackgroundTransparency = 1}, TweenInfoFast) end
                         task.wait(0.12)
-                        if not IsOpen then ListFrame.Visible = false end
+                        if not IsOpen then
+                            ListFrame.Visible = false
+                            if SearchHolder2 then SearchHolder2.Visible = false end
+                        end
                     end
                     task.defer(AutoResize)
                 end)
