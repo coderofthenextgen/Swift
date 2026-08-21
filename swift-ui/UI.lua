@@ -863,6 +863,17 @@ function SwiftUI:CreateWindow(Config)
         ZIndex = 3,
         Parent = Footer,
     })
+    for i = 0, 2 do
+        local Dot = self:Create("Frame", {
+            BackgroundColor3 = self.Theme.FontDark,
+            Size = UDim2.fromOffset(2, 2),
+            Position = UDim2.new(1, -5 - i*4, 1, -5 - i*4),
+            ZIndex = 2,
+            Active = false,
+            Parent = ResizeHandle,
+        })
+        self:ApplyCorner(Dot, 1)
+    end
     local ResizeIcon = self:Create("TextLabel", {
         BackgroundTransparency = 1,
         Text = "",
