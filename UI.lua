@@ -304,15 +304,6 @@ function SwiftUI:Notify(Config)
     self:ApplyCorner(Frame, 0)
     self:ApplyStroke(Frame, self.Theme.Outline, 1)
     self:ApplyStroke(Frame, Color3.fromRGB(0,0,0), 2)
-    -- top highlight like Wind
-    local Highlight = self:Create("Frame", {
-        BackgroundColor3 = Color3.fromRGB(255,255,255),
-        BackgroundTransparency = 0.96,
-        Size = UDim2.new(1, 0, 0, 1),
-        Position = UDim2.new(0, 0, 0, 0),
-        ZIndex = 2,
-        Parent = Frame,
-    })
     local Progress = self:Create("Frame", {
         BackgroundColor3 = AccentOverride,
         Size = UDim2.new(1, 0, 0, 2),
@@ -331,7 +322,7 @@ function SwiftUI:Notify(Config)
 
     local Accent = self:Create("Frame", {
         BackgroundColor3 = AccentOverride,
-        Size = UDim2.new(0, 3, 1, 0),
+        Size = UDim2.new(0, 4, 1, 0),
         Position = UDim2.new(0, -14, 0, 0),
         ZIndex = 5,
         Parent = Frame,
@@ -379,10 +370,88 @@ function SwiftUI:Notify(Config)
         ZIndex = 3,
         Parent = Frame,
     })
+    local ConfirmOverlay = nil
     CloseBtn.MouseButton1Click:Connect(function()
-        self:Tween(Frame, {BackgroundTransparency = 1, Position = UDim2.new(1, 12, 0, 0)}, TweenInfoMedium)
-        task.wait(0.2)
-        if Frame.Parent then Frame:Destroy() end
+        if ConfirmOverlay and ConfirmOverlay.Parent then
+            ConfirmOverlay:Destroy()
+            ConfirmOverlay = nil
+            return
+        end
+        ConfirmOverlay = self:Create("Frame", {
+            BackgroundColor3 = self.Theme.Main,
+            BackgroundTransparency = 0.05,
+            Size = UDim2.fromScale(1, 1),
+            Position = UDim2.fromScale(0, 0),
+            ZIndex = 10,
+            Parent = Frame,
+        })
+        self:ApplyCorner(ConfirmOverlay, 0)
+        self:Create("UIPadding", {
+            PaddingTop = UDim.new(0, 8),
+            PaddingBottom = UDim.new(0, 8),
+            PaddingLeft = UDim.new(0, 8),
+            PaddingRight = UDim.new(0, 8),
+            Parent = ConfirmOverlay,
+        })
+        local ConfirmLabel = self:Create("TextLabel", {
+            BackgroundTransparency = 1,
+            Text = "Are you sure you want to do this?",
+            FontFace = self.Font,
+            TextSize = 11,
+            TextColor3 = self.Theme.Font,
+            TextXAlignment = Enum.TextXAlignment.Center,
+            Size = UDim2.new(1, 0, 0, 18),
+            Position = UDim2.new(0, 0, 0, 0),
+            Parent = ConfirmOverlay,
+        })
+        local BtnHolder = self:Create("Frame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 22),
+            Position = UDim2.new(0, 0, 0, 22),
+            Parent = ConfirmOverlay,
+        })
+        self:Create("UIListLayout", {
+            FillDirection = Enum.FillDirection.Horizontal,
+            HorizontalAlignment = Enum.HorizontalAlignment.Center,
+            Padding = UDim.new(0, 8),
+            Parent = BtnHolder,
+        })
+        local NoBtn = self:Create("TextButton", {
+            BackgroundColor3 = self.Theme.Element,
+            Text = "No",
+            FontFace = self.FontBold,
+            TextSize = 11,
+            TextColor3 = self.Theme.FontDim,
+            Size = UDim2.fromOffset(50, 22),
+            AutoButtonColor = false,
+            Parent = BtnHolder,
+        })
+        self:ApplyCorner(NoBtn, 0)
+        self:ApplyStroke(NoBtn, self.Theme.Outline, 1)
+        local YesBtn = self:Create("TextButton", {
+            BackgroundColor3 = self.Theme.Accent,
+            Text = "Yes",
+            FontFace = self.FontBold,
+            TextSize = 11,
+            TextColor3 = Color3.new(1,1,1),
+            Size = UDim2.fromOffset(50, 22),
+            AutoButtonColor = false,
+            Parent = BtnHolder,
+        })
+        self:ApplyCorner(YesBtn, 0)
+        self:ApplyStroke(YesBtn, self.Theme.Outline, 1)
+        NoBtn.MouseButton1Click:Connect(function()
+            if ConfirmOverlay then ConfirmOverlay:Destroy() ConfirmOverlay=nil end
+        end)
+        YesBtn.MouseButton1Click:Connect(function()
+            self:Tween(Frame, {BackgroundTransparency = 1, Position = UDim2.new(1, 12, 0, 0)}, TweenInfoMedium)
+            self:Tween(TitleLabel, {TextTransparency = 1}, TweenInfoMedium)
+            self:Tween(DescLabel, {TextTransparency = 1}, TweenInfoMedium)
+            task.wait(0.2)
+            if Frame.Parent then Frame:Destroy() end
+        end)
+        self:HookHover(NoBtn, function() NoBtn.BackgroundColor3 = self.Theme.ElementHover end, function() NoBtn.BackgroundColor3 = self.Theme.Element end)
+        self:HookHover(YesBtn, function() YesBtn.BackgroundColor3 = self.Theme.AccentHover end, function() YesBtn.BackgroundColor3 = self.Theme.Accent end)
     end)
     self:HookHover(CloseBtn, function() CloseBtn.TextColor3 = self.Theme.Font end, function() CloseBtn.TextColor3 = self.Theme.FontDark end)
 
@@ -407,7 +476,6 @@ function SwiftUI:Notify(Config)
     DescLabel.TextTransparency = 1
     Accent.BackgroundTransparency = 1
     Progress.BackgroundTransparency = 1
-    Highlight.BackgroundTransparency = 1
     CloseBtn.TextTransparency = 1
     if IconLabel then IconLabel.TextTransparency = 1 end
 
@@ -418,7 +486,6 @@ function SwiftUI:Notify(Config)
     if IconLabel then self:Tween(IconLabel, {TextTransparency = 0}, TweenInfoMedium) end
     self:Tween(CloseBtn, {TextTransparency = 0}, TweenInfoMedium)
     self:Tween(Progress, {BackgroundTransparency = 0}, TweenInfoMedium)
-    self:Tween(Highlight, {BackgroundTransparency = 0.92}, TweenInfoMedium)
 
     Progress.Size = UDim2.new(1, 0, 0, 2)
     self:Tween(Progress, {Size = UDim2.new(0, 0, 0, 2)}, TweenInfo.new(Time, Enum.EasingStyle.Linear))
