@@ -273,7 +273,7 @@ local NotificationHolder = SwiftUI:Create("Frame", {
     BackgroundTransparency = 1,
     AnchorPoint = Vector2.new(1, 1),
     Position = UDim2.new(1, -10, 1, -10),
-    Size = UDim2.new(0, 340, 1, -20),
+    Size = UDim2.new(0, 360, 1, -20),
     Parent = ScreenGui,
 })
 SwiftUI:Create("UIListLayout", {
@@ -320,8 +320,9 @@ function SwiftUI:Notify(Config)
 
     local Accent = self:Create("Frame", {
         BackgroundColor3 = self.Theme.Accent,
-        Size = UDim2.new(0, 4, 1, 0),
+        Size = UDim2.new(0, 2, 1, 0),
         Position = UDim2.new(0, 0, 0, 0),
+        ZIndex = 5,
         Parent = Frame,
     })
     self:ApplyCorner(Accent, 0)
@@ -2018,7 +2019,32 @@ function SwiftUI:CreateWindow(Config)
                             ClipsDescendants = false,
                             Parent = SwiftUI.ScreenGui,
                         })
-                        SwiftUI:MakeDraggable(PickerFrame, PickerFrame)
+                        SwiftUI:ApplyCorner(PickerFrame, 0)
+                        SwiftUI:ApplyStroke(PickerFrame, Color3.fromRGB(0,0,0), 2)
+                        SwiftUI:ApplyStroke(PickerFrame, SwiftUI.Theme.Outline, 1)
+                        local PickerHeader = SwiftUI:Create("Frame", {
+                            BackgroundColor3 = SwiftUI.Theme.Sidebar,
+                            Size = UDim2.new(1, 0, 0, 24),
+                            ZIndex = 2,
+                            Parent = PickerContent,
+                        })
+                        SwiftUI:Create("Frame", {
+                            BackgroundColor3 = SwiftUI.Theme.Outline,
+                            Size = UDim2.new(1, 0, 0, 1),
+                            Position = UDim2.new(0, 0, 1, -1),
+                            Parent = PickerHeader,
+                        })
+                        local PickerTitle = SwiftUI:Create("TextLabel", {
+                            BackgroundTransparency = 1,
+                            Text = "Color Picker",
+                            FontFace = SwiftUI.FontBold,
+                            TextSize = 12,
+                            TextColor3 = SwiftUI.Theme.Font,
+                            TextXAlignment = Enum.TextXAlignment.Left,
+                            Position = UDim2.new(0, 8, 0, 0),
+                            Size = UDim2.new(1, -30, 1, 0),
+                            Parent = PickerHeader,
+                        })
                         local CloseMain = SwiftUI:Create("TextButton", {
                             BackgroundColor3 = SwiftUI.Theme.Element,
                             Text = "×",
@@ -2029,7 +2055,7 @@ function SwiftUI:CreateWindow(Config)
                             Position = UDim2.new(1, -22, 0, 2),
                             ZIndex = 5,
                             AutoButtonColor = false,
-                            Parent = PickerFrame,
+                            Parent = PickerHeader,
                         })
                         SwiftUI:ApplyCorner(CloseMain, 0)
                         CloseMain.MouseButton1Click:Connect(function()
@@ -2038,26 +2064,30 @@ function SwiftUI:CreateWindow(Config)
                             Holder.Size = UDim2.new(1, 0, 0, 28)
                             task.defer(AutoResize)
                         end)
-                        SwiftUI:ApplyCorner(PickerFrame, 0)
-                        SwiftUI:ApplyStroke(PickerFrame, Color3.fromRGB(0,0,0), 2)
-                        SwiftUI:ApplyStroke(PickerFrame, SwiftUI.Theme.Outline, 1)
+                        SwiftUI:MakeDraggable(PickerHeader, PickerFrame)
+                        local PickerContent = SwiftUI:Create("Frame", {
+                            BackgroundTransparency = 1,
+                            Position = UDim2.new(0, 0, 0, 24),
+                            Size = UDim2.new(1, 0, 1, -24),
+                            Parent = PickerFrame,
+                        })
                         SwiftUI:Create("UIPadding", {
                             PaddingTop = UDim.new(0, 8),
                             PaddingBottom = UDim.new(0, 8),
                             PaddingLeft = UDim.new(0, 8),
                             PaddingRight = UDim.new(0, 8),
-                            Parent = PickerFrame,
+                            Parent = PickerContent,
                         })
                         SwiftUI:Create("UIListLayout", {
                             FillDirection = Enum.FillDirection.Vertical,
                             Padding = UDim.new(0, 8),
                             SortOrder = Enum.SortOrder.LayoutOrder,
-                            Parent = PickerFrame,
+                            Parent = PickerContent,
                         })
                         local PreviewLarge = SwiftUI:Create("Frame", {
                             BackgroundColor3 = ColorPicker.Value,
                             Size = UDim2.new(1, 0, 0, 28),
-                            Parent = PickerFrame,
+                            Parent = PickerContent,
                         })
                         SwiftUI:ApplyCorner(PreviewLarge, 0)
                         SwiftUI:ApplyStroke(PreviewLarge, SwiftUI.Theme.Outline, 1)
@@ -2073,7 +2103,7 @@ function SwiftUI:CreateWindow(Config)
                         local WheelHolder = SwiftUI:Create("Frame", {
                             BackgroundTransparency = 1,
                             Size = UDim2.new(1, 0, 0, 120),
-                            Parent = PickerFrame,
+                            Parent = PickerContent,
                         })
                         local SVBox = SwiftUI:Create("Frame", {
                             BackgroundColor3 = Color3.fromHSV(CurrentH, 1, 1),
@@ -2235,7 +2265,7 @@ function SwiftUI:CreateWindow(Config)
                         local RGBHolder = SwiftUI:Create("Frame", {
                             BackgroundTransparency = 1,
                             Size = UDim2.new(1, 0, 0, 22),
-                            Parent = PickerFrame,
+                            Parent = PickerContent,
                         })
                         SwiftUI:Create("UIListLayout", {
                             FillDirection = Enum.FillDirection.Horizontal,
@@ -2308,7 +2338,7 @@ function SwiftUI:CreateWindow(Config)
                         local HexHolder2 = SwiftUI:Create("Frame", {
                             BackgroundColor3 = SwiftUI.Theme.Element,
                             Size = UDim2.new(1, 0, 0, 22),
-                            Parent = PickerFrame,
+                            Parent = PickerContent,
                         })
                         SwiftUI:ApplyCorner(HexHolder2, 0)
                         SwiftUI:ApplyStroke(HexHolder2, SwiftUI.Theme.Outline, 1)
@@ -2353,7 +2383,7 @@ function SwiftUI:CreateWindow(Config)
                             TextColor3 = Color3.new(1,1,1),
                             Size = UDim2.new(1, 0, 0, 26),
                             AutoButtonColor = false,
-                            Parent = PickerFrame,
+                            Parent = PickerContent,
                         })
                         SwiftUI:ApplyCorner(ConfirmBtn, 0)
                         SwiftUI:ApplyStroke(ConfirmBtn, SwiftUI.Theme.Outline, 1)
@@ -2373,7 +2403,7 @@ function SwiftUI:CreateWindow(Config)
                             TextColor3 = SwiftUI.Theme.FontDim,
                             Size = UDim2.new(1, 0, 0, 22),
                             AutoButtonColor = false,
-                            Parent = PickerFrame,
+                            Parent = PickerContent,
                         })
                         SwiftUI:ApplyCorner(RainbowBtn2, 0)
                         SwiftUI:ApplyStroke(RainbowBtn2, SwiftUI.Theme.Outline, 1)
