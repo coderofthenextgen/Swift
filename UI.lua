@@ -447,7 +447,7 @@ function SwiftUI:Notify(Config)
 
     local Accent = self:Create("Frame", {
         BackgroundColor3 = AccentOverride,
-        Size = UDim2.new(0, 6, 1, 0),
+        Size = UDim2.new(0, 6, 1, -2),
         Position = UDim2.new(0, -14, 0, 0),
         ZIndex = 5,
         Parent = Frame,
@@ -665,7 +665,7 @@ function SwiftUI:CreateWindow(Config)
     self:ApplyStroke(SearchHolder, self.Theme.Outline, 1)
     local SearchIcon = self:Create("TextLabel", {
         BackgroundTransparency = 1,
-        Text = "⌕",
+        Text = "",
         FontFace = self.Font,
         TextSize = 12,
         TextColor3 = self.Theme.FontDark,
@@ -865,7 +865,7 @@ function SwiftUI:CreateWindow(Config)
     })
     local ResizeIcon = self:Create("TextLabel", {
         BackgroundTransparency = 1,
-        Text = "⤡",
+        Text = "",
         FontFace = self.Font,
         TextSize = 12,
         TextColor3 = self.Theme.FontDark,
