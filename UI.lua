@@ -295,6 +295,8 @@ function SwiftUI:Notify(Config)
         BackgroundColor3 = self.Theme.Main,
         Size = UDim2.new(1, 0, 0, 64),
         ClipsDescendants = true,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(1, 10, 0, 0),
         Parent = NotificationHolder,
     })
     self:ApplyCorner(Frame, 0)
@@ -354,7 +356,7 @@ function SwiftUI:Notify(Config)
     DescLabel.TextTransparency = 1
     Accent.BackgroundTransparency = 1
 
-    self:Tween(Frame, {BackgroundTransparency = 0}, TweenInfoMedium)
+    self:Tween(Frame, {BackgroundTransparency = 0, Position = UDim2.new(0, 0, 0, 0)}, TweenInfoMedium)
     self:Tween(TitleLabel, {TextTransparency = 0}, TweenInfoMedium)
     self:Tween(DescLabel, {TextTransparency = 0}, TweenInfoMedium)
     self:Tween(Accent, {BackgroundTransparency = 0}, TweenInfoMedium)
@@ -368,7 +370,7 @@ function SwiftUI:Notify(Config)
         self:Tween(Progress, {Size = UDim2.new(0, 0, 0, 2)}, TweenInfo.new(Time, Enum.EasingStyle.Linear))
     end)
     task.delay(Time, function()
-        self:Tween(Frame, {BackgroundTransparency = 1}, TweenInfoMedium)
+        self:Tween(Frame, {BackgroundTransparency = 1, Position = UDim2.new(1, 10, 0, 0)}, TweenInfoMedium)
         self:Tween(TitleLabel, {TextTransparency = 1}, TweenInfoMedium)
         self:Tween(DescLabel, {TextTransparency = 1}, TweenInfoMedium)
         self:Tween(Progress, {BackgroundTransparency = 1}, TweenInfoMedium)
@@ -770,7 +772,6 @@ function SwiftUI:CreateWindow(Config)
     end
 
     local ToggleConnection = UserInputService.InputBegan:Connect(function(Input, GameProcessed)
-        if GameProcessed then return end
         if Input.KeyCode == ToggleKeybind then
             Window:Toggle()
         end
@@ -1380,6 +1381,25 @@ function SwiftUI:CreateWindow(Config)
                             Color3.fromRGB(231,76,60), Color3.fromRGB(241,196,15), Color3.fromRGB(230,126,34),
                             Color3.fromRGB(255,255,255), Color3.fromRGB(150,150,150), Color3.fromRGB(0,0,0),
                         }
+                        local CloseBtn2 = SwiftUI:Create("TextButton", {
+                            BackgroundColor3 = SwiftUI.Theme.Element,
+                            Text = "×",
+                            FontFace = SwiftUI.FontBold,
+                            TextSize = 12,
+                            TextColor3 = SwiftUI.Theme.FontDim,
+                            Size = UDim2.fromOffset(18, 18),
+                            Position = UDim2.new(1, -18, 0, 0),
+                            ZIndex = 5,
+                            AutoButtonColor = false,
+                            Parent = ToggleColorPickerFrame,
+                        })
+                        SwiftUI:ApplyCorner(CloseBtn2, 0)
+                        CloseBtn2.MouseButton1Click:Connect(function()
+                            ToggleColorOpen = false
+                            if ToggleColorPickerFrame then ToggleColorPickerFrame:Destroy() ToggleColorPickerFrame=nil end
+                            Holder.Size = UDim2.new(1, 0, 0, 28)
+                            task.defer(AutoResize)
+                        end)
                         local Grid2 = SwiftUI:Create("Frame", {
                             BackgroundTransparency = 1,
                             Size = UDim2.new(1, 0, 0, 96),
@@ -1403,6 +1423,10 @@ function SwiftUI:CreateWindow(Config)
                                 Toggle:SetColor(C)
                                 ToggleColorPreview.BackgroundColor3 = C
                                 if ToggleColorCallback then ToggleColorCallback(C) end
+                                ToggleColorOpen = false
+                                if ToggleColorPickerFrame then ToggleColorPickerFrame:Destroy() ToggleColorPickerFrame=nil end
+                                Holder.Size = UDim2.new(1, 0, 0, 28)
+                                task.defer(AutoResize)
                             end)
                         end
                         Holder.Size = UDim2.new(1, 0, 0, 28 + 150)
@@ -1976,14 +2000,44 @@ function SwiftUI:CreateWindow(Config)
                     PickerOpen = not PickerOpen
                     if PickerOpen then
                         if PickerFrame then PickerFrame:Destroy() end
+                        local SideX = Container.AbsolutePosition.X + Container.AbsoluteSize.X + 8
+                        local SideY = Container.AbsolutePosition.Y
+                        -- clamp to screen
+                        local Viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1920,1080)
+                        if SideX + 220 > Viewport.X then
+                            SideX = Container.AbsolutePosition.X - 228
+                        end
+                        if SideY + 320 > Viewport.Y then
+                            SideY = Viewport.Y - 330
+                        end
                         PickerFrame = SwiftUI:Create("Frame", {
                             BackgroundColor3 = SwiftUI.Theme.Main,
-                            Size = UDim2.fromOffset(200, 260),
-                            Position = UDim2.new(1, -200, 0, 24),
-                            ZIndex = 50,
+                            Size = UDim2.fromOffset(220, 340),
+                            Position = UDim2.fromOffset(SideX, SideY),
+                            ZIndex = 100,
                             ClipsDescendants = false,
-                            Parent = Holder,
+                            Parent = SwiftUI.ScreenGui,
                         })
+                        SwiftUI:MakeDraggable(PickerFrame, PickerFrame)
+                        local CloseMain = SwiftUI:Create("TextButton", {
+                            BackgroundColor3 = SwiftUI.Theme.Element,
+                            Text = "×",
+                            FontFace = SwiftUI.FontBold,
+                            TextSize = 14,
+                            TextColor3 = SwiftUI.Theme.FontDim,
+                            Size = UDim2.fromOffset(20, 20),
+                            Position = UDim2.new(1, -22, 0, 2),
+                            ZIndex = 5,
+                            AutoButtonColor = false,
+                            Parent = PickerFrame,
+                        })
+                        SwiftUI:ApplyCorner(CloseMain, 0)
+                        CloseMain.MouseButton1Click:Connect(function()
+                            PickerOpen = false
+                            if PickerFrame then PickerFrame:Destroy() PickerFrame=nil end
+                            Holder.Size = UDim2.new(1, 0, 0, 28)
+                            task.defer(AutoResize)
+                        end)
                         SwiftUI:ApplyCorner(PickerFrame, 0)
                         SwiftUI:ApplyStroke(PickerFrame, Color3.fromRGB(0,0,0), 2)
                         SwiftUI:ApplyStroke(PickerFrame, SwiftUI.Theme.Outline, 1)
@@ -2118,6 +2172,11 @@ function SwiftUI:CreateWindow(Config)
                             PreviewLarge.BackgroundColor3 = C
                             local Lum = 0.299*C.R + 0.587*C.G + 0.114*C.B
                             PreviewLabel.TextColor3 = Lum > 0.5 and Color3.new(0,0,0) or Color3.new(1,1,1)
+                            pcall(function()
+                                if RBox then RBox.Text = tostring(math.floor(C.R*255)) end
+                                if GBox then GBox.Text = tostring(math.floor(C.G*255)) end
+                                if BBox then BBox.Text = tostring(math.floor(C.B*255)) end
+                            end)
                         end
 
                         local DraggingSV = false
@@ -2178,7 +2237,13 @@ function SwiftUI:CreateWindow(Config)
                             Size = UDim2.new(1, 0, 0, 22),
                             Parent = PickerFrame,
                         })
-                        local function CreateRGBBox(Placeholder, Get, Set)
+                        SwiftUI:Create("UIListLayout", {
+                            FillDirection = Enum.FillDirection.Horizontal,
+                            Padding = UDim.new(0, 6),
+                            SortOrder = Enum.SortOrder.LayoutOrder,
+                            Parent = RGBHolder,
+                        })
+                        local function CreateRGBBox(Placeholder, DefaultVal)
                             local Box = SwiftUI:Create("Frame", {
                                 BackgroundColor3 = SwiftUI.Theme.Element,
                                 Size = UDim2.new(0.33, -4, 1, 0),
@@ -2188,7 +2253,7 @@ function SwiftUI:CreateWindow(Config)
                             SwiftUI:ApplyStroke(Box, SwiftUI.Theme.Outline, 1)
                             local TB = SwiftUI:Create("TextBox", {
                                 BackgroundTransparency = 1,
-                                Text = tostring(math.floor(Get()*255)),
+                                Text = tostring(DefaultVal),
                                 PlaceholderText = Placeholder,
                                 PlaceholderColor3 = SwiftUI.Theme.FontDark,
                                 FontFace = SwiftUI.FontCode,
@@ -2199,19 +2264,46 @@ function SwiftUI:CreateWindow(Config)
                                 Size = UDim2.fromScale(1,1),
                                 Parent = Box,
                             })
-                            TB.FocusLost:Connect(function(Enter)
-                                if not Enter then return end
-                                local N = tonumber(TB.Text)
-                                if N and N >=0 and N <=255 then
-                                    Set(N/255)
-                                    local C = Color3.fromHSV(CurrentH, CurrentS, CurrentV)
-                                    ColorPicker:SetValue(C)
-                                    PreviewLarge.BackgroundColor3 = C
-                                end
-                            end)
-                            return TB, Box
+                            return TB
                         end
-                        local RBox, _r = CreateRGBBox("R", function() return Color3.fromHSV(CurrentH, CurrentS, CurrentV).R end, function(v) CurrentH, CurrentS, CurrentV = Color3.fromRGB(v*255, CurrentS*255, CurrentV*255):ToHSV() end)
+                        local Initial = ColorPicker.Value
+                        local RBox = CreateRGBBox("R", math.floor(Initial.R*255))
+                        local GBox = CreateRGBBox("G", math.floor(Initial.G*255))
+                        local BBox = CreateRGBBox("B", math.floor(Initial.B*255))
+                        local function UpdateRGBBoxes()
+                            local C = Color3.fromHSV(CurrentH, CurrentS, CurrentV)
+                            RBox.Text = tostring(math.floor(C.R*255))
+                            GBox.Text = tostring(math.floor(C.G*255))
+                            BBox.Text = tostring(math.floor(C.B*255))
+                        end
+                        local function RGBBoxChanged()
+                            local R = tonumber(RBox.Text) or 0
+                            local G = tonumber(GBox.Text) or 0
+                            local B = tonumber(BBox.Text) or 0
+                            R = math.clamp(R,0,255); G = math.clamp(G,0,255); B = math.clamp(B,0,255)
+                            local C = Color3.fromRGB(R,G,B)
+                            CurrentH, CurrentS, CurrentV = C:ToHSV()
+                            SVCursor.Position = UDim2.new(CurrentS, 0, 1-CurrentV, 0)
+                            HueCursor.Position = UDim2.new(0,0,CurrentH,0)
+                            local SVCol = Color3.fromHSV(CurrentH,1,1)
+                            SVBox.BackgroundColor3 = SVCol
+                            Preview.BackgroundColor3 = C
+                            PreviewLarge.BackgroundColor3 = C
+                            local WhiteGrad2 = SVBox:FindFirstChildWhichIsA("UIGradient") or SVWhite:FindFirstChildOfClass("UIGradient")
+                            if WhiteGrad2 then
+                                WhiteGrad2.Color = ColorSequence.new{
+                                    ColorSequenceKeypoint.new(0, Color3.new(1,1,1)),
+                                    ColorSequenceKeypoint.new(1, SVCol)
+                                }
+                            end
+                        end
+                        RBox.FocusLost:Connect(function(Enter) if Enter then RGBBoxChanged() end end)
+                        GBox.FocusLost:Connect(function(Enter) if Enter then RGBBoxChanged() end end)
+                        BBox.FocusLost:Connect(function(Enter) if Enter then RGBBoxChanged() end end)
+                        -- hook SV/Hue updates to RGB boxes
+                        local OrigUpdateSV = UpdateColorFromHSV
+                        -- wrap to also update RGB
+                        
                         -- Simpler: just hex below
                         local HexHolder2 = SwiftUI:Create("Frame", {
                             BackgroundColor3 = SwiftUI.Theme.Element,
