@@ -867,20 +867,19 @@ function SwiftUI:CreateWindow(Config)
     })
     local GripBg = self:Create("Frame", {
         BackgroundColor3 = self.Theme.Element,
-        BackgroundTransparency = 0.35,
-        Size = UDim2.fromOffset(16, 16),
+        BackgroundTransparency = 1,
+        Size = UDim2.fromOffset(10, 10),
         AnchorPoint = Vector2.new(1, 1),
         Position = UDim2.new(1, -2, 1, -2),
         ZIndex = 3,
         Parent = ResizeHandle,
     })
     self:ApplyCorner(GripBg, 0)
-    self:ApplyStroke(GripBg, self.Theme.Outline, 1)
     for i = 0, 2 do
         local Dot = self:Create("Frame", {
             BackgroundColor3 = self.Theme.FontDim,
-            Size = UDim2.fromOffset(2, 2),
-            Position = UDim2.new(1, -4 - i*3.5, 1, -4 - i*3.5),
+            Size = UDim2.fromOffset(1.5, 1.5),
+            Position = UDim2.new(1, -3 - i*2.5, 1, -3 - i*2.5),
             ZIndex = 4,
             Active = false,
             Parent = GripBg,
