@@ -290,42 +290,70 @@ function SwiftUI:Notify(Config)
     local Title = Config.Title or "Swift"
     local Description = Config.Description or Config.Text or ""
     local Time = Config.Time or 3
-
+    local Icon = Config.Icon
+    local AccentOverride = Config.Color or Config.Accent or self.Theme.Accent
+    -- Blend Obsidian + Linoria + Wind + Elisium: boxy 0 radius, left accent, icon, progress, outer double stroke, shadow
     local Frame = self:Create("Frame", {
         BackgroundColor3 = self.Theme.Main,
         Size = UDim2.new(1, 0, 0, 64),
         ClipsDescendants = true,
         BackgroundTransparency = 1,
-        Position = UDim2.new(1, 10, 0, 0),
+        Position = UDim2.new(1, 12, 0, 0),
         Parent = NotificationHolder,
     })
     self:ApplyCorner(Frame, 0)
     self:ApplyStroke(Frame, self.Theme.Outline, 1)
     self:ApplyStroke(Frame, Color3.fromRGB(0,0,0), 2)
+    -- top highlight like Wind
+    local Highlight = self:Create("Frame", {
+        BackgroundColor3 = Color3.fromRGB(255,255,255),
+        BackgroundTransparency = 0.96,
+        Size = UDim2.new(1, 0, 0, 1),
+        Position = UDim2.new(0, 0, 0, 0),
+        ZIndex = 2,
+        Parent = Frame,
+    })
     local Progress = self:Create("Frame", {
-        BackgroundColor3 = self.Theme.Accent,
+        BackgroundColor3 = AccentOverride,
         Size = UDim2.new(1, 0, 0, 2),
         Position = UDim2.new(0, 0, 1, -2),
         BorderSizePixel = 0,
-        ZIndex = 2,
+        ZIndex = 4,
         Parent = Frame,
     })
     self:Create("UIPadding", {
         PaddingTop = UDim.new(0, 10),
-        PaddingBottom = UDim.new(0, 10),
-        PaddingLeft = UDim.new(0, 12),
+        PaddingBottom = UDim.new(0, 12),
+        PaddingLeft = UDim.new(0, 14),
         PaddingRight = UDim.new(0, 12),
         Parent = Frame,
     })
 
     local Accent = self:Create("Frame", {
-        BackgroundColor3 = self.Theme.Accent,
-        Size = UDim2.new(0, 2, 1, 0),
-        Position = UDim2.new(0, 0, 0, 0),
+        BackgroundColor3 = AccentOverride,
+        Size = UDim2.new(0, 3, 1, 0),
+        Position = UDim2.new(0, -14, 0, 0),
         ZIndex = 5,
         Parent = Frame,
     })
     self:ApplyCorner(Accent, 0)
+
+    local IconLabel = nil
+    local TitleOffset = 0
+    if Icon and Icon ~= "" then
+        IconLabel = self:Create("TextLabel", {
+            BackgroundTransparency = 1,
+            Text = tostring(Icon),
+            FontFace = self.FontBold,
+            TextSize = 14,
+            TextColor3 = AccentOverride,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Size = UDim2.new(0, 18, 0, 16),
+            Position = UDim2.new(0, 0, 0, 0),
+            Parent = Frame,
+        })
+        TitleOffset = 20
+    end
 
     local TitleLabel = self:Create("TextLabel", {
         BackgroundTransparency = 1,
@@ -334,9 +362,30 @@ function SwiftUI:Notify(Config)
         TextSize = 13,
         TextColor3 = self.Theme.Font,
         TextXAlignment = Enum.TextXAlignment.Left,
-        Size = UDim2.new(1, 0, 0, 16),
+        TextTruncate = Enum.TextTruncate.AtEnd,
+        Size = UDim2.new(1, -24 - TitleOffset, 0, 16),
+        Position = UDim2.new(0, TitleOffset, 0, 0),
         Parent = Frame,
     })
+    local CloseBtn = self:Create("TextButton", {
+        BackgroundTransparency = 1,
+        Text = "×",
+        FontFace = self.FontBold,
+        TextSize = 14,
+        TextColor3 = self.Theme.FontDark,
+        Size = UDim2.fromOffset(18, 18),
+        Position = UDim2.new(1, -18, 0, -2),
+        AutoButtonColor = false,
+        ZIndex = 3,
+        Parent = Frame,
+    })
+    CloseBtn.MouseButton1Click:Connect(function()
+        self:Tween(Frame, {BackgroundTransparency = 1, Position = UDim2.new(1, 12, 0, 0)}, TweenInfoMedium)
+        task.wait(0.2)
+        if Frame.Parent then Frame:Destroy() end
+    end)
+    self:HookHover(CloseBtn, function() CloseBtn.TextColor3 = self.Theme.Font end, function() CloseBtn.TextColor3 = self.Theme.FontDark end)
+
     local DescLabel = self:Create("TextLabel", {
         BackgroundTransparency = 1,
         Text = Description,
@@ -346,7 +395,8 @@ function SwiftUI:Notify(Config)
         TextXAlignment = Enum.TextXAlignment.Left,
         TextYAlignment = Enum.TextYAlignment.Top,
         TextWrapped = true,
-        Size = UDim2.new(1, 0, 0, 28),
+        RichText = true,
+        Size = UDim2.new(1, -4, 0, 28),
         Position = UDim2.new(0, 0, 0, 18),
         Parent = Frame,
     })
@@ -356,20 +406,22 @@ function SwiftUI:Notify(Config)
     TitleLabel.TextTransparency = 1
     DescLabel.TextTransparency = 1
     Accent.BackgroundTransparency = 1
+    Progress.BackgroundTransparency = 1
+    Highlight.BackgroundTransparency = 1
+    CloseBtn.TextTransparency = 1
+    if IconLabel then IconLabel.TextTransparency = 1 end
 
     self:Tween(Frame, {BackgroundTransparency = 0, Position = UDim2.new(0, 0, 0, 0)}, TweenInfoMedium)
     self:Tween(TitleLabel, {TextTransparency = 0}, TweenInfoMedium)
     self:Tween(DescLabel, {TextTransparency = 0}, TweenInfoMedium)
     self:Tween(Accent, {BackgroundTransparency = 0}, TweenInfoMedium)
+    if IconLabel then self:Tween(IconLabel, {TextTransparency = 0}, TweenInfoMedium) end
+    self:Tween(CloseBtn, {TextTransparency = 0}, TweenInfoMedium)
+    self:Tween(Progress, {BackgroundTransparency = 0}, TweenInfoMedium)
+    self:Tween(Highlight, {BackgroundTransparency = 0.92}, TweenInfoMedium)
 
-    self:Tween(Progress, {Size = UDim2.new(0, 0, 0, 2)}, TweenInfoMedium)
-    task.delay(0.05, function()
-        self:Tween(Progress, {Size = UDim2.new(0, 0, 0, 2)}, TweenInfoFast)
-        TweenService:Create(Progress, TweenInfo.new(Time, Enum.EasingStyle.Linear), {Size = UDim2.new(0, 0, 0, 2)}):Play()
-        -- animate progress
-        Progress.Size = UDim2.new(1, 0, 0, 2)
-        self:Tween(Progress, {Size = UDim2.new(0, 0, 0, 2)}, TweenInfo.new(Time, Enum.EasingStyle.Linear))
-    end)
+    Progress.Size = UDim2.new(1, 0, 0, 2)
+    self:Tween(Progress, {Size = UDim2.new(0, 0, 0, 2)}, TweenInfo.new(Time, Enum.EasingStyle.Linear))
     task.delay(Time, function()
         self:Tween(Frame, {BackgroundTransparency = 1, Position = UDim2.new(1, 10, 0, 0)}, TweenInfoMedium)
         self:Tween(TitleLabel, {TextTransparency = 1}, TweenInfoMedium)
@@ -1225,15 +1277,6 @@ function SwiftUI:CreateWindow(Config)
                 })
                 SwiftUI:ApplyCorner(Track, 10)
                 local TrackStroke = SwiftUI:ApplyStroke(Track, SwiftUI.Theme.Outline, 1)
-                SwiftUI:HookHover(Holder, function()
-                    if not Toggle.Value then
-                        SwiftUI:Tween(TrackStroke, {Color = SwiftUI.Theme.OutlineLight}, TweenInfoFast)
-                    end
-                end, function()
-                    if not Toggle.Value then
-                        SwiftUI:Tween(TrackStroke, {Color = SwiftUI.Theme.Outline}, TweenInfoFast)
-                    end
-                end)
                 local Thumb = SwiftUI:Create("Frame", {
                     BackgroundColor3 = SwiftUI.Theme.FontDark,
                     Size = UDim2.fromOffset(14, 14),
@@ -1293,6 +1336,15 @@ function SwiftUI:CreateWindow(Config)
                     end
                 end
                 UpdateVisual(Default)
+                SwiftUI:HookHover(Holder, function()
+                    if not Toggle.Value then
+                        SwiftUI:Tween(TrackStroke, {Color = SwiftUI.Theme.OutlineLight}, TweenInfoFast)
+                    end
+                end, function()
+                    if not Toggle.Value then
+                        SwiftUI:Tween(TrackStroke, {Color = SwiftUI.Theme.Outline}, TweenInfoFast)
+                    end
+                end)
 
                 function Toggle:SetValue(Value)
                     Toggle.Value = Value
