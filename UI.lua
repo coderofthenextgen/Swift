@@ -26,18 +26,18 @@ local SwiftUI = {
 }
 
 SwiftUI.Theme = {
-    Background = Color3.fromRGB(13, 13, 15),
-    Main = Color3.fromRGB(20, 20, 22),
-    Sidebar = Color3.fromRGB(16, 16, 18),
-    Element = Color3.fromRGB(28, 28, 31),
-    ElementHover = Color3.fromRGB(34, 34, 38),
-    Outline = Color3.fromRGB(42, 42, 46),
-    OutlineLight = Color3.fromRGB(52, 52, 56),
+    Background = Color3.fromRGB(10, 10, 12),
+    Main = Color3.fromRGB(14, 14, 16),
+    Sidebar = Color3.fromRGB(12, 12, 14),
+    Element = Color3.fromRGB(22, 22, 26),
+    ElementHover = Color3.fromRGB(30, 30, 34),
+    Outline = Color3.fromRGB(48, 48, 52),
+    OutlineLight = Color3.fromRGB(62, 62, 66),
     Accent = Color3.fromRGB(124, 92, 255),
     AccentHover = Color3.fromRGB(138, 110, 255),
     Font = Color3.fromRGB(240, 240, 240),
-    FontDim = Color3.fromRGB(150, 150, 155),
-    FontDark = Color3.fromRGB(105, 105, 110),
+    FontDim = Color3.fromRGB(165, 165, 170),
+    FontDark = Color3.fromRGB(110, 110, 115),
     Success = Color3.fromRGB(46, 204, 113),
     Warning = Color3.fromRGB(241, 196, 15),
     Danger = Color3.fromRGB(231, 76, 60),
@@ -69,7 +69,7 @@ end
 
 function SwiftUI:ApplyCorner(Instance, Radius)
     return self:Create("UICorner", {
-        CornerRadius = UDim.new(0, Radius or 6),
+        CornerRadius = UDim.new(0, Radius or 0),
         Parent = Instance,
     })
 end
@@ -210,7 +210,7 @@ function SwiftUI:Notify(Config)
         Size = UDim2.new(1, 0, 0, 64),
         Parent = NotificationHolder,
     })
-    self:ApplyCorner(Frame, 8)
+    self:ApplyCorner(Frame, 0)
     self:ApplyStroke(Frame, self.Theme.Outline, 1)
     self:Create("UIPadding", {
         PaddingTop = UDim.new(0, 10),
@@ -226,7 +226,7 @@ function SwiftUI:Notify(Config)
         Position = UDim2.new(0, 0, 0, 0),
         Parent = Frame,
     })
-    self:ApplyCorner(Accent, 8)
+    self:ApplyCorner(Accent, 0)
 
     local TitleLabel = self:Create("TextLabel", {
         BackgroundTransparency = 1,
@@ -292,13 +292,13 @@ function SwiftUI:CreateWindow(Config)
 
     local Shadow = self:Create("Frame", {
         BackgroundColor3 = self.Theme.Shadow,
-        BackgroundTransparency = 0.65,
+        BackgroundTransparency = 1,
         Size = UDim2.new(1, 10, 1, 10),
         Position = UDim2.new(0, -5, 0, -5),
         ZIndex = 0,
         Parent = Container,
     })
-    self:ApplyCorner(Shadow, 10)
+    self:ApplyCorner(Shadow, 0)
 
     local Main = self:Create("Frame", {
         Name = "Main",
@@ -308,7 +308,8 @@ function SwiftUI:CreateWindow(Config)
         ZIndex = 1,
         Parent = Container,
     })
-    self:ApplyCorner(Main, 10)
+    self:ApplyCorner(Main, 0)
+    self:ApplyStroke(Main, Color3.fromRGB(0, 0, 0), 2)
     self:ApplyStroke(Main, self.Theme.Outline, 1)
 
     local Titlebar = self:Create("Frame", {
@@ -390,7 +391,7 @@ function SwiftUI:CreateWindow(Config)
             ZIndex = 3,
             Parent = Controls,
         })
-        self:ApplyCorner(Btn, 6)
+        self:ApplyCorner(Btn, 0)
         self:ApplyStroke(Btn, self.Theme.Outline, 1)
         self:HookHover(Btn, function()
             self:Tween(Btn, {BackgroundColor3 = HoverColor or self.Theme.ElementHover}, TweenInfoFast)
@@ -557,7 +558,7 @@ function SwiftUI:CreateWindow(Config)
             Size = UDim2.new(1, 0, 0, 34),
             Parent = TabList,
         })
-        SwiftUI:ApplyCorner(TabButton, 7)
+        SwiftUI:ApplyCorner(TabButton, 0)
 
         local TabIcon = SwiftUI:Create("TextLabel", {
             BackgroundTransparency = 1,
@@ -693,7 +694,8 @@ function SwiftUI:CreateWindow(Config)
                 Size = UDim2.new(1, 0, 0, 40),
                 Parent = ParentColumn,
             })
-            SwiftUI:ApplyCorner(Box, 8)
+            SwiftUI:ApplyCorner(Box, 0)
+            SwiftUI:ApplyStroke(Box, Color3.fromRGB(0, 0, 0), 2)
             SwiftUI:ApplyStroke(Box, SwiftUI.Theme.Outline, 1)
             SwiftUI:Create("UIPadding", {
                 PaddingTop = UDim.new(0, 8),
@@ -820,7 +822,7 @@ function SwiftUI:CreateWindow(Config)
                     AutoButtonColor = false,
                     Parent = ContainerFrame,
                 })
-                SwiftUI:ApplyCorner(Btn, 6)
+                SwiftUI:ApplyCorner(Btn, 0)
                 SwiftUI:ApplyStroke(Btn, SwiftUI.Theme.Outline, 1)
 
                 SwiftUI:HookHover(Btn, function()
@@ -985,7 +987,7 @@ function SwiftUI:CreateWindow(Config)
                     Position = UDim2.new(1, 0, 0, 0),
                     Parent = Top,
                 })
-                SwiftUI:ApplyCorner(ValueLabel, 4)
+                SwiftUI:ApplyCorner(ValueLabel, 0)
                 SwiftUI:ApplyStroke(ValueLabel, SwiftUI.Theme.Outline, 1)
 
                 local Track = SwiftUI:Create("Frame", {
@@ -994,14 +996,14 @@ function SwiftUI:CreateWindow(Config)
                     Position = UDim2.new(0, 0, 0, 26),
                     Parent = Holder,
                 })
-                SwiftUI:ApplyCorner(Track, 3)
+                SwiftUI:ApplyCorner(Track, 0)
                 SwiftUI:ApplyStroke(Track, SwiftUI.Theme.Outline, 1)
                 local Fill = SwiftUI:Create("Frame", {
                     BackgroundColor3 = SwiftUI.Theme.Accent,
                     Size = UDim2.new(0, 0, 1, 0),
                     Parent = Track,
                 })
-                SwiftUI:ApplyCorner(Fill, 3)
+                SwiftUI:ApplyCorner(Fill, 0)
                 local Thumb = SwiftUI:Create("Frame", {
                     BackgroundColor3 = Color3.new(1,1,1),
                     Size = UDim2.fromOffset(12, 12),
@@ -1113,7 +1115,7 @@ function SwiftUI:CreateWindow(Config)
                     AutoButtonColor = false,
                     Parent = Holder,
                 })
-                SwiftUI:ApplyCorner(Button, 6)
+                SwiftUI:ApplyCorner(Button, 0)
                 SwiftUI:ApplyStroke(Button, SwiftUI.Theme.Outline, 1)
                 local SelectedLabel = SwiftUI:Create("TextLabel", {
                     BackgroundTransparency = 1,
@@ -1149,7 +1151,7 @@ function SwiftUI:CreateWindow(Config)
                     ScrollBarThickness = 2,
                     Parent = Holder,
                 })
-                SwiftUI:ApplyCorner(ListFrame, 6)
+                SwiftUI:ApplyCorner(ListFrame, 0)
                 SwiftUI:ApplyStroke(ListFrame, SwiftUI.Theme.Outline, 1)
                 SwiftUI:Create("UIListLayout", {
                     FillDirection = Enum.FillDirection.Vertical,
@@ -1195,7 +1197,7 @@ function SwiftUI:CreateWindow(Config)
                             AutoButtonColor = false,
                             Parent = ListFrame,
                         })
-                        SwiftUI:ApplyCorner(Opt, 4)
+                        SwiftUI:ApplyCorner(Opt, 0)
                         Opt.MouseButton1Click:Connect(function()
                             if Multi then
                                 if type(Dropdown.Value) ~= "table" then Dropdown.Value = {} end
@@ -1291,7 +1293,7 @@ function SwiftUI:CreateWindow(Config)
                     Position = UDim2.new(0, 0, 0, 18),
                     Parent = Holder,
                 })
-                SwiftUI:ApplyCorner(BoxHolder, 6)
+                SwiftUI:ApplyCorner(BoxHolder, 0)
                 SwiftUI:ApplyStroke(BoxHolder, SwiftUI.Theme.Outline, 1)
                 local TextBox = SwiftUI:Create("TextBox", {
                     BackgroundTransparency = 1,
@@ -1376,7 +1378,7 @@ function SwiftUI:CreateWindow(Config)
                     Position = UDim2.new(1, 0, 0.5, 0),
                     Parent = Holder,
                 })
-                SwiftUI:ApplyCorner(Preview, 4)
+                SwiftUI:ApplyCorner(Preview, 0)
                 SwiftUI:ApplyStroke(Preview, SwiftUI.Theme.Outline, 1)
                 local Button = SwiftUI:Create("TextButton", {
                     BackgroundTransparency = 1,
@@ -1408,7 +1410,7 @@ function SwiftUI:CreateWindow(Config)
                             ZIndex = 25,
                             Parent = Holder,
                         })
-                        SwiftUI:ApplyCorner(PickerFrame, 8)
+                        SwiftUI:ApplyCorner(PickerFrame, 0)
                         SwiftUI:ApplyStroke(PickerFrame, SwiftUI.Theme.Outline, 1)
                         SwiftUI:Create("UIPadding", {
                             PaddingTop = UDim.new(0, 8),
@@ -1444,7 +1446,7 @@ function SwiftUI:CreateWindow(Config)
                                 AutoButtonColor = false,
                                 Parent = Grid,
                             })
-                            SwiftUI:ApplyCorner(Btn, 6)
+                            SwiftUI:ApplyCorner(Btn, 0)
                             SwiftUI:ApplyStroke(Btn, SwiftUI.Theme.Outline, 1)
                             Btn.MouseButton1Click:Connect(function()
                                 ColorPicker:SetValue(C)
@@ -1460,7 +1462,7 @@ function SwiftUI:CreateWindow(Config)
                             AutoButtonColor = false,
                             Parent = PickerFrame,
                         })
-                        SwiftUI:ApplyCorner(RainbowBtn, 6)
+                        SwiftUI:ApplyCorner(RainbowBtn, 0)
                         RainbowBtn.MouseButton1Click:Connect(function()
                             local Hue = tick() % 5 / 5
                             local C = Color3.fromHSV(Hue, 0.8, 1)
@@ -1517,7 +1519,7 @@ function SwiftUI:CreateWindow(Config)
                     AutoButtonColor = false,
                     Parent = Holder,
                 })
-                SwiftUI:ApplyCorner(KeyButton, 4)
+                SwiftUI:ApplyCorner(KeyButton, 0)
                 SwiftUI:ApplyStroke(KeyButton, SwiftUI.Theme.Outline, 1)
 
                 local KeyPicker = {
@@ -1630,13 +1632,13 @@ function SwiftUI:CreateLoading(Config)
         Size = UDim2.new(1, 0, 0, 8),
         Parent = Group.Container,
     })
-    self:ApplyCorner(BarHolder, 4)
+    self:ApplyCorner(BarHolder, 0)
     local BarFill = self:Create("Frame", {
         BackgroundColor3 = self.Theme.Accent,
         Size = UDim2.new(0, 0, 1, 0),
         Parent = BarHolder,
     })
-    self:ApplyCorner(BarFill, 4)
+    self:ApplyCorner(BarFill, 0)
 
     local Loading = {}
     function Loading:SetMessage(Text) Label:SetText(Text) end
