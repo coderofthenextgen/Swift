@@ -1,53 +1,28 @@
 --!strict
--- Swift | MM2 Exclusive | v1.0.0
--- Premium Murder Mystery 2 Hub — WindUI + ESP + Combat
--- Repository: https://github.com/coderofthenextgen/Swift
--- Loader: loadstring(game:HttpGet("https://raw.githubusercontent.com/coderofthenextgen/Swift/main/swift.lua"))()
---
---  H O O K S  R E F E R E N C E  (from dumped clients):
---  -------------------------------------------------------------------------
---  KnifeClient.stabKnife @ 131
---    Upvalues: ThrowKnife, ThrowCharge, Slash, ThrowHold, Downstab, Events, RunService
---    Constant: "KnifeStabbed" -> Events.KnifeStabbed:FireServer()
---    Logic: os.clock debounce 0.85s, Random.new():NextInteger scan, PreSimulation wait
---
---  KnifeClient.throwKnife @ 147
---    Upvalues: Events, Handle, Animations
---    Constants: "KnifeThrown" -> Events.KnifeThrown:FireServer(CFrame)
---    Args: (originCF, targetCF) -> server validates trajectory
---
---  GunClient @ 69
---    Upvalues: UIS, WeaponService.GunFired, KnifeThrown Event, GetMouseTargetCFrame
---    Constants: "Shoot" -> GunFired:FireServer(targetCF, hitCF)
---    Logic: PreferredInput Touch check, WorldCFrame ray from HumanoidRootPart.GunRaycastAttachment
---  -------------------------------------------------------------------------
 
 local cloneref = cloneref or clonereference or function(o) return o end
 local gethui = gethui or function() return cloneref(game:GetService("CoreGui")) end
 
--- // STRICT MM2 GUARD // ----------------------------------------------------
-local MM2_PLACE_IDS = { [142823291] = true }
-local MM2_UNIVERSE_IDS = { [66654135] = true, [6035872082] = false } -- second is Rivals, explicitly block
+local Mm2PlaceIds = { [142823291] = true }
+local Mm2UniverseIds = { [66654135] = true, [6035872082] = false }
 
 local PlaceId = game.PlaceId
 local GameId = game.GameId
-local UniverseOk = MM2_UNIVERSE_IDS[GameId] ~= nil and MM2_UNIVERSE_IDS[GameId] ~= false
-local PlaceOk = MM2_PLACE_IDS[PlaceId] == true
+local UniverseOk = Mm2UniverseIds[GameId] ~= nil and Mm2UniverseIds[GameId] ~= false
+local PlaceOk = Mm2PlaceIds[PlaceId] == true
 
 if not (PlaceOk or UniverseOk) then
-    -- Try to notify even before UI
     pcall(function()
         game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "Swift — MM2 Only",
+            Title = "Swift - MM2 Only",
             Text = "This hub only works on Murder Mystery 2 [142823291].\nCurrent PlaceId: " .. tostring(PlaceId),
             Duration = 7,
         })
     end)
-    warn("[Swift] Unsupported game. PlaceId=" .. tostring(PlaceId) .. " Universe=" .. tostring(GameId) .. " — Swift is MM2 exclusive.")
+    warn("[Swift] Unsupported game. PlaceId=" .. tostring(PlaceId) .. " Universe=" .. tostring(GameId) .. " - Swift is MM2 exclusive.")
     return
 end
 
--- // SERVICES // ------------------------------------------------------------
 local Players = cloneref(game:GetService("Players"))
 local RunService = cloneref(game:GetService("RunService"))
 local ReplicatedStorage = cloneref(game:GetService("ReplicatedStorage"))
@@ -59,12 +34,8 @@ local HttpService = cloneref(game:GetService("HttpService"))
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
--- wait for game loaded
 if not game:IsLoaded() then game.Loaded:Wait() end
 
--- // WINDUI — best looking modern lib (glass, motion, gradients) // -------
--- Primary: WindUI ( Footagesus/WindUI — 327+ stars, best aesthetics 2026 )
--- Fallback: Swift-UI (obsidian boxy) if WindUI unreachable
 local WindUI
 local okWind, resWind = pcall(function()
     return loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
@@ -72,7 +43,6 @@ end)
 if okWind and resWind then
     WindUI = resWind
 else
-    -- fallback to swift-ui owned lib
     local ok2, res2 = pcall(function()
         return loadstring(game:HttpGet("https://raw.githubusercontent.com/coderofthenextgen/swift-ui/main/UI.lua"))()
     end)
@@ -84,32 +54,29 @@ else
     end
 end
 
--- // UTILS // ---------------------------------------------------------------
-local function findRemote(name: string): RemoteEvent?
-    -- exhaustive search in ReplicatedStorage
+local function findRemote(name)
     local found = ReplicatedStorage:FindFirstChild(name, true)
     if found and found:IsA("RemoteEvent") then return found end
-    -- try common containers
     for _, container in ipairs({ReplicatedStorage, ReplicatedStorage:FindFirstChild("ClientServices"), ReplicatedStorage:FindFirstChild("WeaponService")}) do
         if container then
             local c = container:FindFirstChild(name, true)
-            if c and c:IsA("RemoteEvent") then return c :: any end
+            if c and c:IsA("RemoteEvent") then return c end
         end
     end
     return nil
 end
 
-local function getCharacter(plr: Player): Model?
+local function getCharacter(plr)
     return plr.Character
 end
 
-local function getRoot(plr: Player): BasePart?
+local function getRoot(plr)
     local c = getCharacter(plr)
     if not c then return nil end
-    return c:FindFirstChild("HumanoidRootPart") :: BasePart?
+    return c:FindFirstChild("HumanoidRootPart")
 end
 
-local function hasTool(plr: Player, toolName: string): boolean
+local function hasTool(plr, toolName)
     local c = getCharacter(plr)
     if c and c:FindFirstChild(toolName) then return true end
     local bp = plr:FindFirstChild("Backpack")
@@ -117,28 +84,23 @@ local function hasTool(plr: Player, toolName: string): boolean
     return false
 end
 
-local function isAlive(plr: Player): boolean
+local function isAlive(plr)
     local c = getCharacter(plr)
     if not c then return false end
     local hum = c:FindFirstChildOfClass("Humanoid")
     return hum ~= nil and hum.Health > 0
 end
 
--- Role detection — MM2 roles are tool-based + decompiler-proven
--- Murderer = has Knife, Sheriff = has Gun/Revolver, Hero = picked up Gun
-local function getRole(plr: Player): string
+local function getRole(plr)
     if not isAlive(plr) then return "Dead" end
     if hasTool(plr, "Knife") then return "Murderer" end
     if hasTool(plr, "Gun") or hasTool(plr, "Revolver") then return "Sheriff" end
-    -- fallback: check for Gun drop owner — handled elsewhere
     return "Innocent"
 end
 
-local function getDroppedGun(): BasePart?
-    -- MM2 drops Gun tool in workspace
+local function getDroppedGun()
     local drop = Workspace:FindFirstChild("GunDrop", true)
     if drop and drop:IsA("BasePart") then return drop end
-    -- alternative name search
     for _, o in ipairs(Workspace:GetDescendants()) do
         if o.Name == "GunDrop" and o:IsA("BasePart") then return o end
         if o.Name == "Gun" and o:IsA("Tool") and o.Parent == Workspace then
@@ -149,18 +111,18 @@ local function getDroppedGun(): BasePart?
     return nil
 end
 
-local function worldToScreen(pos: Vector3)
+local function worldToScreen(pos)
     local v, onScreen = Camera:WorldToViewportPoint(pos)
     return Vector2.new(v.X, v.Y), onScreen, v.Z
 end
 
-local function distanceFromPlayer(pos: Vector3): number
+local function distanceFromPlayer(pos)
     local root = getRoot(LocalPlayer)
     if not root then return math.huge end
     return (root.Position - pos).Magnitude
 end
 
-local function getClosestToCursor(maxDist: number?, aliveOnly: boolean?): Player?
+local function getClosestToCursor(maxDist, aliveOnly)
     maxDist = maxDist or math.huge
     local mouse = UserInputService:GetMouseLocation()
     local best, bestDist = nil, math.huge
@@ -172,7 +134,7 @@ local function getClosestToCursor(maxDist: number?, aliveOnly: boolean?): Player
                 if onScreen then
                     local d = (mouse - scr).Magnitude
                     local w = distanceFromPlayer(root.Position)
-                    if d < bestDist and w <= (maxDist :: number) then
+                    if d < bestDist and w <= maxDist then
                         best, bestDist = plr, d
                     end
                 end
@@ -182,9 +144,7 @@ local function getClosestToCursor(maxDist: number?, aliveOnly: boolean?): Player
     return best
 end
 
--- // CONFIG // --------------------------------------------------------------
 local Flags = {
-    -- Visuals
     ESPEnabled = false,
     ESPBoxes = true,
     ESPNames = true,
@@ -201,16 +161,14 @@ local Flags = {
     InnocentColor = Color3.fromRGB(255, 255, 255),
     HeroColor = Color3.fromRGB(255, 220, 55),
 
-    -- Combat — Knife
     KillAura = false,
     KillAuraRange = 18,
     KillAuraDelay = 0.22,
-    KillAuraTargets = "All", -- All / Murderer / Sheriff
+    KillAuraTargets = "All",
     ThrowAimbot = false,
     ThrowSilent = false,
     ThrowFOV = 500,
 
-    -- Combat — Gun
     GunAimbot = false,
     GunSilentAim = false,
     GunAimPart = "Head",
@@ -219,19 +177,16 @@ local Flags = {
     GunWallbang = false,
     GunAutoShoot = false,
 
-    -- Player
     WalkSpeedEnabled = false,
     WalkSpeed = 16,
     JumpPowerEnabled = false,
     JumpPower = 50,
 }
 
--- // REMOTES (resolved late, with fallback search) // ----------------------
 local Remotes = {
-    KnifeStabbed = nil :: RemoteEvent?,
-    KnifeThrown = nil :: RemoteEvent?,
-    GunFired = nil :: RemoteEvent?,
-    -- MM2 historical names
+    KnifeStabbed = nil,
+    KnifeThrown = nil,
+    GunFired = nil,
     Aliases = {
         KnifeStabbed = {"KnifeStabbed", "StabKnife", "KnifeHit", "Slash"},
         KnifeThrown = {"KnifeThrown", "ThrowKnife", "KnifeThrow"},
@@ -249,7 +204,6 @@ local function resolveRemotes()
             end
         end
     end
-    -- deep scan fallback: look for any RemoteEvent that looks like weapon
     if not Remotes.GunFired then
         for _, inst in ipairs(ReplicatedStorage:GetDescendants()) do
             if inst:IsA("RemoteEvent") and inst.Name:lower():find("gun") and inst.Name:lower():find("fir") then
@@ -258,7 +212,6 @@ local function resolveRemotes()
             end
         end
     end
-    -- also check WeaponService specifically (GunClient upvalue)
     local ws = ReplicatedStorage:FindFirstChild("ClientServices")
     if ws then
         local ws2 = ws:FindFirstChild("WeaponService")
@@ -267,7 +220,7 @@ local function resolveRemotes()
             if gf and gf:IsA("RemoteEvent") then Remotes.GunFired = gf end
         end
     end
-    warn(string.format("[Swift] Remotes — Stab:%s Throw:%s Gun:%s",
+    warn(string.format("[Swift] Remotes - Stab:%s Throw:%s Gun:%s",
         Remotes.KnifeStabbed and Remotes.KnifeStabbed:GetFullName() or "nil",
         Remotes.KnifeThrown and Remotes.KnifeThrown:GetFullName() or "nil",
         Remotes.GunFired and Remotes.GunFired:GetFullName() or "nil"
@@ -279,28 +232,27 @@ task.spawn(function()
     resolveRemotes()
 end)
 
--- // ESP ENGINE // ----------------------------------------------------------
 local ESP = {
     Enabled = false,
-    Container = nil :: Folder?,
-    Highlights = {} :: {[Player]: Highlight},
-    Billboards = {} :: {[Player]: BillboardGui},
-    GunHighlight = nil :: Highlight?,
-    GunBillboard = nil :: BillboardGui?,
-    Conn = nil :: RBXScriptConnection?,
-    Boxes = {} :: {[Player]: Frame}, -- fallback if Drawing not available
+    Container = nil,
+    Highlights = {},
+    Billboards = {},
+    GunHighlight = nil,
+    GunBillboard = nil,
+    Conn = nil,
+    Boxes = {},
 }
 
 local function ensureContainer()
     if ESP.Container and ESP.Container.Parent then return ESP.Container end
     local f = Instance.new("Folder")
     f.Name = "SwiftESP"
-    f.Parent = gethui() -- hidden but we parent highlights to character; folder for billboards
+    f.Parent = gethui()
     ESP.Container = f
     return f
 end
 
-local function getRoleColor(role: string): Color3
+local function getRoleColor(role)
     if not Flags.ESPRoleColors then return Flags.ESPBoxColor end
     if role == "Murderer" then return Flags.MurdererColor end
     if role == "Sheriff" then return Flags.SheriffColor end
@@ -308,7 +260,7 @@ local function getRoleColor(role: string): Color3
     return Flags.InnocentColor
 end
 
-local function createBillboard(plr: Player): BillboardGui
+local function createBillboard(plr)
     local bb = Instance.new("BillboardGui")
     bb.Name = "Swift_" .. plr.Name
     bb.Size = UDim2.fromOffset(200, 50)
@@ -344,28 +296,25 @@ local function createBillboard(plr: Player): BillboardGui
     return bb
 end
 
-local function ensureESPForPlayer(plr: Player)
+local function ensureESPForPlayer(plr)
     if plr == LocalPlayer then return end
     if ESP.Highlights[plr] and ESP.Highlights[plr].Parent then return end
 
     local char = plr.Character
     if not char then return end
 
-    -- Highlight
     local hl = Instance.new("Highlight")
     hl.Name = "SwiftHL"
     hl.Adornee = char
-    hl.FillTransparency = 1 -- we will toggle via loop
+    hl.FillTransparency = 1
     hl.OutlineTransparency = 1
     hl.FillColor = getRoleColor(getRole(plr))
     hl.OutlineColor = getRoleColor(getRole(plr))
     hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-    hl.Parent = ensureContainer() -- parent to hidden folder, adornee does rendering
+    hl.Parent = ensureContainer()
     ESP.Highlights[plr] = hl
 
-    -- Billboard
     local bb = createBillboard(plr)
-    -- adornee to HRP if exists else Head
     local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Head")
     if root and root:IsA("BasePart") then
         bb.Adornee = root
@@ -374,7 +323,7 @@ local function ensureESPForPlayer(plr: Player)
     end
 end
 
-local function removeESPForPlayer(plr: Player)
+local function removeESPForPlayer(plr)
     local hl = ESP.Highlights[plr]
     if hl then hl:Destroy() end
     ESP.Highlights[plr] = nil
@@ -404,7 +353,7 @@ local function updateESP()
         local hl = ESP.Highlights[plr]
         local bb = ESP.Billboards[plr]
         local char = plr.Character
-        local root = char and char:FindFirstChild("HumanoidRootPart") :: BasePart?
+        local root = char and char:FindFirstChild("HumanoidRootPart")
         local hum = char and char:FindFirstChildOfClass("Humanoid")
         if not hl or not char or not root or not hum or hum.Health <= 0 then
             if hl then hl.FillTransparency = 1; hl.OutlineTransparency = 1 end
@@ -423,7 +372,6 @@ local function updateESP()
         hl.FillColor = col
         hl.OutlineColor = col
         hl.Adornee = char
-        -- box vs outline: we use Fill for Murderer/Sheriff more visible
         if Flags.ESPBoxes then
             hl.FillTransparency = (role == "Murderer" or role == "Sheriff") and 0.55 or 0.78
             hl.OutlineTransparency = 0
@@ -431,7 +379,6 @@ local function updateESP()
             hl.FillTransparency = 1
             hl.OutlineTransparency = 1
         end
-        -- if boxes disabled but names enabled, still show outline faint
         if not Flags.ESPBoxes and Flags.ESPNames then
             hl.OutlineTransparency = 0.15
         end
@@ -439,8 +386,8 @@ local function updateESP()
         if bb then
             bb.Enabled = Flags.ESPNames or Flags.ESPDistance or Flags.ESPRoles or Flags.ESPHealth
             bb.Adornee = root
-            local label = bb:FindFirstChild("Label") :: TextLabel?
-            local distL = bb:FindFirstChild("Dist") :: TextLabel?
+            local label = bb:FindFirstChild("Label")
+            local distL = bb:FindFirstChild("Dist")
             if label then
                 local parts = {}
                 if Flags.ESPNames then table.insert(parts, plr.Name) end
@@ -457,12 +404,10 @@ local function updateESP()
                     distL.Visible = false
                 end
             end
-            -- health-based size tweak
             bb.StudsOffset = Vector3.new(0, 3.2, 0)
         end
     end
 
-    -- GunDrop ESP
     if Flags.ESPGunDrop then
         local gunPart = getDroppedGun()
         if gunPart then
@@ -477,10 +422,9 @@ local function updateESP()
                 hl.Parent = ensureContainer()
                 ESP.GunHighlight = hl
             end
-            ESP.GunHighlight.Adornee = gunPart.Parent:IsA("Model") and gunPart.Parent or gunPart :: any
+            ESP.GunHighlight.Adornee = gunPart.Parent:IsA("Model") and gunPart.Parent or gunPart
             ESP.GunHighlight.FillTransparency = 0.35
             ESP.GunHighlight.OutlineTransparency = 0
-            -- billboard
             if not ESP.GunBillboard or not ESP.GunBillboard.Parent then
                 local bb = Instance.new("BillboardGui")
                 bb.Name = "SwiftGunBB"
@@ -491,7 +435,7 @@ local function updateESP()
                 local tl = Instance.new("TextLabel")
                 tl.Size = UDim2.fromScale(1, 1)
                 tl.BackgroundTransparency = 1
-                tl.Text = "🔫 GUN DROP"
+                tl.Text = "Gun Drop"
                 tl.Font = Enum.Font.GothamBold
                 tl.TextSize = 12
                 tl.TextColor3 = Color3.fromRGB(255, 220, 40)
@@ -512,7 +456,7 @@ local function updateESP()
     end
 end
 
-local function setESPEnabled(v: boolean)
+local function setESPEnabled(v)
     Flags.ESPEnabled = v
     if v then
         ensureContainer()
@@ -523,12 +467,10 @@ local function setESPEnabled(v: boolean)
     else
         updateESP()
         if ESP.Conn then
-            -- keep connection but update will hide; we keep it to avoid rebind spam
         end
     end
 end
 
--- Player added/removed
 Players.PlayerAdded:Connect(function(plr)
     plr.CharacterAdded:Connect(function()
         task.wait(0.6)
@@ -543,9 +485,8 @@ for _, plr in ipairs(Players:GetPlayers()) do
     end)
 end
 
--- Tracers (Drawing API if available)
-local Tracers = { Lines = {} :: {[Player]: any}, Conn = nil :: RBXScriptConnection? }
-local function ensureTracer(plr: Player)
+local Tracers = { Lines = {}, Conn = nil }
+local function ensureTracer(plr)
     if not (Drawing and Flags.ESPEnabled and Flags.ESPTracers) then return nil end
     if Tracers.Lines[plr] then return Tracers.Lines[plr] end
     local ok, line = pcall(function() return Drawing.new("Line") end)
@@ -588,33 +529,26 @@ if Drawing then
     Tracers.Conn = RunService.RenderStepped:Connect(updateTracers)
 end
 
--- // COMBAT // --------------------------------------------------------------
 local Combat = {
-    KillAuraConn = nil :: RBXScriptConnection?,
+    KillAuraConn = nil,
     GunHooked = false,
-    FOVCircle = nil :: any,
-    FOVConn = nil :: RBXScriptConnection?,
+    FOVCircle = nil,
+    FOVConn = nil,
     LastStab = 0,
 }
 
--- Internal helper: fire stab remote safely (mirrors stabKnife constants)
-local function fireStab(target: Player?)
+local function fireStab(target)
     local remote = Remotes.KnifeStabbed
     if not remote then
-        -- try re-resolve
         resolveRemotes()
         remote = Remotes.KnifeStabbed
         if not remote then return false end
     end
-    -- MM2 validates distance server-side but FireServer works inside ~10-14 studs normally.
-    -- We emulate stabKnife: FireServer with optional target CFrame? Some forks require no args.
     local ok = pcall(function()
-        -- try no-arg first (most common)
         remote:FireServer()
     end)
     if not ok then
         pcall(function()
-            -- fallback: some remotes expect target position
             local root = target and getRoot(target)
             if root then remote:FireServer(root.Position) end
         end)
@@ -622,25 +556,20 @@ local function fireStab(target: Player?)
     return ok
 end
 
-local function fireThrow(targetCF: CFrame)
+local function fireThrow(targetCF)
     local remote = Remotes.KnifeThrown
     if not remote then resolveRemotes(); remote = Remotes.KnifeThrown end
     if not remote then return end
-    -- throwKnife signature: FireServer(CFrame origin, CFrame target)
-    -- Dump shows throwKnife fires .Events.KnifeThrown:FireServer(CFrame)
-    -- We try both signatures
     local origin = (getRoot(LocalPlayer) and getRoot(LocalPlayer).CFrame) or Camera.CFrame
     pcall(function() remote:FireServer(targetCF) end)
     pcall(function() remote:FireServer(origin, targetCF) end)
     pcall(function() remote:FireServer(targetCF.Position) end)
 end
 
-local function fireGun(targetCF: CFrame, hitPos: Vector3?)
+local function fireGun(targetCF, hitPos)
     local remote = Remotes.GunFired
     if not remote then resolveRemotes(); remote = Remotes.GunFired end
     if not remote then return end
-    -- GunClient: FireServer(mouseTargetCFrame, gunRaycastCFrame) basically
-    -- Some versions: FireServer(Vector3 targetPos, CFrame lookAt)
     pcall(function() remote:FireServer(targetCF) end)
     pcall(function() remote:FireServer(targetCF, targetCF) end)
     pcall(function() remote:FireServer(targetCF.Position, targetCF) end)
@@ -649,7 +578,7 @@ local function fireGun(targetCF: CFrame, hitPos: Vector3?)
     end
 end
 
-local function shouldAuraTarget(plr: Player): boolean
+local function shouldAuraTarget(plr)
     if plr == LocalPlayer or not isAlive(plr) then return false end
     local mode = Flags.KillAuraTargets
     if mode == "All" then return true end
@@ -660,7 +589,7 @@ local function shouldAuraTarget(plr: Player): boolean
     return true
 end
 
-local function getAuraTargets(): {Player}
+local function getAuraTargets()
     local out = {}
     local myRoot = getRoot(LocalPlayer)
     if not myRoot then return out end
@@ -678,7 +607,6 @@ end
 local function hookGunFired()
     if Combat.GunHooked then return end
     Combat.GunHooked = true
-    -- Hook FireServer for silent aim (namecall hook)
     local mt = getrawmetatable and getrawmetatable(game)
     local nc = mt and mt.__namecall
     if mt and nc and setreadonly and newcclosure then
@@ -687,7 +615,6 @@ local function hookGunFired()
             local method = getnamecallmethod and getnamecallmethod() or ""
             local args = {...}
             if method == "FireServer" and Flags.GunSilentAim and self == Remotes.GunFired then
-                -- redirect to silent target
                 local target = getClosestToCursor(Flags.GunFOV, true)
                 if target then
                     local partName = Flags.GunAimPart
@@ -695,12 +622,10 @@ local function hookGunFired()
                     local aimPart = char and char:FindFirstChild(partName) or getRoot(target)
                     if aimPart and aimPart:IsA("BasePart") then
                         local cf = CFrame.new(aimPart.Position)
-                        -- rebuild args: preserve original count but replace CFrames
                         for i, v in ipairs(args) do
                             if typeof(v) == "CFrame" then args[i] = cf end
                             if typeof(v) == "Vector3" then args[i] = aimPart.Position end
                         end
-                        -- if no CFrame in args, prepend
                         local hasCF = false
                         for _, v in ipairs(args) do if typeof(v) == "CFrame" then hasCF = true break end end
                         if not hasCF then table.insert(args, 1, cf) end
@@ -708,16 +633,15 @@ local function hookGunFired()
                     end
                 end
             end
-            -- wallbang: currently just passes through (server check is position based)
             return old(self, ...)
         end))
         if not old then Combat.GunHooked = false end
     else
-        warn("[Swift] Executor missing hookmetamethod — GunSilentAim will use manual Fire")
+        warn("[Swift] Executor missing hookmetamethod - GunSilentAim will use manual Fire")
     end
 end
 
-local function setKillAura(v: boolean)
+local function setKillAura(v)
     Flags.KillAura = v
     if v then
         if Combat.KillAuraConn then Combat.KillAuraConn:Disconnect() end
@@ -725,13 +649,10 @@ local function setKillAura(v: boolean)
         Combat.KillAuraConn = RunService.Heartbeat:Connect(function()
             if not Flags.KillAura then return end
             if tick() - last < Flags.KillAuraDelay then return end
-            -- only aura if we hold knife
             if not hasTool(LocalPlayer, "Knife") then return end
             local targets = getAuraTargets()
             if #targets > 0 then
                 last = tick()
-                -- emulate stabKnife debounce 0.85s but we allow faster via 0.22 toggle
-                -- FireServer once per heartbeat max 1 target to avoid kick
                 fireStab(targets[1])
             end
         end)
@@ -740,9 +661,8 @@ local function setKillAura(v: boolean)
     end
 end
 
--- Throw aimbot loop (fires when LeftClick & holding Knife)
-local ThrowConn: RBXScriptConnection? = nil
-local function setThrowAimbot(v: boolean)
+local ThrowConn = nil
+local function setThrowAimbot(v)
     Flags.ThrowAimbot = v
     if v then
         if ThrowConn then ThrowConn:Disconnect() end
@@ -751,20 +671,15 @@ local function setThrowAimbot(v: boolean)
             if not Flags.ThrowAimbot then return end
             if inp.UserInputType ~= Enum.UserInputType.MouseButton1 and inp.KeyCode ~= Enum.KeyCode.ButtonR2 then return end
             if not hasTool(LocalPlayer, "Knife") then return end
-            -- silent throw override
             local target = getClosestToCursor(Flags.ThrowFOV, true)
             if target then
                 local root = getRoot(target)
                 if root then
-                    -- if silent enabled, directly fire remote instead of letting default trajectory run
                     if Flags.ThrowSilent then
                         fireThrow(CFrame.new(root.Position))
                         return
                     else
-                        -- non-silent: just aim assist — we still fire correct CFrame but let client animation play
-                        -- we hook by firing after short delay to not double-throw
                         task.wait(0.06)
-                        -- optional: fireThrow to guarantee hit (server reconciles)
                     end
                 end
             end
@@ -774,7 +689,6 @@ local function setThrowAimbot(v: boolean)
     end
 end
 
--- FOV circle for Gun
 local function ensureFOVCircle()
     if not Drawing then return end
     if Combat.FOVCircle then return Combat.FOVCircle end
@@ -806,8 +720,7 @@ if Drawing then
     Combat.FOVConn = RunService.RenderStepped:Connect(updateFOVCircle)
 end
 
--- Gun Aimbot (camera lock) — hold RightClick to lock
-local AimbotConn: RBXScriptConnection? = nil
+local AimbotConn = nil
 local Aiming = false
 UserInputService.InputBegan:Connect(function(inp, gpe)
     if inp.UserInputType == Enum.UserInputType.MouseButton2 then Aiming = true end
@@ -825,14 +738,10 @@ local function runGunAimbot()
     local partName = Flags.GunAimPart
     local part = target.Character and target.Character:FindFirstChild(partName) or getRoot(target)
     if not part or not part:IsA("BasePart") then return end
-    -- smooth camera tween to target
     local camPos = Camera.CFrame.Position
     local targetPos = part.Position
-    -- wall check
     if not Flags.GunWallbang then
         local ray = Workspace:Raycast(camPos, targetPos - camPos, RaycastParams.new())
-        -- RaycastParams filter: ignore local char
-        -- if wall hit before target, skip
         if ray and ray.Instance and not ray.Instance:IsDescendantOf(target.Character) then
             return
         end
@@ -841,7 +750,6 @@ local function runGunAimbot()
     Camera.CFrame = Camera.CFrame:Lerp(cf, 0.42)
 
     if Flags.GunAutoShoot then
-        -- fire after aim
         local remote = Remotes.GunFired
         if remote then
             fireGun(CFrame.new(targetPos), targetPos)
@@ -851,13 +759,11 @@ end
 
 RunService.RenderStepped:Connect(runGunAimbot)
 
--- // WINDOW // --------------------------------------------------------------
 local Window
 local okWin, winRes = pcall(function()
     if WindUI.CreateWindow then
-        -- WindUI API
         return WindUI:CreateWindow({
-            Title = "Swift  —  MM2",
+            Title = "Swift  -  MM2",
             Author = "coderofthenextgen",
             Folder = "SwiftMM2",
             Size = UDim2.fromOffset(560, 520),
@@ -867,10 +773,9 @@ local okWin, winRes = pcall(function()
             HasOutline = true,
         })
     else
-        -- Swift-UI fallback (Obsidian style)
         return WindUI:CreateWindow({
-            Title = "Swift — MM2",
-            Footer = "MM2 Exclusive — v1.0.0",
+            Title = "Swift - MM2",
+            Footer = "Swift - MM2",
             NotifySide = "Right",
             ShowCustomCursor = true,
             Center = true,
@@ -884,7 +789,6 @@ if not okWin or not winRes then
 end
 Window = winRes
 
--- Safe tab creator (supports both libs)
 local function addTab(opts)
     if Window.Tab then
         return Window:Tab(opts)
@@ -898,13 +802,14 @@ local function addTab(opts)
 end
 
 local function addSection(tab, title)
+    if not tab then return nil end
     if tab.Section then return tab:Section({Title = title}) end
-    if tab:Section then return tab:Section({Title = title}) end
     if tab.CreateSection then return tab:CreateSection(title) end
     return tab
 end
 
 local function makeToggle(tabOrSec, opts)
+    if not tabOrSec then return nil end
     if tabOrSec.Toggle then return tabOrSec:Toggle(opts) end
     if tabOrSec.CreateToggle then return tabOrSec:CreateToggle(opts.Title or opts.Name, opts.Callback, opts.Value) end
     if tabOrSec.AddToggle then return tabOrSec:AddToggle(opts.Title, opts) end
@@ -912,37 +817,38 @@ local function makeToggle(tabOrSec, opts)
 end
 
 local function makeSlider(tabOrSec, opts)
+    if not tabOrSec then return nil end
     if tabOrSec.Slider then return tabOrSec:Slider(opts) end
     if tabOrSec.CreateSlider then return tabOrSec:CreateSlider(opts.Title, opts.Min, opts.Max, opts.Value, opts.Callback) end
     return nil
 end
 
 local function makeDropdown(tabOrSec, opts)
+    if not tabOrSec then return nil end
     if tabOrSec.Dropdown then return tabOrSec:Dropdown(opts) end
     if tabOrSec.CreateDropdown then return tabOrSec:CreateDropdown(opts.Title, opts.Values or opts.Options, opts.Callback) end
     return nil
 end
 
 local function makeButton(tabOrSec, opts)
+    if not tabOrSec then return nil end
     if tabOrSec.Button then return tabOrSec:Button(opts) end
     if tabOrSec.CreateButton then return tabOrSec:CreateButton(opts.Title, opts.Callback) end
     return nil
 end
 
--- Tabs
 local HomeTab = addTab({Title = "Home", Icon = "house"})
 local CombatTab = addTab({Title = "Combat", Icon = "swords"})
 local VisualsTab = addTab({Title = "Visuals", Icon = "eye"})
 local PlayerTab = addTab({Title = "Player", Icon = "user"})
 local SettingsTab = addTab({Title = "Settings", Icon = "settings"})
 
--- HOME
 do
-    local s = addSection(HomeTab, "Swift — Murder Mystery 2 Exclusive")
+    local s = addSection(HomeTab, "Swift - MM2")
     if s.Paragraph then
         s:Paragraph({
             Title = "Locked to MM2",
-            Desc = string.format("PlaceId %d  •  Universe %d\nSwift will refuse to run outside MM2.\nRemotes auto-resolved on injection.", PlaceId, GameId),
+            Desc = string.format("PlaceId %d  -  Universe %d\nSwift will refuse to run outside MM2.\nRemotes auto-resolved on injection.", PlaceId, GameId),
         })
     elseif s.CreateParagraph then
         s:CreateParagraph({Title = "Locked to MM2", Content = "PlaceId " .. PlaceId})
@@ -957,12 +863,11 @@ do
         end})
     end
     if s.Divider then s:Divider() end
-    -- status indicators
     local function statusRow()
         local alive = isAlive(LocalPlayer)
         local role = getRole(LocalPlayer)
         local gunPart = getDroppedGun()
-        return string.format("You: %s [%s]  •  GunDrop: %s", alive and "Alive" or "Dead", role, gunPart and "AVAILABLE" or "taken")
+        return string.format("You: %s [%s]  -  GunDrop: %s", alive and "Alive" or "Dead", role, gunPart and "Available" or "Taken")
     end
     if s.Label then
         local lbl = s:Label({Title = statusRow()})
@@ -975,25 +880,16 @@ do
     end
 end
 
--- COMBAT
 do
-    local knifeSec = addSection(CombatTab, "Knife — Stab & Throw")
+    local knifeSec = addSection(CombatTab, "Knife - Stab & Throw")
     knifeSec:Toggle({
         Title = "Kill Aura",
         Desc = "Auto-stabs nearby players (uses KnifeStabbed remote, 0.22s delay)",
         Value = Flags.KillAura,
         Callback = function(v) setKillAura(v) end,
     })
-    knifeSec:Slider({
-        Title = "Kill Aura Range",
-        Min = 8, Max = 28, Default = Flags.KillAuraRange, Value = Flags.KillAuraRange,
-        Callback = function(v) Flags.KillAuraRange = v end,
-    })
-    knifeSec:Slider({
-        Title = "Kill Aura Delay",
-        Min = 0.08, Max = 0.9, Step = 0.02, Default = Flags.KillAuraDelay, Value = Flags.KillAuraDelay,
-        Callback = function(v) Flags.KillAuraDelay = v end,
-    })
+    knifeSec:Slider({Title = "Kill Aura Range", Value = {Min = 8, Max = 28, Default = Flags.KillAuraRange}, Callback = function(v) Flags.KillAuraRange = v end})
+    knifeSec:Slider({Title = "Kill Aura Delay", Step = 0.02, Value = {Min = 0.08, Max = 0.9, Default = Flags.KillAuraDelay}, Callback = function(v) Flags.KillAuraDelay = v end})
     knifeSec:Dropdown({
         Title = "Aura Targets",
         Values = {"All", "Murderer", "Sheriff", "Innocent"},
@@ -1012,13 +908,9 @@ do
         Value = Flags.ThrowSilent,
         Callback = function(v) Flags.ThrowSilent = v end,
     })
-    knifeSec:Slider({
-        Title = "Throw FOV",
-        Min = 80, Max = 900, Default = Flags.ThrowFOV, Value = Flags.ThrowFOV,
-        Callback = function(v) Flags.ThrowFOV = v end,
-    })
+    knifeSec:Slider({Title = "Throw FOV", Value = {Min = 80, Max = 900, Default = Flags.ThrowFOV}, Callback = function(v) Flags.ThrowFOV = v end})
 
-    local gunSec = addSection(CombatTab, "Gun — Aimbot & Silent")
+    local gunSec = addSection(CombatTab, "Gun - Aimbot & Silent")
     gunSec:Toggle({
         Title = "Gun Aimbot (Hold RMB)",
         Desc = "Camera locks to closest in FOV. Hold right click.",
@@ -1040,11 +932,7 @@ do
         Value = Flags.GunAimPart,
         Callback = function(v) Flags.GunAimPart = v end,
     })
-    gunSec:Slider({
-        Title = "Gun FOV",
-        Min = 60, Max = 900, Default = Flags.GunFOV, Value = Flags.GunFOV,
-        Callback = function(v) Flags.GunFOV = v; updateFOVCircle() end,
-    })
+    gunSec:Slider({Title = "Gun FOV", Value = {Min = 60, Max = 900, Default = Flags.GunFOV}, Callback = function(v) Flags.GunFOV = v; updateFOVCircle() end})
     gunSec:Toggle({
         Title = "Show FOV Circle",
         Value = Flags.GunShowFOV,
@@ -1072,9 +960,8 @@ do
     })
 end
 
--- VISUALS
 do
-    local espSec = addSection(VisualsTab, "ESP — Roles & Highlights")
+    local espSec = addSection(VisualsTab, "ESP - Roles & Highlights")
     espSec:Toggle({
         Title = "Enable ESP",
         Desc = "Highlights + Billboard name/role/dist (role colors)",
@@ -1089,11 +976,7 @@ do
     espSec:Toggle({Title = "Role Colors", Value = Flags.ESPRoleColors, Callback = function(v) Flags.ESPRoleColors = v end})
     espSec:Toggle({Title = "Tracers (Drawing)", Desc = "Requires Drawing API", Value = Flags.ESPTracers, Callback = function(v) Flags.ESPTracers = v end})
     espSec:Toggle({Title = "Gun Drop ESP", Value = Flags.ESPGunDrop, Callback = function(v) Flags.ESPGunDrop = v end})
-    espSec:Slider({
-        Title = "Max Distance",
-        Min = 300, Max = 9000, Default = Flags.ESPMaxDistance, Value = Flags.ESPMaxDistance,
-        Callback = function(v) Flags.ESPMaxDistance = v end,
-    })
+    espSec:Slider({Title = "Max Distance", Value = {Min = 300, Max = 9000, Default = Flags.ESPMaxDistance}, Callback = function(v) Flags.ESPMaxDistance = v end})
     local colSec = addSection(VisualsTab, "ESP Colors")
     if colSec.Colorpicker then
         colSec:Colorpicker({Title = "Murderer", Default = Flags.MurdererColor, Callback = function(c) Flags.MurdererColor = c end})
@@ -1102,7 +985,6 @@ do
     end
 end
 
--- PLAYER
 do
     local mSec = addSection(PlayerTab, "Movement")
     mSec:Toggle({
@@ -1114,17 +996,7 @@ do
             if hum then hum.WalkSpeed = v and Flags.WalkSpeed or 16 end
         end,
     })
-    mSec:Slider({
-        Title = "WalkSpeed",
-        Min = 16, Max = 120, Default = Flags.WalkSpeed, Value = Flags.WalkSpeed,
-        Callback = function(v)
-            Flags.WalkSpeed = v
-            if Flags.WalkSpeedEnabled then
-                local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-                if hum then hum.WalkSpeed = v end
-            end
-        end,
-    })
+    mSec:Slider({Title = "WalkSpeed", Value = {Min = 16, Max = 120, Default = Flags.WalkSpeed}, Callback = function(v) Flags.WalkSpeed = v; if Flags.WalkSpeedEnabled then local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid"); if hum then hum.WalkSpeed = v end end end})
     mSec:Toggle({
         Title = "JumpPower Override",
         Value = Flags.JumpPowerEnabled,
@@ -1137,17 +1009,7 @@ do
             end
         end,
     })
-    mSec:Slider({
-        Title = "JumpPower",
-        Min = 50, Max = 220, Default = Flags.JumpPower, Value = Flags.JumpPower,
-        Callback = function(v)
-            Flags.JumpPower = v
-            if Flags.JumpPowerEnabled then
-                local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-                if hum then hum.JumpPower = v end
-            end
-        end,
-    })
+    mSec:Slider({Title = "JumpPower", Value = {Min = 50, Max = 220, Default = Flags.JumpPower}, Callback = function(v) Flags.JumpPower = v; if Flags.JumpPowerEnabled then local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid"); if hum then hum.JumpPower = v end end end})
     LocalPlayer.CharacterAdded:Connect(function(c)
         c:WaitForChild("Humanoid")
         task.wait(0.4)
@@ -1169,12 +1031,11 @@ do
                     end
                 end)
             end
-            pcall(function() (Window.Notify or WindUI.Notify)({Title = "Swift", Content = "Infinite Jump: " .. (inf and "ON" or "OFF"), Duration = 2}) end)
+            pcall(function() (Window.Notify or WindUI.Notify)({Title = "Swift", Content = "Infinite Jump: " .. (inf and "On" or "Off"), Duration = 2}) end)
         end
     })
 end
 
--- SETTINGS
 do
     local s = addSection(SettingsTab, "Config & System")
     if s.Button then
@@ -1206,30 +1067,28 @@ do
     if s.Paragraph then
         s:Paragraph({
             Title = "Credits",
-            Desc = "Swift MM2 Exclusive • WindUI (Footagesus) • Hooks: stabKnife @131, throwKnife @147, GunClient @69\nOnly works on MM2 — github.com/coderofthenextgen/Swift",
+            Desc = "Swift - MM2 - WindUI (Footagesus) - Hooks: stabKnife @131, throwKnife @147, GunClient @69\nOnly works on MM2 - github.com/coderofthenextgen/Swift",
         })
     end
 end
 
--- // NOTIFY READY // --------------------------------------------------------
 pcall(function()
     local notif = Window.Notify or WindUI.Notify
     if notif then
         notif({
-            Title = "Swift — MM2 Loaded",
-            Content = "Exclusive build • ESP ready • Combat hooks active",
+            Title = "Swift - MM2 Loaded",
+            Content = "Exclusive build - ESP ready - Combat hooks active",
             Duration = 4,
         })
     else
         game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "Swift — MM2",
-            Text = "Loaded • ESP ready",
+            Title = "Swift - MM2",
+            Text = "Loaded - ESP ready",
             Duration = 4,
         })
     end
 end)
 
--- expose for debug
 getgenv().Swift = {
     Flags = Flags,
     Remotes = Remotes,
@@ -1239,4 +1098,4 @@ getgenv().Swift = {
     Version = "1.0.0-MM2",
 }
 
-warn("[Swift] MM2 Exclusive v1.0.0 loaded. PlaceId=" .. tostring(PlaceId) .. " WindUI=" .. tostring(WindUI ~= nil))
+warn("[Swift] Swift - MM2 loaded. PlaceId=" .. tostring(PlaceId) .. " WindUI=" .. tostring(WindUI ~= nil))
