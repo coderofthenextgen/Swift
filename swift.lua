@@ -207,16 +207,11 @@ local Flags = {
     InnocentColor = Color3.fromRGB(255, 255, 255),
     HeroColor = Color3.fromRGB(255, 220, 55),
 
-    KillAura = false,
-    KillAuraRange = 18,
-    KillAuraDelay = 0.22,
-    KillAuraTargets = "All",
     ThrowAimbot = false,
     ThrowSilent = false,
     ThrowFOV = 500,
 
     GunAimbot = false,
-    GunSilentAim = false,
     GunAimPart = "Head",
     GunFOV = 320,
     GunShowFOV = true,
@@ -230,11 +225,9 @@ local Flags = {
 }
 
 local Remotes = {
-    KnifeStabbed = nil,
     KnifeThrown = nil,
     GunFired = nil,
     Aliases = {
-        KnifeStabbed = {"KnifeStabbed", "StabKnife", "KnifeHit", "Slash"},
         KnifeThrown = {"KnifeThrown", "ThrowKnife", "KnifeThrow"},
         GunFired = {"GunFired", "ShootGun", "GunShoot", "FireGun", "GunShot"},
     }
@@ -247,7 +240,6 @@ local function resolveRemotes()
             if r then Remotes[canonical] = r break end
         end
     end
-    if not Remotes.KnifeStabbed then Remotes.KnifeStabbed = findRemoteFuzzy({"knife","stab"}) or findRemoteFuzzy({"stab"}) or findRemoteFuzzy({"knife","hit"}) end
     if not Remotes.KnifeThrown then Remotes.KnifeThrown = findRemoteFuzzy({"knife","throw"}) or findRemoteFuzzy({"throw"}) end
     if not Remotes.GunFired then Remotes.GunFired = findRemoteFuzzy({"gun","fir"}) or findRemoteFuzzy({"shoot"}) or findRemoteFuzzy({"gun","shot"}) or findRemoteFuzzy({"gun"}) end
     local ws = ReplicatedStorage:FindFirstChild("ClientServices")
@@ -261,13 +253,11 @@ local function resolveRemotes()
     for _, inst in ipairs(ReplicatedStorage:GetDescendants()) do
         if inst:IsA("RemoteEvent") then
             local n = inst.Name:lower()
-            if not Remotes.KnifeStabbed and n:find("knife") and n:find("stab") then Remotes.KnifeStabbed = inst end
             if not Remotes.KnifeThrown and n:find("knife") and n:find("throw") then Remotes.KnifeThrown = inst end
             if not Remotes.GunFired and n:find("gun") and (n:find("fire") or n:find("shoot") or n:find("shot")) then Remotes.GunFired = inst end
         end
     end
-    warn(string.format("[Swift] Remotes - Stab:%s Throw:%s Gun:%s",
-        Remotes.KnifeStabbed and Remotes.KnifeStabbed:GetFullName() or "nil",
+    warn(string.format("[Swift] Remotes - Throw:%s Gun:%s",
         Remotes.KnifeThrown and Remotes.KnifeThrown:GetFullName() or "nil",
         Remotes.GunFired and Remotes.GunFired:GetFullName() or "nil"
     ))
@@ -608,29 +598,9 @@ if Drawing then
 end
 
 local Combat = {
-    KillAuraConn = nil,
-    GunHooked = false,
     FOVCircle = nil,
     FOVConn = nil,
-    LastStab = 0,
 }
-
-local function fireStab(target)
-    local remote = Remotes.KnifeStabbed
-    if not remote then resolveRemotes(); remote = Remotes.KnifeStabbed end
-    if not remote then warn("[Swift] Stab remote nil"); return false end
-    local tried = 0
-    local ok = pcall(function() remote:FireServer() tried=1 end)
-    if ok then return true end
-    pcall(function() remote:FireServer(target and getRoot(target) and getRoot(target).Position or Vector3.new(0,0,0)) end)
-    pcall(function() if target then remote:FireServer(target) end end)
-    pcall(function() if target and target.Character then remote:FireServer(target.Character) end end)
-    pcall(function() local r=target and getRoot(target); if r then remote:FireServer(r) end end)
-    pcall(function() local r=target and getRoot(target); if r then remote:FireServer("Stab", r.Position) end end)
-    pcall(function() remote:FireServer("KnifeStabbed") end)
-    warn("[Swift] Stab fired attempts done")
-    return false
-end
 
 local function fireThrow(targetCF)
     local remote = Remotes.KnifeThrown
@@ -656,90 +626,6 @@ local function fireGun(targetCF, hitPos)
     pcall(function() remote:FireServer(targetCF.Position, hitPos) end)
     pcall(function() remote:FireServer("Shoot", targetCF) end)
     pcall(function() remote:FireServer("GunFired", targetCF) end)
-end
-
-local function shouldAuraTarget(plr)
-    if plr == LocalPlayer or not isAlive(plr) then return false end
-    local mode = Flags.KillAuraTargets
-    if mode == "All" then return true end
-    local role = getRole(plr)
-    if mode == "Murderer" then return role == "Murderer" end
-    if mode == "Sheriff" then return role == "Sheriff" end
-    if mode == "Innocent" then return role == "Innocent" end
-    return true
-end
-
-local function getAuraTargets()
-    local out = {}
-    local myRoot = getRoot(LocalPlayer)
-    if not myRoot then return out end
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if shouldAuraTarget(plr) then
-            local r = getRoot(plr)
-            if r and (r.Position - myRoot.Position).Magnitude <= Flags.KillAuraRange then
-                table.insert(out, plr)
-            end
-        end
-    end
-    return out
-end
-
-local function hookGunFired()
-    if Combat.GunHooked then return end
-    Combat.GunHooked = true
-    local mt = getrawmetatable and getrawmetatable(game)
-    local nc = mt and mt.__namecall
-    if mt and nc and setreadonly and newcclosure then
-        local old
-        old = hookmetamethod and hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
-            local method = getnamecallmethod and getnamecallmethod() or ""
-            local args = {...}
-            if method == "FireServer" and Flags.GunSilentAim and self == Remotes.GunFired then
-                local target = getClosestToCursor(Flags.GunFOV, true)
-                if target then
-                    local partName = Flags.GunAimPart
-                    local char = target.Character
-                    local aimPart = char and char:FindFirstChild(partName) or getRoot(target)
-                    if aimPart and aimPart:IsA("BasePart") then
-                        local cf = CFrame.new(aimPart.Position)
-                        for i, v in ipairs(args) do
-                            if typeof(v) == "CFrame" then args[i] = cf end
-                            if typeof(v) == "Vector3" then args[i] = aimPart.Position end
-                        end
-                        local hasCF = false
-                        for _, v in ipairs(args) do if typeof(v) == "CFrame" then hasCF = true break end end
-                        if not hasCF then table.insert(args, 1, cf) end
-                        return old(self, unpack(args))
-                    end
-                end
-            end
-            return old(self, ...)
-        end))
-        if not old then Combat.GunHooked = false end
-    else
-        warn("[Swift] Executor missing hookmetamethod - GunSilentAim will use manual Fire")
-    end
-end
-
-local function setKillAura(v)
-    Flags.KillAura = v and true or false
-    if Flags.KillAura then
-        if not Remotes.KnifeStabbed then resolveRemotes() end
-        if Combat.KillAuraConn then Combat.KillAuraConn:Disconnect() end
-        local last = 0
-        Combat.KillAuraConn = RunService.Heartbeat:Connect(function()
-            if not Flags.KillAura then return end
-            if tick() - last < Flags.KillAuraDelay then return end
-            if not hasKnife(LocalPlayer) then return end
-            local targets = getAuraTargets()
-            if #targets > 0 then
-                last = tick()
-                fireStab(targets[1])
-            end
-        end)
-    else
-        if Combat.KillAuraConn then Combat.KillAuraConn:Disconnect(); Combat.KillAuraConn = nil end
-    end
 end
 
 local ThrowConn = nil
@@ -790,12 +676,12 @@ end
 local function updateFOVCircle()
     local c = ensureFOVCircle()
     if not c then return end
-    local show = Flags.GunShowFOV and (Flags.GunAimbot or Flags.GunSilentAim)
+    local show = Flags.GunShowFOV and Flags.GunAimbot
     c.Visible = show
     if not show then return end
     c.Position = UserInputService:GetMouseLocation()
     c.Radius = Flags.GunFOV
-    c.Color = Flags.GunSilentAim and Color3.fromRGB(255, 90, 90) or Color3.fromRGB(124, 92, 255)
+    c.Color = Color3.fromRGB(124, 92, 255)
 end
 
 if Drawing then
@@ -1026,21 +912,7 @@ do
 end
 
 do
-    local knifeSec = addSection(CombatTab, "Knife - Stab & Throw")
-    knifeSec:Toggle({
-        Title = "Kill Aura",
-        Desc = "Auto-stabs nearby players (uses KnifeStabbed remote, 0.22s delay)",
-        Value = Flags.KillAura,
-        Callback = function(v) setKillAura(v) end,
-    })
-    knifeSec:Slider({Title = "Kill Aura Range", Value = {Min = 8, Max = 28, Default = Flags.KillAuraRange}, Callback = function(v) Flags.KillAuraRange = v end})
-    knifeSec:Slider({Title = "Kill Aura Delay", Step = 0.02, Value = {Min = 0.08, Max = 0.9, Default = Flags.KillAuraDelay}, Callback = function(v) Flags.KillAuraDelay = v end})
-    knifeSec:Dropdown({
-        Title = "Aura Targets",
-        Values = {"All", "Murderer", "Sheriff", "Innocent"},
-        Value = Flags.KillAuraTargets,
-        Callback = function(v) Flags.KillAuraTargets = v end,
-    })
+    local knifeSec = addSection(CombatTab, "Knife - Throw")
     knifeSec:Toggle({
         Title = "Throw Aimbot",
         Desc = "Closest to cursor within FOV when clicking with Knife",
@@ -1055,21 +927,12 @@ do
     })
     knifeSec:Slider({Title = "Throw FOV", Value = {Min = 80, Max = 900, Default = Flags.ThrowFOV}, Callback = function(v) Flags.ThrowFOV = v end})
 
-    local gunSec = addSection(CombatTab, "Gun - Aimbot & Silent")
+    local gunSec = addSection(CombatTab, "Gun - Aimbot")
     gunSec:Toggle({
         Title = "Gun Aimbot (Hold RMB)",
         Desc = "Camera locks to closest in FOV. Hold right click.",
         Value = Flags.GunAimbot,
         Callback = function(v) Flags.GunAimbot = v end,
-    })
-    gunSec:Toggle({
-        Title = "Gun Silent Aim",
-        Desc = "Hooks GunFired:FireServer to redirect to closest (from dump: GunClient @69)",
-        Value = Flags.GunSilentAim,
-        Callback = function(v)
-            Flags.GunSilentAim = v
-            if v then hookGunFired() end
-        end,
     })
     gunSec:Dropdown({
         Title = "Aim Part",
@@ -1238,7 +1101,6 @@ do
             Title = "Unload Swift (clean ESP/tracers)",
             Callback = function()
                 Flags.ESPEnabled = false
-                setKillAura(false)
                 setThrowAimbot(false)
                 setAutoTpGun(false)
                 if ESP.Conn then ESP.Conn:Disconnect(); ESP.Conn = nil end
