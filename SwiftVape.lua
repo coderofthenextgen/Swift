@@ -16,6 +16,7 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local CollectionService = game:GetService("CollectionService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 local Vape = loadstring(game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/VapeCompiled/refs/heads/main/guis/new.lua"))()
@@ -138,6 +139,7 @@ UserInputService.InputBegan:Connect(function(Input, Gp)
     end
 end)
 local CombatCategory = Vape.Categories.Combat
+local WorldCategory = Vape.Categories.World
 local KillAura = CombatCategory:CreateModule({
     Name = "KillAura",
     Function = function(Callback)
@@ -248,4 +250,69 @@ RunService.Heartbeat:Connect(function()
         end
     end
 end)
+local BedEnabled = false
+local BedHighlights = {}
+local function CreateHighlight(Bed)
+    if BedHighlights[Bed] then return end
+    local Highlight = Instance.new("Highlight")
+    Highlight.Parent = Bed
+    local BedPart = Bed:FindFirstChild("Bed") or Bed:FindFirstChild("bed")
+    if BedPart and BedPart:IsA("BasePart") then
+        Highlight.FillColor = BedPart.Color
+        Highlight.OutlineColor = BedPart.Color
+    else
+        Highlight.FillColor = Color3.fromRGB(255, 255, 255)
+        Highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    end
+    Highlight.FillTransparency = 0.3
+    Highlight.OutlineTransparency = 0
+    Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    Highlight.Enabled = true
+    BedHighlights[Bed] = Highlight
+end
+local function RemoveHighlight(Bed)
+    local Highlight = BedHighlights[Bed]
+    if Highlight then
+        Highlight:Destroy()
+        BedHighlights[Bed] = nil
+    end
+end
+local function UpdateBeds()
+    if not BedEnabled then
+        for Bed, Highlight in pairs(BedHighlights) do
+            Highlight:Destroy()
+        end
+        table.clear(BedHighlights)
+        return
+    end
+    local Character = LocalPlayer.Character
+    local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+    local RootPos = RootPart and RootPart.Position or Vector3.new(0, 0, 0)
+    for _, Bed in ipairs(CollectionService:GetTagged("bed")) do
+        local Distance = (RootPos - Bed.Position).Magnitude
+        if Distance <= 200 then
+            CreateHighlight(Bed)
+        else
+            RemoveHighlight(Bed)
+        end
+    end
+end
+CollectionService:GetInstanceAddedSignal("bed"):Connect(function()
+    task.wait(0.1)
+    UpdateBeds()
+end)
+CollectionService:GetInstanceRemovedSignal("bed"):Connect(function(Bed)
+    RemoveHighlight(Bed)
+    UpdateBeds()
+end)
+local BedEsp = WorldCategory:CreateModule({
+    Name = "BedEsp",
+    Function = function(Callback)
+        BedEnabled = Callback
+        UpdateBeds()
+    end,
+    Tooltip = "SwiftVape BedEsp"
+})
+RunService.Heartbeat:Connect(UpdateBeds)
+UpdateBeds()
 Vape:CreateNotification("SwiftVape", "Loaded RightShift to toggle", 4, "info")
