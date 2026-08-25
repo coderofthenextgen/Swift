@@ -153,6 +153,7 @@ local Flags = {
     ESPRoles = true,
     ESPTracers = false,
     ESPGunDrop = true,
+    AutoTpGun = false,
     ESPRoleColors = true,
     ESPMaxDistance = 2000,
     ESPBoxColor = Color3.fromRGB(255, 255, 255),
@@ -415,15 +416,15 @@ local function updateESP()
                 local hl = Instance.new("Highlight")
                 hl.Name = "SwiftGun"
                 hl.FillColor = Color3.fromRGB(255, 220, 40)
-                hl.OutlineColor = Color3.fromRGB(255, 255, 240)
-                hl.FillTransparency = 0.35
+                hl.OutlineColor = Color3.fromRGB(255, 215, 0)
+                hl.FillTransparency = 1
                 hl.OutlineTransparency = 0
                 hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
                 hl.Parent = ensureContainer()
                 ESP.GunHighlight = hl
             end
-            ESP.GunHighlight.Adornee = gunPart.Parent:IsA("Model") and gunPart.Parent or gunPart
-            ESP.GunHighlight.FillTransparency = 0.35
+            ESP.GunHighlight.Adornee = gunPart
+            ESP.GunHighlight.FillTransparency = 1
             ESP.GunHighlight.OutlineTransparency = 0
             if not ESP.GunBillboard or not ESP.GunBillboard.Parent then
                 local bb = Instance.new("BillboardGui")
@@ -468,6 +469,38 @@ local function setESPEnabled(v)
         updateESP()
         if ESP.Conn then
         end
+    end
+end
+
+local function setAutoTpGun(v)
+    Flags.AutoTpGun = v
+    if v then
+        getgenv()._swiftLastGunTp = 0
+        task.spawn(function()
+            while Flags.AutoTpGun do
+                task.wait(0.25)
+                if not Flags.AutoTpGun then break end
+                if not isAlive(LocalPlayer) then continue end
+                if hasTool(LocalPlayer, "Gun") or hasTool(LocalPlayer, "Revolver") then continue end
+                local gunPart = getDroppedGun()
+                if not gunPart then continue end
+                local hrp = getRoot(LocalPlayer)
+                if not hrp then continue end
+                if tick() - (getgenv()._swiftLastGunTp or 0) < 2.5 then continue end
+                getgenv()._swiftLastGunTp = tick()
+                local startCF = hrp.CFrame
+                hrp.CFrame = gunPart.CFrame + Vector3.new(0, 3, 0)
+                task.wait(0.35)
+                task.wait(0.15)
+                local hrp2 = getRoot(LocalPlayer)
+                if hrp2 then hrp2.CFrame = startCF end
+                pcall(function()
+                    if Window.Notify or WindUI.Notify then
+                        (Window.Notify or WindUI.Notify)({Title = "Swift - MM2", Content = "Gun grabbed - returned", Duration = 2})
+                    end
+                end)
+            end
+        end)
     end
 end
 
@@ -1034,6 +1067,28 @@ do
     espSec:Toggle({Title = "Role Colors", Value = Flags.ESPRoleColors, Callback = function(v) Flags.ESPRoleColors = v end})
     espSec:Toggle({Title = "Tracers (Drawing)", Desc = "Requires Drawing API", Value = Flags.ESPTracers, Callback = function(v) Flags.ESPTracers = v end})
     espSec:Toggle({Title = "Gun Drop ESP", Value = Flags.ESPGunDrop, Callback = function(v) Flags.ESPGunDrop = v end})
+    espSec:Toggle({
+        Title = "Auto TP to Gun & Back",
+        Desc = "Auto teleports to dropped gun, grabs it, and returns",
+        Value = Flags.AutoTpGun,
+        Callback = function(v) setAutoTpGun(v) end
+    })
+    espSec:Button({
+        Title = "TP to Gun Once",
+        Desc = "Instant teleport to gun and back",
+        Callback = function()
+            local gunPart = getDroppedGun()
+            local hrp = getRoot(LocalPlayer)
+            if gunPart and hrp then
+                local startCF = hrp.CFrame
+                hrp.CFrame = gunPart.CFrame + Vector3.new(0, 3, 0)
+                task.wait(0.35)
+                task.wait(0.2)
+                local hrp2 = getRoot(LocalPlayer)
+                if hrp2 then hrp2.CFrame = startCF end
+            end
+        end
+    })
     espSec:Slider({Title = "Max Distance", Value = {Min = 300, Max = 9000, Default = Flags.ESPMaxDistance}, Callback = function(v) Flags.ESPMaxDistance = v end})
     local colSec = addSection(VisualsTab, "ESP Colors")
     if colSec.Colorpicker then
@@ -1131,6 +1186,7 @@ do
                 Flags.ESPEnabled = false
                 setKillAura(false)
                 setThrowAimbot(false)
+                setAutoTpGun(false)
                 if ESP.Conn then ESP.Conn:Disconnect(); ESP.Conn = nil end
                 for _, hl in pairs(ESP.Highlights) do pcall(function() hl:Destroy() end) end
                 for _, bb in pairs(ESP.Billboards) do pcall(function() bb:Destroy() end) end
