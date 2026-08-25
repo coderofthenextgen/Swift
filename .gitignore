@@ -1,1 +1,4 @@
 .DS_Store
+*.luac
+config.json
+swift_key.json
