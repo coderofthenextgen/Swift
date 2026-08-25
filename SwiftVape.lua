@@ -20,7 +20,7 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 local Vape = loadstring(game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/VapeCompiled/refs/heads/main/guis/new.lua"))()
 local Settings = {
-    Enabled = true,
+    Enabled = false,
     Range = 18,
     HitChance = 100,
     MaxTargets = 1,
@@ -144,11 +144,6 @@ local KillAura = CombatCategory:CreateModule({
         Settings.Enabled = Callback
     end,
     Tooltip = "SwiftVape KillAura"
-})
-KillAura:CreateToggle({
-    Name = "Enabled",
-    Function = function(Callback) Settings.Enabled = Callback end,
-    Default = true
 })
 KillAura:CreateSlider({
     Name = "Range",
