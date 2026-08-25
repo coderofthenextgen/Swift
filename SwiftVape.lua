@@ -116,7 +116,27 @@ local function Attack(Target, Sword)
     })
 end
 Vape:LoadGUI()
-pcall(function() Vape.GUIBind:SetValue({"RightShift"}) end)
+pcall(function()
+    if Vape.GUIBind and Vape.GUIBind.SetBind then
+        Vape.GUIBind:SetBind({"RightShift"})
+    end
+    if Vape.GUIBind and Vape.GUIBind.Keys then
+        Vape.GUIBind.Keys = {"RightShift"}
+        if not table.find(Vape.ActiveBinds, Vape.GUIBind) then
+            table.insert(Vape.ActiveBinds, Vape.GUIBind)
+        end
+    end
+end)
+UserInputService.InputBegan:Connect(function(Input, Gp)
+    if Gp then return end
+    if Input.KeyCode == Enum.KeyCode.RightShift then
+        pcall(function()
+            if Vape.GUIBind and Vape.GUIBind.Triggered then
+                Vape.GUIBind.Triggered:Fire(true)
+            end
+        end)
+    end
+end)
 local CombatCategory = Vape.Categories.Combat
 local KillAura = CombatCategory:CreateModule({
     Name = "KillAura",
