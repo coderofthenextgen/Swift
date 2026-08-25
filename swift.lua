@@ -762,16 +762,43 @@ RunService.RenderStepped:Connect(runGunAimbot)
 local Window
 local okWin, winRes = pcall(function()
     if WindUI.CreateWindow then
-        return WindUI:CreateWindow({
-            Title = "Swift  -  MM2",
+        local w = WindUI:CreateWindow({
+            Title = "Swift - MM2",
             Author = "coderofthenextgen",
+            Icon = "sparkles",
             Folder = "SwiftMM2",
-            Size = UDim2.fromOffset(560, 520),
+            Size = UDim2.fromOffset(580, 560),
             Transparent = true,
             Theme = "Dark",
-            SideBarWidth = 170,
+            Resizable = true,
+            SideBarWidth = 185,
+            NewElements = true,
+            HideSearchBar = false,
             HasOutline = true,
+            BackgroundImageTransparency = 0.88,
+            OpenButton = {
+                Title = "Swift - MM2",
+                CornerRadius = UDim.new(1, 0),
+                StrokeThickness = 2,
+                Enabled = true,
+                Draggable = true,
+                OnlyMobile = false,
+                Scale = 0.65,
+                Color = ColorSequence.new(Color3.fromHex("#a855f7"), Color3.fromHex("#ec4899")),
+            },
+            Topbar = {
+                Height = 42,
+                ButtonsType = "Mac",
+            },
         })
+        pcall(function()
+            w:Tag({Title = "v1.0.0", Color = Color3.fromHex("#a855f7")})
+            w:Tag({Title = "RightShift", Icon = "keyboard", Color = Color3.fromHex("#1a1a1a")})
+        end)
+        pcall(function()
+            if w.SetToggleKey then w:SetToggleKey(Enum.KeyCode.RightShift) end
+        end)
+        return w
     else
         return WindUI:CreateWindow({
             Title = "Swift - MM2",
@@ -788,6 +815,9 @@ if not okWin or not winRes then
     error("[Swift] Window creation failed: " .. tostring(winRes))
 end
 Window = winRes
+pcall(function()
+    if Window.SetToggleKey then Window:SetToggleKey(Enum.KeyCode.RightShift) end
+end)
 
 local function addTab(opts)
     if Window.Tab then
@@ -837,32 +867,47 @@ local function makeButton(tabOrSec, opts)
     return nil
 end
 
-local HomeTab = addTab({Title = "Home", Icon = "house"})
-local CombatTab = addTab({Title = "Combat", Icon = "swords"})
-local VisualsTab = addTab({Title = "Visuals", Icon = "eye"})
-local PlayerTab = addTab({Title = "Player", Icon = "user"})
-local SettingsTab = addTab({Title = "Settings", Icon = "settings"})
+local HomeTab = addTab({Title = "Home", Icon = "house", IconColor = Color3.fromHex("#a855f7")})
+local CombatTab = addTab({Title = "Combat", Icon = "swords", IconColor = Color3.fromHex("#ef4444")})
+local VisualsTab = addTab({Title = "Visuals", Icon = "eye", IconColor = Color3.fromHex("#06b6d4")})
+local PlayerTab = addTab({Title = "Player", Icon = "user", IconColor = Color3.fromHex("#22c55e")})
+local SettingsTab = addTab({Title = "Settings", Icon = "settings", IconColor = Color3.fromHex("#64748b")})
 
 do
     local s = addSection(HomeTab, "Swift - MM2")
+    pcall(function()
+        if s.Paragraph then
+            s:Paragraph({
+                Title = "Swift - MM2 - Modern",
+                Desc = string.format("PlaceId %d  -  Universe %d\nAcrylic Dark - Gradient OpenButton - RightShift toggle.\nRemotes auto-resolved on injection.", PlaceId, GameId),
+            })
+        end
+    end)
     if s.Paragraph then
         s:Paragraph({
             Title = "Locked to MM2",
-            Desc = string.format("PlaceId %d  -  Universe %d\nSwift will refuse to run outside MM2.\nRemotes auto-resolved on injection.", PlaceId, GameId),
+            Desc = "WindUI NewElements + Mac Topbar + SearchBar. Press RightShift to toggle UI.",
         })
     elseif s.CreateParagraph then
         s:CreateParagraph({Title = "Locked to MM2", Content = "PlaceId " .. PlaceId})
     end
-    if s.Button then
-        s:Button({Title = "Copy Discord (soon)", Callback = function()
-            pcall(setclipboard, "https://github.com/coderofthenextgen/Swift")
-            if Window.Notify or WindUI.Notify then
-                local n = Window.Notify or WindUI.Notify
-                pcall(n, {Title = "Swift", Content = "Copied repo link", Duration = 2})
-            end
-        end})
-    end
     if s.Divider then s:Divider() end
+    if s.Button then
+        s:Button({
+            Title = "Copy Discord",
+            Desc = "github.com/coderofthenextgen/Swift",
+            Icon = "link",
+            Variant = "Primary",
+            Callback = function()
+                pcall(setclipboard, "https://github.com/coderofthenextgen/Swift")
+                if Window.Notify or WindUI.Notify then
+                    local n = Window.Notify or WindUI.Notify
+                    pcall(n, {Title = "Swift", Content = "Copied repo link", Duration = 2})
+                end
+            end
+        })
+    end
+    if s.Space then s:Space({Height = 12}) end
     local function statusRow()
         local alive = isAlive(LocalPlayer)
         local role = getRole(LocalPlayer)
@@ -878,6 +923,19 @@ do
             end
         end)
     end
+    if s.Space then s:Space() end
+    pcall(function()
+        if s.Keybind then
+            s:Keybind({
+                Title = "Quick Toggle",
+                Desc = "RightShift - native WindUI bind",
+                Value = "RightShift",
+                Callback = function(v)
+                    pcall(function() if Window.SetToggleKey then Window:SetToggleKey(Enum.KeyCode[v]) end end)
+                end,
+            })
+        end
+    end)
 end
 
 do
@@ -1038,6 +1096,34 @@ end
 
 do
     local s = addSection(SettingsTab, "Config & System")
+    if s.Keybind then
+        s:Keybind({
+            Title = "Toggle UI Keybind",
+            Desc = "RightShift to hide/show Swift - modern WindUI bind",
+            Value = "RightShift",
+            Callback = function(v)
+                pcall(function()
+                    if Window.SetToggleKey then Window:SetToggleKey(Enum.KeyCode[v]) end
+                end)
+            end,
+        })
+        if s.Divider then s:Divider() end
+    end
+    if s.Dropdown and WindUI and WindUI.GetThemes then
+        local ok, themes = pcall(function() return WindUI:GetThemes() end)
+        if ok and themes and #themes > 0 then
+            s:Dropdown({
+                Title = "Theme",
+                Desc = "WindUI theme - pick modern palette",
+                Values = themes,
+                Value = "Dark",
+                Callback = function(v)
+                    pcall(function() Window:SetTheme(v) end)
+                end,
+            })
+            if s.Divider then s:Divider() end
+        end
+    end
     if s.Button then
         s:Button({
             Title = "Unload Swift (clean ESP/tracers)",
