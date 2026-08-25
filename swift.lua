@@ -63,6 +63,37 @@ local function findRemote(name)
             if c and c:IsA("RemoteEvent") then return c end
         end
     end
+    local low = name:lower()
+    for _, inst in ipairs(ReplicatedStorage:GetDescendants()) do
+        if inst:IsA("RemoteEvent") and inst.Name:lower() == low then return inst end
+    end
+    for _, inst in ipairs(game:GetDescendants()) do
+        if inst:IsA("RemoteEvent") and inst.Name:lower() == low then return inst end
+    end
+    return nil
+end
+
+local function findRemoteFuzzy(keywords)
+    for _, inst in ipairs(ReplicatedStorage:GetDescendants()) do
+        if inst:IsA("RemoteEvent") then
+            local n = inst.Name:lower()
+            local ok = true
+            for _, kw in ipairs(keywords) do
+                if not n:find(kw:lower(), 1, true) then ok = false break end
+            end
+            if ok then return inst end
+        end
+    end
+    for _, inst in ipairs(game:GetDescendants()) do
+        if inst:IsA("RemoteEvent") then
+            local n = inst.Name:lower()
+            local ok = true
+            for _, kw in ipairs(keywords) do
+                if not n:find(kw:lower(), 1, true) then ok = false break end
+            end
+            if ok then return inst end
+        end
+    end
     return nil
 end
 
@@ -77,12 +108,26 @@ local function getRoot(plr)
 end
 
 local function hasTool(plr, toolName)
+    local needle = toolName:lower()
     local c = getCharacter(plr)
-    if c and c:FindFirstChild(toolName) then return true end
+    if c then
+        for _, o in ipairs(c:GetChildren()) do
+            if o:IsA("Tool") and o.Name:lower():find(needle, 1, true) then return true end
+        end
+        if c:FindFirstChild(toolName) then return true end
+    end
     local bp = plr:FindFirstChild("Backpack")
-    if bp and bp:FindFirstChild(toolName) then return true end
+    if bp then
+        for _, o in ipairs(bp:GetChildren()) do
+            if o:IsA("Tool") and o.Name:lower():find(needle, 1, true) then return true end
+        end
+        if bp:FindFirstChild(toolName) then return true end
+    end
     return false
 end
+
+local function hasKnife(plr) return hasTool(plr, "Knife") end
+local function hasGun(plr) return hasTool(plr, "Gun") or hasTool(plr, "Revolver") or hasTool(plr, "Weapon") end
 
 local function isAlive(plr)
     local c = getCharacter(plr)
@@ -93,8 +138,8 @@ end
 
 local function getRole(plr)
     if not isAlive(plr) then return "Dead" end
-    if hasTool(plr, "Knife") then return "Murderer" end
-    if hasTool(plr, "Gun") or hasTool(plr, "Revolver") then return "Sheriff" end
+    if hasKnife(plr) then return "Murderer" end
+    if hasGun(plr) then return "Sheriff" end
     return "Innocent"
 end
 
@@ -199,26 +244,26 @@ local function resolveRemotes()
     for canonical, aliases in pairs(Remotes.Aliases) do
         for _, name in ipairs(aliases) do
             local r = findRemote(name)
-            if r then
-                Remotes[canonical] = r
-                break
-            end
+            if r then Remotes[canonical] = r break end
         end
     end
-    if not Remotes.GunFired then
-        for _, inst in ipairs(ReplicatedStorage:GetDescendants()) do
-            if inst:IsA("RemoteEvent") and inst.Name:lower():find("gun") and inst.Name:lower():find("fir") then
-                Remotes.GunFired = inst
-                break
-            end
-        end
-    end
+    if not Remotes.KnifeStabbed then Remotes.KnifeStabbed = findRemoteFuzzy({"knife","stab"}) or findRemoteFuzzy({"stab"}) or findRemoteFuzzy({"knife","hit"}) end
+    if not Remotes.KnifeThrown then Remotes.KnifeThrown = findRemoteFuzzy({"knife","throw"}) or findRemoteFuzzy({"throw"}) end
+    if not Remotes.GunFired then Remotes.GunFired = findRemoteFuzzy({"gun","fir"}) or findRemoteFuzzy({"shoot"}) or findRemoteFuzzy({"gun","shot"}) or findRemoteFuzzy({"gun"}) end
     local ws = ReplicatedStorage:FindFirstChild("ClientServices")
     if ws then
         local ws2 = ws:FindFirstChild("WeaponService")
         if ws2 then
-            local gf = ws2:FindFirstChild("GunFired")
+            local gf = ws2:FindFirstChild("GunFired") or ws2:FindFirstChild("ShootGun") or ws2:FindFirstChild("FireGun")
             if gf and gf:IsA("RemoteEvent") then Remotes.GunFired = gf end
+        end
+    end
+    for _, inst in ipairs(ReplicatedStorage:GetDescendants()) do
+        if inst:IsA("RemoteEvent") then
+            local n = inst.Name:lower()
+            if not Remotes.KnifeStabbed and n:find("knife") and n:find("stab") then Remotes.KnifeStabbed = inst end
+            if not Remotes.KnifeThrown and n:find("knife") and n:find("throw") then Remotes.KnifeThrown = inst end
+            if not Remotes.GunFired and n:find("gun") and (n:find("fire") or n:find("shoot") or n:find("shot")) then Remotes.GunFired = inst end
         end
     end
     warn(string.format("[Swift] Remotes - Stab:%s Throw:%s Gun:%s",
@@ -473,15 +518,15 @@ local function setESPEnabled(v)
 end
 
 local function setAutoTpGun(v)
-    Flags.AutoTpGun = v
-    if v then
+    Flags.AutoTpGun = v and true or false
+    if Flags.AutoTpGun then
         getgenv()._swiftLastGunTp = 0
         task.spawn(function()
             while Flags.AutoTpGun do
                 task.wait(0.25)
                 if not Flags.AutoTpGun then break end
                 if not isAlive(LocalPlayer) then continue end
-                if hasTool(LocalPlayer, "Gun") or hasTool(LocalPlayer, "Revolver") then continue end
+                if hasGun(LocalPlayer) then continue end
                 local gunPart = getDroppedGun()
                 if not gunPart then continue end
                 local hrp = getRoot(LocalPlayer)
@@ -572,43 +617,45 @@ local Combat = {
 
 local function fireStab(target)
     local remote = Remotes.KnifeStabbed
-    if not remote then
-        resolveRemotes()
-        remote = Remotes.KnifeStabbed
-        if not remote then return false end
-    end
-    local ok = pcall(function()
-        remote:FireServer()
-    end)
-    if not ok then
-        pcall(function()
-            local root = target and getRoot(target)
-            if root then remote:FireServer(root.Position) end
-        end)
-    end
-    return ok
+    if not remote then resolveRemotes(); remote = Remotes.KnifeStabbed end
+    if not remote then warn("[Swift] Stab remote nil"); return false end
+    local tried = 0
+    local ok = pcall(function() remote:FireServer() tried=1 end)
+    if ok then return true end
+    pcall(function() remote:FireServer(target and getRoot(target) and getRoot(target).Position or Vector3.new(0,0,0)) end)
+    pcall(function() if target then remote:FireServer(target) end end)
+    pcall(function() if target and target.Character then remote:FireServer(target.Character) end end)
+    pcall(function() local r=target and getRoot(target); if r then remote:FireServer(r) end end)
+    pcall(function() local r=target and getRoot(target); if r then remote:FireServer("Stab", r.Position) end end)
+    pcall(function() remote:FireServer("KnifeStabbed") end)
+    warn("[Swift] Stab fired attempts done")
+    return false
 end
 
 local function fireThrow(targetCF)
     local remote = Remotes.KnifeThrown
     if not remote then resolveRemotes(); remote = Remotes.KnifeThrown end
-    if not remote then return end
+    if not remote then warn("[Swift] Throw remote nil"); return end
     local origin = (getRoot(LocalPlayer) and getRoot(LocalPlayer).CFrame) or Camera.CFrame
     pcall(function() remote:FireServer(targetCF) end)
     pcall(function() remote:FireServer(origin, targetCF) end)
     pcall(function() remote:FireServer(targetCF.Position) end)
+    pcall(function() remote:FireServer(origin.Position, targetCF.Position) end)
+    pcall(function() remote:FireServer("Throw", targetCF) end)
+    pcall(function() remote:FireServer("KnifeThrown", targetCF) end)
 end
 
 local function fireGun(targetCF, hitPos)
     local remote = Remotes.GunFired
     if not remote then resolveRemotes(); remote = Remotes.GunFired end
-    if not remote then return end
+    if not remote then warn("[Swift] Gun remote nil"); return end
     pcall(function() remote:FireServer(targetCF) end)
     pcall(function() remote:FireServer(targetCF, targetCF) end)
     pcall(function() remote:FireServer(targetCF.Position, targetCF) end)
-    if hitPos then
-        pcall(function() remote:FireServer(hitPos, targetCF) end)
-    end
+    pcall(function() remote:FireServer(hitPos, targetCF) end)
+    pcall(function() remote:FireServer(targetCF.Position, hitPos) end)
+    pcall(function() remote:FireServer("Shoot", targetCF) end)
+    pcall(function() remote:FireServer("GunFired", targetCF) end)
 end
 
 local function shouldAuraTarget(plr)
@@ -675,14 +722,15 @@ local function hookGunFired()
 end
 
 local function setKillAura(v)
-    Flags.KillAura = v
-    if v then
+    Flags.KillAura = v and true or false
+    if Flags.KillAura then
+        if not Remotes.KnifeStabbed then resolveRemotes() end
         if Combat.KillAuraConn then Combat.KillAuraConn:Disconnect() end
         local last = 0
         Combat.KillAuraConn = RunService.Heartbeat:Connect(function()
             if not Flags.KillAura then return end
             if tick() - last < Flags.KillAuraDelay then return end
-            if not hasTool(LocalPlayer, "Knife") then return end
+            if not hasKnife(LocalPlayer) then return end
             local targets = getAuraTargets()
             if #targets > 0 then
                 last = tick()
@@ -696,14 +744,15 @@ end
 
 local ThrowConn = nil
 local function setThrowAimbot(v)
-    Flags.ThrowAimbot = v
-    if v then
+    Flags.ThrowAimbot = v and true or false
+    if Flags.ThrowAimbot then
+        if not Remotes.KnifeThrown then resolveRemotes() end
         if ThrowConn then ThrowConn:Disconnect() end
         ThrowConn = UserInputService.InputBegan:Connect(function(inp, gpe)
             if gpe then return end
             if not Flags.ThrowAimbot then return end
             if inp.UserInputType ~= Enum.UserInputType.MouseButton1 and inp.KeyCode ~= Enum.KeyCode.ButtonR2 then return end
-            if not hasTool(LocalPlayer, "Knife") then return end
+            if not hasKnife(LocalPlayer) then return end
             local target = getClosestToCursor(Flags.ThrowFOV, true)
             if target then
                 local root = getRoot(target)
@@ -765,7 +814,7 @@ end)
 local function runGunAimbot()
     if not Flags.GunAimbot then return end
     if not Aiming then return end
-    if not hasTool(LocalPlayer, "Gun") and not hasTool(LocalPlayer, "Revolver") then return end
+    if not hasGun(LocalPlayer) then return end
     local target = getClosestToCursor(Flags.GunFOV, true)
     if not target then return end
     local partName = Flags.GunAimPart
@@ -774,7 +823,12 @@ local function runGunAimbot()
     local camPos = Camera.CFrame.Position
     local targetPos = part.Position
     if not Flags.GunWallbang then
-        local ray = Workspace:Raycast(camPos, targetPos - camPos, RaycastParams.new())
+        local params = RaycastParams.new()
+        params.FilterType = Enum.RaycastFilterType.Blacklist
+        local filt = {}
+        if LocalPlayer.Character then table.insert(filt, LocalPlayer.Character) end
+        params.FilterDescendantsInstances = filt
+        local ray = Workspace:Raycast(camPos, targetPos - camPos, params)
         if ray and ray.Instance and not ray.Instance:IsDescendantOf(target.Character) then
             return
         end
